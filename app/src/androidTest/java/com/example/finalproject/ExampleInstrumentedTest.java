@@ -30,11 +30,23 @@ public class ExampleInstrumentedTest {
 
     @Test
     public void testSetBirthDateFromString() {
+        assertEquals("3/8/2020", User.birthDateToString(User.getBirthDateFromString("3/8/2020")));
+    }
+
+    @Test
+    public void testGetCurrentAge(){
+
+    }
+
+    @Test
+    public void testBirthDateToString(){
         Calendar c1 = Calendar.getInstance();
-        User u1 = new User("Bob", "Ross", Calendar.getInstance(), 50.5);
-        u1.setBirthDateFromString("10/1/1998");
-        String expected = "10/1/1998";
-        String actual = User.getBirthDateAsString(u1.getBirthDate());
-        //assertEquals(expected, actual);
+        c1.clear();
+        c1.set(2020, 9, 3);
+        assertEquals("3/9/2020", User.birthDateToString(c1));
+
+        c1.clear();
+        c1.set(1999, 1, 10);
+        assertEquals("10/1/1999", User.birthDateToString(c1));
     }
 }

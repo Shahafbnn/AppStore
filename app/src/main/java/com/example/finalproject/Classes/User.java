@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import android.icu.util.Calendar;
+
+import java.util.Date;
 import java.util.LinkedList;
 
 public class User {
@@ -37,7 +39,7 @@ public class User {
 
         String firstName = sp.getString(FIRST_NAME_KEY, "default");
         String lastName = sp.getString(LAST_NAME_KEY, "default");
-        android.icu.util.Calendar birthDate = User.setBirthDateFromString(sp.getString(BIRTH_DATE_KEY, "default"));
+        android.icu.util.Calendar birthDate = User.getBirthDateFromString(sp.getString(BIRTH_DATE_KEY, "default"));
         double weight = sp.getFloat(WEIGHT_KEY, 100);
 
         if((boolean)User.validateFirstName(firstName)[0]) this.firstName = firstName;
@@ -71,17 +73,19 @@ public class User {
         this.birthDate = birthDate;
     }
 
-    public static android.icu.util.Calendar setBirthDateFromString(String birthDate){
+    public static android.icu.util.Calendar getBirthDateFromString(String birthDate){
         String[] time = birthDate.split("/");
-        android.icu.util.Calendar calendar = android.icu.util.Calendar.getInstance();
-        calendar.set(android.icu.util.Calendar.DAY_OF_MONTH, Integer.parseInt(time[0]));
-        calendar.set(android.icu.util.Calendar.MONTH, Integer.parseInt(time[1]));
-        calendar.set(android.icu.util.Calendar.YEAR, Integer.parseInt(time[2]));
+        Calendar calendar = Calendar.getInstance();
+        calendar.clear();
+        calendar.set(Calendar.YEAR, Integer.parseInt(time[2]));
+        calendar.set(Calendar.MONTH, Integer.parseInt(time[1]));
+        calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(time[0]));
+
         return calendar;
     }
 
-    public static String getBirthDateAsString(Calendar cal){
-        return + cal.get(Calendar.DAY_OF_MONTH) + "/" + cal.get(Calendar.MONTH) + "/" + cal.get(Calendar.YEAR);
+    public static String birthDateToString(Calendar cal){
+        return cal.get(Calendar.DAY_OF_MONTH) + "/" + (cal.get(Calendar.MONTH)) + "/" + cal.get(Calendar.YEAR);
     }
     public double getWeight() {
         return weight;
@@ -102,12 +106,10 @@ public class User {
     @Override
     public String toString(){
         return ("Full name: " + firstName + " " + lastName +
-                ", Birth date: " + calendarSpecialToString(birthDate) +" (" + getCurrentAgeDouble() + " years old)" +
+                ", Birth date: " + birthDateToString(birthDate) +" (" + getCurrentAgeDouble() + " years old)" +
                 ", Weight: " + weight);
     }
-    private String calendarSpecialToString(android.icu.util.Calendar calendar){
-        return (calendar.get(android.icu.util.Calendar.DAY_OF_WEEK) + "/" + calendar.get(android.icu.util.Calendar.MONTH) + "/" + calendar.get(android.icu.util.Calendar.YEAR));
-    }
+
     public android.icu.util.Calendar getCurrentAge() {
         final Calendar today = Calendar.getInstance();
         int years = today.get(Calendar.YEAR) - birthDate.get(Calendar.YEAR);

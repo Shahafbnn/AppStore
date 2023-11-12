@@ -182,7 +182,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
             if((boolean)firstNameValidated[0] && (boolean)lastNameValidated[0] && birthDateValidated && (boolean)weightValidated[0]){
                 //calendar time stuff
-                Calendar calendar = User.setBirthDateFromString(etdBirthDate.getText().toString());
+                Calendar calendar = User.getBirthDateFromString(etdBirthDate.getText().toString());
 
                 //weight double stuff
 
