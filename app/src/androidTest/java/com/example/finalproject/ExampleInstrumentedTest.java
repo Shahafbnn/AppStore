@@ -1,6 +1,8 @@
 package com.example.finalproject;
 
 import android.content.Context;
+import android.icu.util.Calendar;
+import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -9,6 +11,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
+
+import com.example.finalproject.Classes.User;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -22,5 +26,15 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertEquals("com.example.finalproject", appContext.getPackageName());
+    }
+
+    @Test
+    public void testSetBirthDateFromString() {
+        Calendar c1 = Calendar.getInstance();
+        User u1 = new User("Bob", "Ross", Calendar.getInstance(), 50.5);
+        u1.setBirthDateFromString("10/1/1998");
+        String expected = "10/1/1998";
+        String actual = User.getBirthDateAsString(u1.getBirthDate());
+        //assertEquals(expected, actual);
     }
 }

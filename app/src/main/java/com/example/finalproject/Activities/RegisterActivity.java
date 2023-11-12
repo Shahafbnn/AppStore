@@ -3,6 +3,7 @@ package com.example.finalproject.Activities;
 import android.app.DatePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.icu.util.Calendar;
 import android.net.Uri;
@@ -14,7 +15,6 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -29,15 +29,46 @@ import com.example.finalproject.R;
 import java.io.IOException;
 import java.util.LinkedList;
 
-public class RegisterActivity extends AppCompatActivity implements View.OnClickListener {
+public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
-    Button btnSendData,btnViewData;
+    Button btnSendData;
     EditText etdBirthDate,ettFirstName,ettLastName,etndWeight;
     LinkedList<User> users;
     ImageView ivGallery,ivImage,ivCamera;
     boolean isFromCamera, isFromGallery;
     private Uri uriPhoto;
     private Bitmap photoBitmap;
+
+    private SharedPreferences sharedPreferences;
+    private boolean spInitialized;
+    private SharedPreferences.Editor editor;
+
+
+//    @Override
+//    protected void onCreate(Bundle savedInstanceState) {
+//        super.onCreate(savedInstanceState);
+//        setContentView(R.layout.activity_register_shared_preference);
+//
+//        sp = getSharedPreferences("SharedPreferencesSignUp", 0);
+//        editor = sp.edit();
+//
+//        // Let's say you want to store a string
+//        String key = "exampleKey";
+//        String value = "exampleValue";
+//
+//        // Store the string in SharedPreferences
+//        editor.putString(key, value);
+//        editor.apply();
+//
+//        // Now let's retrieve the string from SharedPreferences
+//        String retrievedValue = sp.getString(key, "default");
+//
+//        Log.d("SharedPreferences", "Stored value: " + sp.getString(key, null));
+//
+//        // At this point, 'retrievedValue' should be equal to 'exampleValue'
+//    }
+
+    //this object gets the result of the camera/gallery activity and sets the image in ivImage.
     ActivityResultLauncher<Intent> startFile = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -69,7 +100,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         btnSendData = findViewById(R.id.btnSendData);
         btnSendData.setOnClickListener(this);
-        btnViewData.setOnClickListener(this);
         etdBirthDate = findViewById(R.id.etdBirthDate);
         etdBirthDate.setOnClickListener(this);
 
@@ -86,6 +116,46 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(!PermissionClass.CheckPremission(this)) PermissionClass.RequestPerms(this);
 
+        //shared preferences init:
+        sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
+        spInitialized = sharedPreferences.contains("initialized");
+        if(spInitialized){
+            String firstName = sharedPreferences.getString("firstName", "default");
+            Object[] isFirstNameValidated = User.validateFirstName(firstName);
+            ettFirstName.setText(firstName);
+
+            String lastName = sharedPreferences.getString("lastName", "default");
+            Object[] isLastNameValidated = User.validateFirstName(lastName);
+            ettLastName.setText(lastName);
+
+            String birthDate = sharedPreferences.getString("birthDate", "default");
+            boolean birthDateValidated = (!birthDate.equals("")) && birthDate != null;
+            if(!birthDateValidated) etdBirthDate.setError("The text cannot be empty");
+
+            String[] weight = new String[]{sharedPreferences.getString("weight", "default")};
+            Object[] isWeightValidated = User.validateWeight(weight);
+            etndWeight.setText(weight[0]);
+
+
+
+            if(!(boolean)isFirstNameValidated[0]) ettFirstName.setError("The text is " + isFirstNameValidated[1]);
+            if(!(boolean)isLastNameValidated[0]) ettLastName.setError("The text is " + isLastNameValidated[1]);
+            if(!(boolean)isWeightValidated[0]) etndWeight.setError("The text is " + isWeightValidated[1]);
+
+
+
+
+        }
+        else{
+            editor = sharedPreferences.edit();
+
+            //Indicate that the default shared prefs have been set
+            editor.putBoolean("initialized", true);
+
+            editor.commit();
+        }
+
+        editor.apply();
 
     }
 
@@ -107,17 +177,12 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
             String[] weightString = new String[]{etndWeight.getText().toString()};
             Object[] weightValidated = User.validateWeight(weightString);
-            Log.v("weight", "weight after: " + weightString[0]);
 
             if(!(boolean)weightValidated[0]) etndWeight.setError("The text is " + weightValidated[1]);
 
             if((boolean)firstNameValidated[0] && (boolean)lastNameValidated[0] && birthDateValidated && (boolean)weightValidated[0]){
                 //calendar time stuff
-                String[] time = etdBirthDate.getText().toString().split("/");
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(time[0]));
-                calendar.set(Calendar.MONTH, Integer.parseInt(time[1]));
-                calendar.set(Calendar.YEAR, Integer.parseInt(time[2]));
+                Calendar calendar = User.setBirthDateFromString(etdBirthDate.getText().toString());
 
                 //weight double stuff
 
@@ -127,6 +192,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 User user = new User(ettFirstName.getText().toString(), ettLastName.getText().toString(), calendar, Double.parseDouble(etndWeight.getText().toString()));
                 User.getUsersList().add(user);
                 //clearing them all so u can add another user
+
+                editor.putString("firstName", ettFirstName.getText().toString());
+                editor.putString("firstName", ettFirstName.getText().toString());
+
                 ettFirstName.getText().clear();
                 ettLastName.getText().clear();
                 etdBirthDate.getText().clear();
