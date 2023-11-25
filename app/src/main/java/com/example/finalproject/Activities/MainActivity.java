@@ -21,6 +21,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
         spInitialized = sharedPreferences.contains("initialized");
         //it will return the default if the sharedPreferences isn't init and the name will be Guest maybe
-        String fullName = sharedPreferences.getString(User.FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(User.LAST_NAME_KEY, "");
+        String fullName = sharedPreferences.getString(Constants.FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(Constants.LAST_NAME_KEY, "");
         if(sharedPreferences.getBoolean("isAdmin", false)) fullName += " (Admin)";
         tvWelcome.setText("Welcome " + fullName + "!");
 
