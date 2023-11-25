@@ -11,6 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:layout_weight="1"
         android:gravity="center">
 
         <ImageView
@@ -44,49 +45,103 @@
 
 
     <EditText
-        android:id="@+id/ettFirstName"
+        android:id="@+id/etTextFirstName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="text"
         android:hint="First Name:"
-        android:layout_marginVertical="20dp"
+        android:layout_weight="1"
         android:text="Eli" />
 
     <EditText
-        android:id="@+id/ettLastName"
+        android:id="@+id/etTextLastName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="text"
         android:text="Baba"
-        android:layout_marginVertical="20dp"
+        android:layout_weight="1"
+
         android:hint="Last Name:" />
 
     <EditText
-        android:id="@+id/etdBirthDate"
+        android:id="@+id/etBirthDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="none"
         android:hint="Birth Date:"
         android:focusable="false"
-        android:layout_marginVertical="20dp"
+        android:layout_weight="1"
         android:onClick="onClick" />
 
     <EditText
-        android:id="@+id/etndWeight"
+        android:id="@+id/etDecimalWeight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="numberDecimal"
-        android:layout_marginVertical="20dp"
+        android:layout_weight="1"
         android:hint="Weight(kg):" />
 
+    <EditText
+        android:id="@+id/etPhoneNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="phone"
+        android:layout_weight="1"
+        android:hint="Phone Number:" />
+
+    <EditText
+        android:id="@+id/etTextPassword"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:layout_weight="1"
+        android:hint="Password:" />
+    <EditText
+        android:id="@+id/etTextPasswordConfirm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:layout_weight="1"
+        android:hint="Confirm Password:" />
+
+    <EditText
+        android:id="@+id/etTextEmailAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textEmailAddress"
+        android:layout_weight="1"
+        android:hint="Email:" />
+
+    <EditText
+        android:id="@+id/etTextHomeCity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="text"
+        android:layout_weight="1"
+        android:hint="City:" />
+
+    <EditText
+        android:id="@+id/etTextHomeAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="text"
+        android:layout_weight="1"
+        android:hint="Home Address:" />
     <Button
         android:id="@+id/btnSendData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:layout_marginVertical="20dp"
         android:text="Send Data" />
 

@@ -1,16 +1,14 @@
 package com.example.finalproject.Classes;
 
 import android.content.SharedPreferences;
-import android.util.Log;
+import android.icu.util.GregorianCalendar;
 
 import android.icu.util.Calendar;
 
-import java.util.Date;
 import java.util.LinkedList;
 
 public class User {
     private static LinkedList<User> usersList = null;
-
     private String firstName;
     private String lastName;
     private android.icu.util.Calendar birthDate;
@@ -18,24 +16,65 @@ public class User {
     private String email;
     private LocationAddress location;
     private String password;
-    private int phoneNumber;
+    private String passwordConfirm;
+    private String phoneNumber;
+
+    public static final String FIRST_NAME_KEY = "firstName";
+    public static final String LAST_NAME_KEY = "lastName";
+    public static final String WEIGHT_KEY = "weight";
+    public static final String BIRTH_DATE_KEY = "birthDate";
+    public static final String PHONE_NUMBER_KEY = "phoneNumber";
+
+    public static final String PASSWORD_KEY = "password";
+
+    public static final String PASSWORD_CONFIRM_KEY = "passwordConfirm";
+
+    public static final String EMAIL_ADDRESS_KEY = "emailAddress";
+    public static final String HOME_ADDRESS_KEY = "homeAddress";
+    public static final String IMAGE_URI_ADDRESS_KEY = "imageUriAddress";
 
 
 
-    public User(String firstName, String lastName, android.icu.util.Calendar birthDate, double weight) {
+
+
+
+
+    public User(String firstName, String lastName, Calendar birthDate, double weight, String email, LocationAddress location, String password, String phoneNumber) {
         if(usersList==null) usersList = new LinkedList<>();
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.weight = weight;
+        if((boolean)validateFirstName(firstName)[0]) this.firstName = firstName;
+        else this.firstName = "Guest";
+        if((boolean)validateLastName(firstName)[0]) this.lastName = lastName;
+        else this.lastName = "Guest";
+        if((boolean)validateBirthDate(birthDate)[0]) this.birthDate = birthDate;
+        else {
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.YEAR, -16);
+            this.birthDate = c;
+        }
+        if((boolean)validateWeight(weight)[0]) this.weight = weight;
+        else this.weight = 100;
+
+        Object[] emailValidated = validateEmail(email);
+        if((boolean)emailValidated[0]) this.email = email;
+        else throw new RuntimeException(emailValidated[1].toString());
+
+        this.location = location;
+
+        if((boolean)validatePassword(email)[0]) this.password = password;
+        else this.password = "Password123!";
+
+        Object[] phoneNumberValidated = validatePhoneNumber(phoneNumber);
+        if((boolean) phoneNumberValidated[0]) this.phoneNumber = phoneNumber;
+        else throw new RuntimeException(phoneNumberValidated[1].toString());
     }
+    public User(Calendar birthDate){
+        this.birthDate = birthDate;
+    }
+    //FOR TESTS ONLY, DELETE LATER!
 
     public User(SharedPreferences sp){
         if(usersList==null) usersList = new LinkedList<>();
-        final String FIRST_NAME_KEY = "firstName";
-        final String LAST_NAME_KEY = "lastName";
-        final String WEIGHT_KEY = "weight";
-        final String BIRTH_DATE_KEY = "birthDate";
+
 
         String firstName = sp.getString(FIRST_NAME_KEY, "default");
         String lastName = sp.getString(LAST_NAME_KEY, "default");
@@ -74,6 +113,7 @@ public class User {
     }
 
     public static android.icu.util.Calendar getBirthDateFromString(String birthDate){
+        //i am not checking for cases where birthDate is null, empty, lacking slashes... because it will already show an exception
         String[] time = birthDate.split("/");
         Calendar calendar = Calendar.getInstance();
         calendar.clear();
@@ -83,6 +123,7 @@ public class User {
 
         return calendar;
     }
+
 
     public static String birthDateToString(Calendar cal){
         return cal.get(Calendar.DAY_OF_MONTH) + "/" + (cal.get(Calendar.MONTH)) + "/" + cal.get(Calendar.YEAR);
@@ -136,25 +177,20 @@ public class User {
 
     public double getCurrentAgeDouble() {
         Calendar age = Calendar.getInstance();
-//        int years = today.get(Calendar.YEAR) - birthDate.get(Calendar.YEAR);
-//        int months = today.get(Calendar.MONTH) - birthDate.get(Calendar.MONTH);
-//        int days = today.get(Calendar.DAY_OF_MONTH) - birthDate.get(Calendar.DAY_OF_MONTH);
         age.add(android.icu.util.Calendar.YEAR, -birthDate.get(Calendar.YEAR));
         age.add(android.icu.util.Calendar.MONTH, -birthDate.get(Calendar.MONTH));
         age.add(android.icu.util.Calendar.DAY_OF_MONTH, -birthDate.get(Calendar.DAY_OF_MONTH));
 
+        int years = age.get(Calendar.YEAR);
+        int months = age.get(Calendar.MONTH) + 1;
+        int days = age.get(Calendar.DAY_OF_MONTH);
 
-//        if (days < 0) {
-//            months--;
-//            days += today.getActualMaximum(Calendar.DAY_OF_MONTH);
-//        }
-//
-//        if (months < 0) {
-//            years--;
-//            months += 12;
-//        }
+        // Check if the current month is the birth month and the current day is less than the birth day
+        if (months == 0 && days < 0) {
+            years--;
+        }
 
-        double ageDouble = age.get(android.icu.util.Calendar.YEAR) + age.get(android.icu.util.Calendar.MONTH)/12 + age.get(android.icu.util.Calendar.DAY_OF_YEAR)/365;
+        double ageDouble = years + months/12.0 + (double)days/ (((GregorianCalendar)age).isLeapYear(age.get(Calendar.YEAR))?366:365);
         return ageDouble;
     }
 
@@ -162,6 +198,7 @@ public class User {
         if (firstName==null) return new Object[]{false, "null"};
         if (firstName.equals("")) return new Object[]{false, "empty"};
         int size = firstName.length();
+        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new Object[]{false, "name must start with an uppercase English letter"};
         if (size >= 2 && size <= 10){
             boolean inEnglish = true;
             char currentChar;
@@ -174,10 +211,12 @@ public class User {
         return new Object[]{false, "shorter than 2 characters or longer than 10 characters"};
     }
 
+
     public static Object[] validateLastName(String firstName){
         if (firstName==null) return new Object[]{false, "null"};
         if (firstName.equals("")) return new Object[]{false, "empty"};
         int size = firstName.length();
+        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new Object[]{false, "name must start with an uppercase English letter"};
         if (size >= 2 && size <= 15){
             boolean inHebrew = true;
             char currentChar;
@@ -308,6 +347,15 @@ public class User {
 
         return new Object[]{correct, "password can only contain English, numbers and special chars"};
     }
+    public static Object[] validatePhoneNumber(String phoneNumber){
+
+        return new Object[]{true};
+    }
+    public static int phoneNumberFromString(String phoneNumber){
+        return -1;
+    }
+
+
 
 
 }

@@ -5,9 +5,11 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -22,17 +24,23 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.finalproject.Classes.LocationAddress;
 import com.example.finalproject.Classes.PermissionClass;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.LinkedList;
+import java.util.function.Function;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
     Button btnSendData;
-    EditText etdBirthDate,ettFirstName,ettLastName,etndWeight;
+    EditText etTextFirstName,etTextLastName,etBirthDate,etDecimalWeight,etPhoneNumber,
+            etTextPassword,etTextPasswordConfirm,etTextEmailAddress,etTextHomeCity,etTextHomeAddress;
     LinkedList<User> users;
     ImageView ivGallery,ivImage,ivCamera;
     boolean isFromCamera, isFromGallery;
@@ -43,6 +51,23 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private boolean spInitialized;
     private SharedPreferences.Editor editor;
 
+    public void saveBitmapInFolder(Bitmap bitmap){
+        String timeStamp = new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
+        String foldersPhotos = "ABC";
+        File myDir = new File(Environment.getExternalStorageDirectory(), "/" + foldersPhotos);
+
+        if(!myDir.exists())
+        {
+            myDir.mkdirs();
+        }
+
+        File dest = new File(myDir, timeStamp);
+        try {
+            FileOutputStream out = new FileOutputStream(dest);
+        } catch (Exception e){
+
+        }
+    }
 
 //    @Override
 //    protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +102,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         if(isFromCamera){
                             try{
                                 photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
+                                saveBitmapInFolder(photoBitmap);
                             } catch (IOException e){
                                 throw new RuntimeException(e);
                             }
@@ -90,6 +116,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
                         }
                         ivImage.setImageURI(uriPhoto);
+
                     }
                 }
             });
@@ -100,12 +127,18 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         btnSendData = findViewById(R.id.btnSendData);
         btnSendData.setOnClickListener(this);
-        etdBirthDate = findViewById(R.id.etdBirthDate);
-        etdBirthDate.setOnClickListener(this);
+        etBirthDate = findViewById(R.id.etBirthDate);
+        etBirthDate.setOnClickListener(this);
 
-        ettFirstName = findViewById(R.id.ettFirstName);
-        ettLastName = findViewById(R.id.ettLastName);
-        etndWeight = findViewById(R.id.etndWeight);
+        etTextFirstName = findViewById(R.id.etTextFirstName);
+        etTextLastName = findViewById(R.id.etTextLastName);
+        etDecimalWeight = findViewById(R.id.etDecimalWeight);
+        etPhoneNumber = findViewById(R.id.etPhoneNumber);
+        etTextPassword = findViewById(R.id.etTextPassword);
+        etTextPasswordConfirm = findViewById(R.id.etTextPasswordConfirm);
+        etTextEmailAddress = findViewById(R.id.etTextEmailAddress);
+        etTextHomeCity = findViewById(R.id.etTextHomeCity);
+        etTextHomeAddress = findViewById(R.id.etTextHomeAddress);
 
         ivGallery = findViewById(R.id.ivGallery);
         ivGallery.setOnClickListener(this);
@@ -120,27 +153,39 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
         spInitialized = sharedPreferences.contains("initialized");
         if(spInitialized){
-            String firstName = sharedPreferences.getString("firstName", "default");
+            String firstName = sharedPreferences.getString(User.FIRST_NAME_KEY, "Guest");
             Object[] isFirstNameValidated = User.validateFirstName(firstName);
-            ettFirstName.setText(firstName);
+            etTextFirstName.setText(firstName);
 
-            String lastName = sharedPreferences.getString("lastName", "default");
+            String lastName = sharedPreferences.getString(User.LAST_NAME_KEY, "Guest");
             Object[] isLastNameValidated = User.validateFirstName(lastName);
-            ettLastName.setText(lastName);
+            etTextLastName.setText(lastName);
 
-            String birthDate = sharedPreferences.getString("birthDate", "default");
-            boolean birthDateValidated = (!birthDate.equals("")) && birthDate != null;
-            if(!birthDateValidated) etdBirthDate.setError("The text cannot be empty");
+            String birthDate = sharedPreferences.getString(User.BIRTH_DATE_KEY, "1/1/1991");
+            Object[] isBirthDayValidated = User.validateBirthDate(User.getBirthDateFromString(birthDate));
+            if(!(boolean)isBirthDayValidated[0]) etBirthDate.setError((String)isBirthDayValidated[1]);
 
-            String[] weight = new String[]{sharedPreferences.getString("weight", "default")};
+            double weight = sharedPreferences.getFloat(User.WEIGHT_KEY, 50.5f);
             Object[] isWeightValidated = User.validateWeight(weight);
-            etndWeight.setText(weight[0]);
+            etDecimalWeight.setText(""+weight);
+            if(!(boolean)isWeightValidated[0]) etDecimalWeight.setError((String)isWeightValidated[1]);
+
+            String email = sharedPreferences.getString(User.EMAIL_ADDRESS_KEY, "example@email.com");
+            Object[] isEmailValidated = User.validateEmail(email);
+            if(!(boolean)isEmailValidated[0]) etTextEmailAddress.setError((String)isEmailValidated[1]);
+
+            String password = sharedPreferences.getString(User.PASSWORD_KEY, "Pass123!");
+            Object[] isPasswordValidated = User.validatePassword(password);
+            if(!(boolean)isPasswordValidated[0]) etTextPassword.setError((String)isPasswordValidated[1]);
+
+            String passwordConfirm = sharedPreferences.getString(User.PASSWORD_CONFIRM_KEY, "Pass123!");
+            Object[] isPasswordConfirmValidated = User.validatePassword(passwordConfirm);
+            if(!(boolean)isPasswordConfirmValidated[0]) etTextPasswordConfirm.setError((String)isPasswordConfirmValidated[1]);
 
 
-
-            if(!(boolean)isFirstNameValidated[0]) ettFirstName.setError("The text is " + isFirstNameValidated[1]);
-            if(!(boolean)isLastNameValidated[0]) ettLastName.setError("The text is " + isLastNameValidated[1]);
-            if(!(boolean)isWeightValidated[0]) etndWeight.setError("The text is " + isWeightValidated[1]);
+            if(!(boolean)isFirstNameValidated[0]) etTextFirstName.setError("The text is " + isFirstNameValidated[1]);
+            if(!(boolean)isLastNameValidated[0]) etTextLastName.setError("The text is " + isLastNameValidated[1]);
+            if(!(boolean)isWeightValidated[0]) etDecimalWeight.setError("The text is " + isWeightValidated[1]);
 
 
 
@@ -158,53 +203,61 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         editor.apply();
 
     }
-
+    public static void initUserFromSharedPreferences(Object[] isValidated, Runnable userSet, EditText et){
+        //Object[] isPasswordConfirmValidated = User.validatePassword(passwordConfirm);
+        if((boolean)isValidated[0]){
+            userSet.run();
+        }
+        else {
+            et.setError((String)isValidated[1]);
+        }
+    }
 
 
     @Override
     public void onClick(View v) {
         if(v==btnSendData){
-            Object[] firstNameValidated = User.validateFirstName(ettFirstName.getText().toString());
+            Object[] firstNameValidated = User.validateFirstName(etTextFirstName.getText().toString());
             if(!(boolean)(firstNameValidated[0])){
-                ettFirstName.setError("The text is " + firstNameValidated[1]);
+                etTextFirstName.setError("The text is " + firstNameValidated[1]);
             }
-            Object[] lastNameValidated = User.validateLastName(ettLastName.getText().toString());
+            Object[] lastNameValidated = User.validateLastName(etTextLastName.getText().toString());
             if(!(boolean)(lastNameValidated[0])){
-                ettLastName.setError("The text is " + lastNameValidated[1]);
+                etTextLastName.setError("The text is " + lastNameValidated[1]);
             }
-            boolean birthDateValidated = (!etdBirthDate.getText().toString().equals("")) && etdBirthDate.getText() != null;
-            if(!birthDateValidated) etdBirthDate.setError("The text cannot be empty");
+            boolean birthDateValidated = (!etBirthDate.getText().toString().equals("")) && etBirthDate.getText() != null;
+            if(!birthDateValidated) etBirthDate.setError("The text cannot be empty");
 
-            String[] weightString = new String[]{etndWeight.getText().toString()};
+            String[] weightString = new String[]{etDecimalWeight.getText().toString()};
             Object[] weightValidated = User.validateWeight(weightString);
 
-            if(!(boolean)weightValidated[0]) etndWeight.setError("The text is " + weightValidated[1]);
+            if(!(boolean)weightValidated[0]) etDecimalWeight.setError("The text is " + weightValidated[1]);
 
             if((boolean)firstNameValidated[0] && (boolean)lastNameValidated[0] && birthDateValidated && (boolean)weightValidated[0]){
                 //calendar time stuff
-                Calendar calendar = User.getBirthDateFromString(etdBirthDate.getText().toString());
+                Calendar calendar = User.getBirthDateFromString(etBirthDate.getText().toString());
 
                 //weight double stuff
 
                 double weightDouble = Double.parseDouble(weightString[0]);
-
+                LocationAddress location = LocationAddress.getLocationAddressFromString(etTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString());
                 //change to the database later
-                User user = new User(ettFirstName.getText().toString(), ettLastName.getText().toString(), calendar, Double.parseDouble(etndWeight.getText().toString()));
+                User user = new User(etTextFirstName.getText().toString(), etTextLastName.getText().toString(), calendar, Double.parseDouble(etDecimalWeight.getText().toString()), etTextEmailAddress.getText().toString(), location, etTextPassword.getText().toString(), etPhoneNumber.getText().toString());
                 User.getUsersList().add(user);
                 //clearing them all so u can add another user
 
-                editor.putString("firstName", ettFirstName.getText().toString());
-                editor.putString("firstName", ettFirstName.getText().toString());
+                editor.putString("firstName", etTextFirstName.getText().toString());
+                editor.putString("firstName", etTextFirstName.getText().toString());
 
-                ettFirstName.getText().clear();
-                ettLastName.getText().clear();
-                etdBirthDate.getText().clear();
-                etndWeight.getText().clear();
+                etTextFirstName.getText().clear();
+                etTextLastName.getText().clear();
+                etBirthDate.getText().clear();
+                etDecimalWeight.getText().clear();
 
             }
 
         }
-        else if(v==etdBirthDate){
+        else if(v==etBirthDate){
             final Calendar calendar = Calendar.getInstance();
             int day = calendar.get(Calendar.DAY_OF_MONTH);
             int month = calendar.get(Calendar.MONTH);
@@ -214,7 +267,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 @Override
                 public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
                     String time = dayOfMonth + "/" + month + "/" + year;
-                    etdBirthDate.setText(time);
+                    etBirthDate.setText(time);
 //                    Toast myToast = Toast.makeText(getApplicationContext(), time, Toast.LENGTH_LONG);
 //                    myToast.show();
                 }

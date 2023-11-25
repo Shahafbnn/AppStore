@@ -2,6 +2,7 @@ package com.example.finalproject;
 
 import android.content.Context;
 import android.icu.util.Calendar;
+import android.icu.util.GregorianCalendar;
 import android.util.Log;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -30,12 +31,29 @@ public class ExampleInstrumentedTest {
 
     @Test
     public void testSetBirthDateFromString() {
-        assertEquals("3/8/2020", User.birthDateToString(User.getBirthDateFromString("3/8/2020")));
+        String date;
+        date = "3/8/2020";
+        assertEquals(date, User.birthDateToString(User.getBirthDateFromString(date)));
+        date = "1/1/1800";
+        assertEquals(date, User.birthDateToString(User.getBirthDateFromString(date)));
+        date = "3/8/1";
+        assertEquals(date, User.birthDateToString(User.getBirthDateFromString(date)));
+        date = "-10/8/1";
+        assertEquals("21/7/1", User.birthDateToString(User.getBirthDateFromString(date)));
     }
 
     @Test
     public void testGetCurrentAge(){
+        String date;
+        date = "3/8/2020";
+        User u1 = new User(User.getBirthDateFromString("3/8/2020"));
+        double daysInYear = ((GregorianCalendar)u1.getBirthDate()).isLeapYear(u1.getBirthDate().get(Calendar.YEAR))?366:365;
+        //assertEquals((double)(2023 - 2020 + 3/12.0 + 9/daysInYear), u1.getCurrentAgeDouble(), 0.0001);
+        daysInYear = ((GregorianCalendar)u1.getBirthDate()).isLeapYear(u1.getBirthDate().get(Calendar.YEAR))?366:365;
+        u1 = new User(User.getBirthDateFromString("8/11/2006"));
+        assertEquals((double)(2023 - 2006 + 3/12.0 + 9/daysInYear), u1.getCurrentAgeDouble(), 0.0001);
 
+        //alr gotta fix some stuffs.
     }
 
     @Test

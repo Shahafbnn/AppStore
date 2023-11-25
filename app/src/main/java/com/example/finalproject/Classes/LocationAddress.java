@@ -11,6 +11,40 @@ public class LocationAddress {
     }
 
 
+    public static LocationAddress getLocationAddressFromString(String locationAddressStr){
+        // example input: BritLand/Massachusetts/Bonk/11
+        //country, city, street, streetNum;
+        String[] splitAddress = locationAddressStr.split("/");
+        String country, city, street, streetNum;
+        country = "Unknown";
+        city = "Unknown";
+        street = "Unknown";
+        streetNum = "Unknown";
+
+        if(splitAddress.length == 4){
+            if((boolean)LocationAddress.validateCountry(splitAddress[0])[0]) country = splitAddress[0];
+            if((boolean)LocationAddress.validateCity(splitAddress[1])[0]) city = splitAddress[1];
+            if((boolean)LocationAddress.validateStreet(splitAddress[2])[0]) street = splitAddress[2];
+            if((boolean)LocationAddress.validateStreetNum(splitAddress[3])[0]) streetNum = splitAddress[3];
+        }
+        return new LocationAddress(country,city,street,streetNum);
+    }
+
+    public static LocationAddress getLocationAddressFromString(String country, String locationAddressStr){
+        // example input: BritLand, Massachusetts/Bonk/11
+        String[] splitAddress = locationAddressStr.split("/");
+        String city, street, streetNum;
+        city = "Unknown";
+        street = "Unknown";
+        streetNum = "Unknown";
+
+        if(splitAddress.length == 3){
+            if((boolean)LocationAddress.validateCity(splitAddress[1])[0]) city = splitAddress[0];
+            if((boolean)LocationAddress.validateStreet(splitAddress[2])[0]) street = splitAddress[1];
+            if((boolean)LocationAddress.validateStreetNum(splitAddress[3])[0]) streetNum = splitAddress[2];
+        }
+        return new LocationAddress(country,city,street,streetNum);
+    }
 
     public String getCountry() {
         return country;
@@ -42,5 +76,19 @@ public class LocationAddress {
 
     public void setStreetNum(String streetNum) {
         this.streetNum = streetNum;
+    }
+
+    //country, city, street, streetNum;
+    public static Object[] validateCountry(String country){
+        return new Object[]{true};
+    }
+    public static Object[] validateCity(String city){
+        return new Object[]{true};
+    }
+    public static Object[] validateStreet(String street){
+        return new Object[]{true};
+    }
+    public static Object[] validateStreetNum(String streetNum){
+        return new Object[]{true};
     }
 }

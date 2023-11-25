@@ -45,8 +45,7 @@
             android:id="@+id/tvPassword"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Password: "
-            android:paddingRight="0dp"/>
+            android:text="Password: " />
         <EditText
             android:id="@+id/etTextPassword"
             android:layout_width="match_parent"

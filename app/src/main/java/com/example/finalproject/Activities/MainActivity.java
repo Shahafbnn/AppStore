@@ -11,8 +11,10 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -20,9 +22,13 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.Dialogs;
+import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -42,28 +48,12 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
         spInitialized = sharedPreferences.contains("initialized");
         //it will return the default if the sharedPreferences isn't init and the name will be Guest maybe
-        String fullName = sharedPreferences.getString("firstName", "Guest") + sharedPreferences.getString("lastName", "");
+        String fullName = sharedPreferences.getString(User.FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(User.LAST_NAME_KEY, "");
         if(sharedPreferences.getBoolean("isAdmin", false)) fullName += " (Admin)";
         tvWelcome.setText("Welcome " + fullName + "!");
 
     }
-    //    public void saveBitmapInFolder(Bitmap bitmap){
-//        String timeStamp = new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
-//        String foldersPhotos = "ABC";
-//        File myDir = new File(Environment.getExternalStorageDirectory(), "/" + foldersPhotos);
-//
-//        if(!myDir.exists())
-//        {
-//            myDir.mkdirs();
-//        }
-//
-//        File dest = new File(myDir, filename);
-//        try {
-//            FileOutputStream out = new FileOutputStream(dest);
-//        } catch (Exception e){
-//
-//        }
-//    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
