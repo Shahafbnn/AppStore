@@ -165,7 +165,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             etTextLastName.setText(lastName);
 
             String birthDate = sharedPreferences.getString(Constants.BIRTH_DATE_KEY, "1/1/1991");
-//            ValidationData isBirthDayValidated = UserValidations.validateBirthDate(User.getBirthDateFromString(birthDate));
+//            ValidationData isBirthDayValidated = UserValidations.validateBirthDate(UserValidations.getBirthDateFromString(birthDate));
 //            if(!isBirthDayValidated.isValid()) etBirthDate.setError((String)isBirthDayValidated.getError());
 
             double weight = sharedPreferences.getFloat(Constants.WEIGHT_KEY, 50.5f);
@@ -238,7 +238,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
             if(firstNameValidated.isValid() && lastNameValidated.isValid() && birthDateValidated && weightValidated.isValid()){
                 //calendar time stuff
-//                Calendar calendar = User.getBirthDateFromString(etBirthDate.getText().toString());
+//                Calendar calendar = UserValidations.getBirthDateFromString(etBirthDate.getText().toString());
 
                 //weight double stuff
 
@@ -246,7 +246,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 LocationAddress location = LocationAddress.getLocationAddressFromString(etTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString());
                 //change to the database later
 //                User user = new User(etTextFirstName.getText().toString(), etTextLastName.getText().toString(), calendar, Double.parseDouble(etDecimalWeight.getText().toString()), etTextEmailAddress.getText().toString(), location, etTextPassword.getText().toString(), etPhoneNumber.getText().toString());
-//                User.getUsersList().add(user);
+//                UserValidations.getUsersList().add(user);
                 //clearing them all so u can add another user
 
                 editor.putString("firstName", etTextFirstName.getText().toString());

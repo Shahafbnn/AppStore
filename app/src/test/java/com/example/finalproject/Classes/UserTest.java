@@ -59,40 +59,40 @@ public class UserTest extends TestCase {
     }
 
     public void testValidateWeight() {
-        assertEquals(true, (boolean)User.validateWeight((double)50)[0]);
-        assertEquals(true, (boolean)User.validateWeight(30.2)[0]);
+        assertEquals(true, UserValidations.validateWeight((double)50).isValid());
+        assertEquals(true, UserValidations.validateWeight(30.2).isValid());
 
         //empties
-        //assertEquals(false, (boolean)User.validateWeight(new Double(null))[0]);
-        assertEquals(false, (boolean)User.validateWeight(-10.0)[0]);
-        assertEquals(false, (boolean)User.validateWeight(500.0)[0]);
-        assertEquals(false, (boolean)User.validateWeight((double)Long.MAX_VALUE)[0]);
+        //assertEquals(false, UserValidations.validateWeight(new Double(null)).isValid());
+        assertEquals(false, UserValidations.validateWeight(-10.0).isValid());
+        assertEquals(false, UserValidations.validateWeight(500.0).isValid());
+        assertEquals(false, UserValidations.validateWeight((double)Long.MAX_VALUE).isValid());
     }
 
     public void testTestValidateWeight() {
-        assertEquals(true, (boolean)User.validateWeight(new String[]{"30"})[0]);
-        assertEquals(true, (boolean)User.validateWeight(new String[]{"30.5"})[0]);
-        assertEquals(true, (boolean)User.validateWeight(new String[]{"30."})[0]);
+        assertEquals(true, UserValidations.validateWeight(new String[]{"30"}).isValid());
+        assertEquals(true, UserValidations.validateWeight(new String[]{"30.5"}).isValid());
+        assertEquals(true, UserValidations.validateWeight(new String[]{"30."}).isValid());
 
         //empties
-        assertEquals(false, (boolean)User.validateWeight(new String[1])[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[0])[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{null})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{""})[0]);
+        assertEquals(false, UserValidations.validateWeight(new String[1]).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[0]).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{null}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{""}).isValid());
 
 
-        assertEquals(false, (boolean)User.validateWeight(new String[]{"0"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{"19"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{"400"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{"-50"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{"-5-0"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{".-5.-0"})[0]);
-        assertEquals(false, (boolean)User.validateWeight(new String[]{".3"})[0]);
+        assertEquals(false, UserValidations.validateWeight(new String[]{"0"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{"19"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{"400"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{"-50"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{"-5-0"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{".-5.-0"}).isValid());
+        assertEquals(false, UserValidations.validateWeight(new String[]{".3"}).isValid());
 
         String[] str = new String[]{"."};
-        assertEquals(false, (boolean)User.validateWeight(str)[0]);
+        assertEquals(false, UserValidations.validateWeight(str).isValid());
         String[] str2 = new String[]{"."};
-        User.validateWeight(str2);
+        UserValidations.validateWeight(str2);
         //should fix any stray dots after func activated ^
         assertEquals("0.0", str[0]);
 
@@ -107,34 +107,34 @@ public class UserTest extends TestCase {
     }
 
     public void testValidateEmail() {
-        assertEquals(true, (boolean)User.validateEmail("a@b.c")[0]);
-        assertEquals(true, (boolean)User.validateEmail("example.com@co.ex.gov")[0]);
+        assertEquals(true, UserValidations.validateEmail("a@b.c").isValid());
+        assertEquals(true, UserValidations.validateEmail("example.com@co.ex.gov").isValid());
 
         //empties
-        assertEquals(false, (boolean)User.validateEmail(new String())[0]);
-        assertEquals(false, (boolean)User.validateEmail("")[0]);
-        assertEquals(false, (boolean)User.validateEmail(null)[0]);
+        assertEquals(false, UserValidations.validateEmail(new String()).isValid());
+        assertEquals(false, UserValidations.validateEmail("").isValid());
+        assertEquals(false, UserValidations.validateEmail(null).isValid());
 
 
-        assertEquals(false, (boolean)User.validateEmail("examp@le@email.com")[0]);
-        assertEquals(false, (boolean)User.validateEmail("example@email.com!")[0]);
-        assertEquals(false, (boolean)User.validateEmail("example@email.ferrrrrrreeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")[0]);
+        assertEquals(false, UserValidations.validateEmail("examp@le@email.com").isValid());
+        assertEquals(false, UserValidations.validateEmail("example@email.com!").isValid());
+        assertEquals(false, UserValidations.validateEmail("example@email.ferrrrrrreeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").isValid());
 
     }
 
     @Test
     public void testValidatePassword() {
-        assertEquals(true, (boolean)User.validatePassword("Pass123!")[0]);
-        assertEquals(false, (boolean)User.validatePassword("Pass123")[0]);
+        assertEquals(true, UserValidations.validatePassword("Pass123!").isValid());
+        assertEquals(false, UserValidations.validatePassword("Pass123").isValid());
 
         //empties
-        assertEquals(false, (boolean)User.validatePassword(new String())[0]);
-        assertEquals(false, (boolean)User.validatePassword("")[0]);
-        assertEquals(false, (boolean)User.validatePassword(null)[0]);
+        assertEquals(false, UserValidations.validatePassword(new String()).isValid());
+        assertEquals(false, UserValidations.validatePassword("").isValid());
+        assertEquals(false, UserValidations.validatePassword(null).isValid());
 
-        assertEquals(false, (boolean)User.validatePassword("Pass123!ferrrrrrreeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")[0]);
-        assertEquals(false, (boolean)User.validatePassword("Pp.1")[0]);
-        assertEquals(false, (boolean)User.validatePassword("Password123!л")[0]);
+        assertEquals(false, UserValidations.validatePassword("Pass123!ferrrrrrreeeeeeefeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee").isValid());
+        assertEquals(false, UserValidations.validatePassword("Pp.1").isValid());
+        assertEquals(false, UserValidations.validatePassword("Password123!л").isValid());
 
     }
 }
