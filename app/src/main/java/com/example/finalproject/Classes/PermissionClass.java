@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat;
 
 public class PermissionClass {
 
-    public static boolean CheckPremission(Activity act){
+    public static boolean CheckPermission(Activity act){
         int resultCamera = ContextCompat.checkSelfPermission(act, CAMERA);
         int resultWriteStorage = ContextCompat.checkSelfPermission(act, WRITE_EXTERNAL_STORAGE);
         int resultReadStorage = ContextCompat.checkSelfPermission(act, READ_EXTERNAL_STORAGE);

@@ -1,21 +1,11 @@
 package com.example.finalproject.Activities;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.icu.text.SimpleDateFormat;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -23,13 +13,8 @@ import android.widget.TextView;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
-import com.example.finalproject.Classes.User;
+import com.example.finalproject.Classes.MyDatabase;
 import com.example.finalproject.R;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private boolean spInitialized;
     private SharedPreferences.Editor editor;
+    private MyDatabase myDatabase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,9 +35,11 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
         spInitialized = sharedPreferences.contains("initialized");
         //it will return the default if the sharedPreferences isn't init and the name will be Guest maybe
-        String fullName = sharedPreferences.getString(Constants.FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(Constants.LAST_NAME_KEY, "");
+        String fullName = sharedPreferences.getString(Constants.USER_FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(Constants.USER_LAST_NAME_KEY, "");
         if(sharedPreferences.getBoolean("isAdmin", false)) fullName += " (Admin)";
         tvWelcome.setText("Welcome " + fullName + "!");
+
+        myDatabase = MyDatabase.getInstance(this);
 
     }
 

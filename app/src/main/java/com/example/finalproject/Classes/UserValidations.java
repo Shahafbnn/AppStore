@@ -4,8 +4,26 @@ import android.icu.util.Calendar;
 public class UserValidations {
 
     public static ValidationData validateFirstName(String firstName){
-        if (firstName==null) return new ValidationData(false,  "null");
-        if (firstName.equals("")) return new ValidationData(false,  "empty");
+        if (firstName==null) return new ValidationData(false,  "first name cannot be null");
+        if (firstName.equals("")) return new ValidationData(false,  "first name cannot be empty");
+        int size = firstName.length();
+        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new ValidationData(false,  "first name must start with an uppercase English letter");
+        if (size >= 2 && size <= 10){
+            boolean inEnglish = true;
+            char currentChar;
+            for(int i = 0; i< size; i++){
+                currentChar = firstName.charAt(i);
+                if(!(currentChar >= 'a' && currentChar <= 'z') || !(currentChar >= 'A' && currentChar <= 'Z')) inEnglish = false;
+            }
+            return new ValidationData(inEnglish,  "first name cannot be in another language");
+        }
+        return new ValidationData(false,  "first name cannot be shorter than 2 characters or longer than 10 characters");
+    }
+
+
+    public static ValidationData validateLastName(String firstName){
+        if (firstName==null) return new ValidationData(false,  "last name cannot be null");
+        if (firstName.equals("")) return new ValidationData(false,  "last name cannot be empty");
         int size = firstName.length();
         if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new ValidationData(false,  "name must start with an uppercase English letter");
         if (size >= 2 && size <= 10){
@@ -15,27 +33,9 @@ public class UserValidations {
                 currentChar = firstName.charAt(i);
                 if(!(currentChar >= 'a' && currentChar <= 'z') || !(currentChar >= 'A' && currentChar <= 'Z')) inEnglish = false;
             }
-            return new ValidationData(inEnglish,  "in another language");
+            return new ValidationData(inEnglish,  "last name cannot be in another language");
         }
-        return new ValidationData(false,  "shorter than 2 characters or longer than 10 characters");
-    }
-
-
-    public static ValidationData validateLastName(String firstName){
-        if (firstName==null) return new ValidationData(false,  "null");
-        if (firstName.equals("")) return new ValidationData(false,  "empty");
-        int size = firstName.length();
-        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new ValidationData(false,  "name must start with an uppercase English letter");
-        if (size >= 2 && size <= 15){
-            boolean inHebrew = true;
-            char currentChar;
-            for(int i = 0; i< size; i++){
-                currentChar = firstName.charAt(i);
-                if(!(currentChar >= 'א' && currentChar <= 'ת')) inHebrew = false;
-            }
-            return new ValidationData(inHebrew,  "not in Hebrew");
-        }
-        return new ValidationData(false,  "shorter than 2 characters or longer than 10 characters");
+        return new ValidationData(false,  "last name cannot be shorter than 2 characters or longer than 10 characters");
     }
 
     public static ValidationData validateWeight(String[] weight){
@@ -157,6 +157,8 @@ public class UserValidations {
         return new ValidationData(correct,  "password can only contain English, numbers and special chars");
     }
     public static ValidationData validatePhoneNumber(String phoneNumber){
+        if(phoneNumber==null) return new ValidationData(false,  "password cannot be null");
+        if (phoneNumber.equals("")) return new ValidationData(false,  "password cannot be empty");
 
         return new ValidationData(true, null);
     }

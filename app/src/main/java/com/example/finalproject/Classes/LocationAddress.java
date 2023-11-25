@@ -46,6 +46,11 @@ public class LocationAddress {
         return new LocationAddress(country,city,street,streetNum);
     }
 
+    @Override
+    public String toString() {
+        return country + '\'' + city + '\'' + street + '\'' + streetNum;
+    }
+
     public String getCountry() {
         return country;
     }
