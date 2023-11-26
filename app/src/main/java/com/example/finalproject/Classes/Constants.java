@@ -16,11 +16,16 @@ public abstract class Constants {
 
     public static final String USER_EMAIL_ADDRESS_KEY = "emailAddress";
     public static final String USER_HOME_ADDRESS_KEY = "homeAddress";
+
+    public static final String USER_IS_ADMIN_KEY = "isAdmin";
     public static final String CITY_ID_KEY = "homeCityId";
 
     public static final String USER_IMAGE_URI_ADDRESS_KEY = "imageUriAddress";
 
     public static final String CITY_NAME_KEY = "cityName";
+
+    public static final String[] ADMIN_PHONE_NUMBERS = new String[]{"0535622719"};
+    public static final String USER_IMG_SOURCE_KEY = "imageSource";
 
 
 }

@@ -33,6 +33,10 @@ public class User {
     private String password;
     @ColumnInfo(name = Constants.USER_PHONE_NUMBER_KEY)
     private String phoneNumber;
+    @ColumnInfo(name = Constants.USER_IS_ADMIN_KEY)
+    private boolean isAdmin;
+    @ColumnInfo(name = Constants.USER_IMG_SOURCE_KEY)
+    private String imgSrc;
 
     public User() {
     }
@@ -115,5 +119,21 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public boolean isAdmin() {
+        return isAdmin;
+    }
+
+    public void setAdmin(boolean admin) {
+        isAdmin = admin;
+    }
+
+    public String getImgSrc() {
+        return imgSrc;
+    }
+
+    public void setImgSrc(String imgSrc) {
+        this.imgSrc = imgSrc;
     }
 }

@@ -5,25 +5,35 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.MyDatabase;
+import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
+
+import java.io.File;
+import java.io.FileInputStream;
 
 public class MainActivity extends AppCompatActivity {
 
     private MenuItem itemLogIn,itemRegister;
     private TextView tvWelcome;
+    private ImageView ivProfilePic;
     private Dialogs dialogs;
     private SharedPreferences sharedPreferences;
-    private boolean spInitialized;
+    private boolean isSpValid;
     private SharedPreferences.Editor editor;
+    private User curUser;
     private MyDatabase myDatabase;
 
     @Override
@@ -31,16 +41,59 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         tvWelcome = findViewById(R.id.tvWelcome);
+        ivProfilePic = findViewById(R.id.ivProfilePic);
         dialogs = new Dialogs(this);
-        sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
-        spInitialized = sharedPreferences.contains("initialized");
-        //it will return the default if the sharedPreferences isn't init and the name will be Guest maybe
-        String fullName = sharedPreferences.getString(Constants.USER_FIRST_NAME_KEY, "Guest") + sharedPreferences.getString(Constants.USER_LAST_NAME_KEY, "");
-        if(sharedPreferences.getBoolean("isAdmin", false)) fullName += " (Admin)";
-        tvWelcome.setText("Welcome " + fullName + "!");
+
 
         myDatabase = MyDatabase.getInstance(this);
+        initUserSharedPreferences();
+    }
 
+    //making it so it's repeatable in other classes/activities
+    public void initUserSharedPreferences(){
+        sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
+        if (sharedPreferences==null || sharedPreferences.contains("initialized")) {
+            isSpValid = false;
+            return;
+        }
+
+        long id = sharedPreferences.getLong(Constants.USER_ID_KEY, -1);
+        if(id<0){
+            isSpValid = false;
+            return;
+        }
+        curUser = myDatabase.userDAO().get(id);
+
+
+    }
+
+    //uses curUser and turns the
+    public void initViewsFromUser(User user, boolean isValid){
+        if(isValid){
+            String fullName = curUser.getFirstName() + " " + curUser.getLastName();
+            boolean isAdmin = isAdmin(curUser.getPhoneNumber());
+            if(isAdmin != curUser.isAdmin()) {
+                curUser.setAdmin(false);
+                myDatabase.userDAO().update(curUser);
+            }
+            if(isAdmin) fullName += " (Admin)";
+            tvWelcome.setText("Welcome " + fullName + "!");
+            String imageSrc = curUser.getImgSrc();
+            if(new File(imageSrc).exists())
+            {
+                Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
+                ivProfilePic.setImageBitmap(imageBitmap);
+            }
+            else Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
+            throw new RuntimeException("pfp image path does not exist: " + imageSrc);
+        }
+    }
+
+    public boolean isAdmin(String phoneNumber){
+        for (String s:Constants.ADMIN_PHONE_NUMBERS) {
+            if (phoneNumber.equals(s)) return true;
+        }
+        return false;
     }
 
 
