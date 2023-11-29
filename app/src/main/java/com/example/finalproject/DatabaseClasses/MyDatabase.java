@@ -1,4 +1,4 @@
-package com.example.finalproject.Classes;
+package com.example.finalproject.DatabaseClasses;
 
 import android.content.Context;
 
@@ -7,6 +7,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
 
+import com.example.finalproject.Classes.User;
 import com.example.finalproject.DAOs.CityDAO;
 import com.example.finalproject.DAOs.UserDAO;
 @Database(entities = {User.class, City.class}, version = 1, exportSchema = false)

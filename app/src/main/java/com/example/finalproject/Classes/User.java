@@ -7,6 +7,9 @@ import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
+import com.example.finalproject.DatabaseClasses.City;
+import com.example.finalproject.DatabaseClasses.DateConverter;
+
 import java.util.Date;
 
 @Entity (tableName = "tblUser", foreignKeys = @ForeignKey(entity = City.class, parentColumns = Constants.CITY_ID_KEY, childColumns = Constants.CITY_ID_KEY, onDelete = ForeignKey.CASCADE, onUpdate = ForeignKey.CASCADE))

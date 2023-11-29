@@ -17,12 +17,11 @@ import android.widget.TextView;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
-import com.example.finalproject.Classes.MyDatabase;
+import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
 
 import java.io.File;
-import java.io.FileInputStream;
 
 public class MainActivity extends AppCompatActivity {
 

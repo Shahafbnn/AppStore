@@ -1,7 +1,49 @@
 package com.example.finalproject.Classes;
 
+import static com.example.finalproject.Classes.UserValidations.ValidateTypes.*;
+
 import android.icu.util.Calendar;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.function.Function;
+
 public class UserValidations {
+
+    public enum ValidateTypes{
+        FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER, PASSWORD, EMAIL, BIRTH_DATE
+    }
+    public static <T> ValidationData validate(T toValidate, ValidateTypes type){
+        ValidateTypes[] types = {FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER,PASSWORD, EMAIL, BIRTH_DATE};
+
+        switch (type) {
+            case FIRST_NAME:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validateFirstName((String)toValidate);
+            case LAST_NAME:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validateLastName((String)toValidate);
+            case WEIGHT:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validateWeight((String) toValidate);
+            case PHONE_NUMBER:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validatePhoneNumber((String)toValidate);
+            case PASSWORD:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validatePassword((String)toValidate);
+            case EMAIL:
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validateEmail((String)toValidate);
+            case BIRTH_DATE:
+                if(!(toValidate instanceof Date)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                return validateBirthDate((Date) toValidate);
+            default:
+                throw new RuntimeException("UserValidations{validate{Wrong ValidateTypes}}");
+        }
+
+    }
 
     public static ValidationData validateFirstName(String firstName){
         if (firstName==null) return new ValidationData(false,  "first name cannot be null");
@@ -38,6 +80,13 @@ public class UserValidations {
         return new ValidationData(false,  "last name cannot be shorter than 2 characters or longer than 10 characters");
     }
 
+
+
+    public static ValidationData validateWeight(String weight){
+        if (weight==null) return new ValidationData(false,  "weight cannot be null");
+        String[] str = new String[]{weight};
+        return validateWeight(str);
+    }
     public static ValidationData validateWeight(String[] weight){
         //weight is an array to emulate a pointer in C
         if (weight==null) return new ValidationData(false,  "weight cannot be null");
@@ -66,24 +115,27 @@ public class UserValidations {
 
         if (weight==null) return new ValidationData(false,  "weight cannot be null");
         //if (weight==new Double(null)) return new ValidationData(false,  "weight cannot be null");
-        if(weight <= 0) return new ValidationData(false,  "negative or contains -");
-        if(weight < 20) return new ValidationData(false,  "smaller than 20kg");
-        if(weight > 300) return new ValidationData(false,  "larger than 300kg");
+        if(weight <= 0) return new ValidationData(false,  "weight cannot be negative or contains -");
+        if(weight < 20) return new ValidationData(false,  "weight cannot be smaller than 20kg");
+        if(weight > 300) return new ValidationData(false,  "weight cannot be larger than 300kg");
 
         return new ValidationData(true, null);
     }
 
-    public static ValidationData validateBirthDate(android.icu.util.Calendar cal){
-        if(cal==null) return new ValidationData(false,  "null");
+    public static ValidationData validateBirthDate(Date date){
+        if(date==null) return new ValidationData(false,  "birth date cannot be null");
+        final Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        if(cal==null) return new ValidationData(false,  "birth date cannot be null");
         //create a new calendar to check if the age is under 16y
         final Calendar age = Calendar.getInstance();
         age.add(Calendar.YEAR, -16);
-        if(cal.after(age)) return new ValidationData(false,  "under the age 16");
+        if(cal.after(age)) return new ValidationData(false,  "birth date cannot be under the age 16");
 
         //create a new calendar to check if the age is over 150y
         final Calendar old = Calendar.getInstance();
         old.add(Calendar.YEAR, -150);
-        if(cal.before(old)) return new ValidationData(false,  "over the age 150");
+        if(cal.before(old)) return new ValidationData(false,  "birth date cannot be over the age 150");
 
         return new ValidationData(true, null);
     }

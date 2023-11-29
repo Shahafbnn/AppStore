@@ -1,4 +1,4 @@
-package com.example.finalproject.Classes;
+package com.example.finalproject.DatabaseClasses;
 
 import androidx.room.TypeConverter;
 

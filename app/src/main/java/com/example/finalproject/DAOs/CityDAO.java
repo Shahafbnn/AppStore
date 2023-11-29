@@ -6,7 +6,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
-import com.example.finalproject.Classes.City;
+import com.example.finalproject.DatabaseClasses.City;
 import com.example.finalproject.Classes.Constants;
 
 import java.util.List;
