@@ -15,13 +15,13 @@ import java.util.List;
 public interface CityDAO {
 
     @Query("SELECT * FROM tblCity")
-    List<City> get();
+    List<City> getAllCities();
 
     @Query("SELECT * FROM tblCity Where " + Constants.CITY_ID_KEY + " = :id")
-    City get(long id);
+    City getCityById(long id);
 
     @Query("SELECT * FROM tblCity Where " + Constants.CITY_NAME_KEY + " = :name")
-    City get(String name);
+    City getCityByName(String name);
 
     @Insert
     long insert(City city);

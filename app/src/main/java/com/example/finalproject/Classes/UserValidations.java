@@ -1,13 +1,11 @@
 package com.example.finalproject.Classes;
 
-import static com.example.finalproject.Classes.UserValidations.ValidateTypes.*;
-
+import android.content.Context;
 import android.icu.util.Calendar;
 
-import java.util.ArrayList;
+import com.example.finalproject.DatabaseClasses.MyDatabase;
+
 import java.util.Date;
-import java.util.HashMap;
-import java.util.function.Function;
 
 public class UserValidations {
 
@@ -15,7 +13,6 @@ public class UserValidations {
         FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER, PASSWORD, EMAIL, BIRTH_DATE
     }
     public static <T> ValidationData validate(T toValidate, ValidateTypes type){
-        ValidateTypes[] types = {FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER,PASSWORD, EMAIL, BIRTH_DATE};
 
         switch (type) {
             case FIRST_NAME:
@@ -122,6 +119,14 @@ public class UserValidations {
         return new ValidationData(true, null);
     }
 
+    public static ValidationData validateBirthDate(String date){
+        if(date==null) return new ValidationData(false,  "date cannot be null");
+        if(date.equals("")) return new ValidationData(false,  "date cannot be empty");
+
+        Date d = User.getDateFromString(date);
+        if(d==null) return new ValidationData(false,  "date must be NN/NN/NNNN");
+        return validateBirthDate(d);
+    }
     public static ValidationData validateBirthDate(Date date){
         if(date==null) return new ValidationData(false,  "birth date cannot be null");
         final Calendar cal = Calendar.getInstance();
@@ -139,7 +144,22 @@ public class UserValidations {
 
         return new ValidationData(true, null);
     }
+
     public static ValidationData validateEmail(String email){
+        return validateEmail(email, false, null);
+    }
+    public static ValidationData validateEmail(String email, Context context){
+        return validateEmail(email, true, context);
+    }
+
+    public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context){
+        return validateEmail(email, true, context, false, null);
+    }
+
+    public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context, String editEmail){
+        return validateEmail(email, true, context, true, editEmail);
+    }
+    public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context, boolean isEditEmail, String editEmail){
         if(email==null) return new ValidationData(false,  "email cannot be null");
         if (email.equals("")) return new ValidationData(false,  "email cannot be empty");
         long strLen = email.length();
@@ -153,6 +173,10 @@ public class UserValidations {
         for(int i = 0; i< strLen; i++){
             currentChar = email.charAt(i);
             if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == '@') || (currentChar == '.'))) correct = false;
+        }
+        if(isCheckingDB){
+            MyDatabase myDatabase = MyDatabase.getInstance(context);
+            if(!myDatabase.userDAO().getUsersByEmail(email).isEmpty() || (isEditEmail && (!editEmail.equals(email)))) return new ValidationData(false,  "phone number is already in use");
         }
         return new ValidationData(correct,  "email can only contain English chars, '@'s or '.'s");
     }
@@ -208,13 +232,28 @@ public class UserValidations {
 
         return new ValidationData(correct,  "password can only contain English, numbers and special chars");
     }
-    public static ValidationData validatePhoneNumber(String phoneNumber){
-        if(phoneNumber==null) return new ValidationData(false,  "password cannot be null");
-        if (phoneNumber.equals("")) return new ValidationData(false,  "password cannot be empty");
 
-        return new ValidationData(true, null);
+    public static ValidationData validatePhoneNumber(String phoneNumber){
+        return validatePhoneNumber(phoneNumber, false, null);
     }
-    public static int phoneNumberFromString(String phoneNumber){
-        return -1;
+    public static ValidationData validatePhoneNumber(String phoneNumber, Context context){
+        return validatePhoneNumber(phoneNumber, true, context);
+    }
+    public static ValidationData validatePhoneNumber(String phoneNumber, boolean isCheckingDB, Context context){
+        return validatePhoneNumber(phoneNumber, true, context, false, null);
+    }
+    public static ValidationData validatePhoneNumber(String phoneNumber, Context context, String editPhoneNumber){
+        return validatePhoneNumber(phoneNumber, true, context, true, editPhoneNumber);
+    }
+    public static ValidationData validatePhoneNumber(String phoneNumber, boolean isCheckingDB, Context context, boolean isEditPhoneNumber, String editPhoneNumber){
+        if(phoneNumber==null) return new ValidationData(false,  "phone number cannot be null");
+        if (phoneNumber.equals("")) return new ValidationData(false,  "phone number cannot be empty");
+        long len  = phoneNumber.length();
+        if(len < 3 || len > 13) return new ValidationData(false, "phone number cannot be shorter than 3 chars or longer than 13 chars");
+        if(isCheckingDB){
+            MyDatabase myDatabase = MyDatabase.getInstance(context);
+            if(!myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty() || (isEditPhoneNumber && (!editPhoneNumber.equals(phoneNumber)))) return new ValidationData(false,  "phone number is already in use");
+        }
+        return new ValidationData(phoneNumber.matches("05(1[25][0-9]{2}|[02-46-8][0-9]{3}|055([23]{2}[0-9]|4[41]0|43[0-9]|5[105][0-9]|6[876][0-9]|7[2107][0-9]|8[987][0-9]|9[^0][0-9]))[0-9]{4}"), "phone number must have a valid prefix");
     }
 }

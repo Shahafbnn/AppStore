@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
+import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
@@ -45,32 +46,17 @@ public class MainActivity extends AppCompatActivity {
 
 
         myDatabase = MyDatabase.getInstance(this);
-        initUserSharedPreferences();
+        InitiateFunctions.initUserSharedPreferences(sharedPreferences, this, myDatabase);
     }
 
     //making it so it's repeatable in other classes/activities
-    public void initUserSharedPreferences(){
-        sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
-        if (sharedPreferences==null || sharedPreferences.contains("initialized")) {
-            isSpValid = false;
-            return;
-        }
 
-        long id = sharedPreferences.getLong(Constants.USER_ID_KEY, -1);
-        if(id<0){
-            isSpValid = false;
-            return;
-        }
-        curUser = myDatabase.userDAO().get(id);
-
-
-    }
 
     //uses curUser and turns the
     public void initViewsFromUser(User user, boolean isValid){
         if(isValid){
             String fullName = curUser.getFirstName() + " " + curUser.getLastName();
-            boolean isAdmin = isAdmin(curUser.getPhoneNumber());
+            boolean isAdmin = User.isAdmin(curUser.getPhoneNumber());
             if(isAdmin != curUser.isAdmin()) {
                 curUser.setAdmin(false);
                 myDatabase.userDAO().update(curUser);
@@ -88,12 +74,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public boolean isAdmin(String phoneNumber){
-        for (String s:Constants.ADMIN_PHONE_NUMBERS) {
-            if (phoneNumber.equals(s)) return true;
-        }
-        return false;
-    }
 
 
     @Override

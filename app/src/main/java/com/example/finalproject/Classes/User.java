@@ -25,7 +25,7 @@ public class User {
     @TypeConverters(DateConverter.class)
     private Date birthDate;
     @ColumnInfo(name = Constants.USER_WEIGHT_KEY)
-    private double weight;
+    private Double weight;
     @ColumnInfo(name = Constants.USER_EMAIL_ADDRESS_KEY)
     private String email;
     @ColumnInfo(name = Constants.CITY_ID_KEY)
@@ -42,6 +42,21 @@ public class User {
     private String imgSrc;
 
     public User() {
+    }
+
+    public User(long id, String firstName, String lastName, Date birthDate, Double weight, String email, long homeCityId, String homeAddress, String password, String phoneNumber, boolean isAdmin, String imgSrc) {
+        this.id = id;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.birthDate = birthDate;
+        this.weight = weight;
+        this.email = email;
+        this.homeCityId = homeCityId;
+        this.homeAddress = homeAddress;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.isAdmin = isAdmin;
+        this.imgSrc = imgSrc;
     }
 
     public long getId() {
@@ -138,5 +153,17 @@ public class User {
 
     public void setImgSrc(String imgSrc) {
         this.imgSrc = imgSrc;
+    }
+
+    public static Date getDateFromString(String date){
+        String[] dates = date.split("/");
+        if(dates.length != 3) return null;
+        return new Date(Integer.parseInt(dates[0]), Integer.parseInt(dates[1]), Integer.parseInt(dates[2]));
+    }
+    public static boolean isAdmin(String phoneNumber){
+        for (String s:Constants.ADMIN_PHONE_NUMBERS) {
+            if (phoneNumber.equals(s)) return true;
+        }
+        return false;
     }
 }
