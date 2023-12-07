@@ -105,17 +105,17 @@ public class MainActivity extends AppCompatActivity {
         itemLogIn = menu.findItem(R.id.itemLogIn);
         return true;
     }
-//    private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-//            new ActivityResultContracts.StartActivityForResult(),
-//            new ActivityResultCallback<ActivityResult>() {
-//                @Override
-//                public void onActivityResult(ActivityResult result) {
-//                    if (result.getResultCode() == Activity.RESULT_OK) {
-//                        recreate();
-//                    }
-//                }
-//            }
-//    );
+    private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        recreate();
+                    }
+                }
+            }
+    );
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -124,8 +124,8 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         else if(item==itemRegister){
-            //Intent intent = new Intent(this, RegisterActivity.class);
-            //activityResultLauncher.launch(intent);
+            Intent intent = new Intent(this, RegisterActivity.class);
+            activityResultLauncher.launch(intent);
             return true;
         }
         else return super.onOptionsItemSelected(item);
