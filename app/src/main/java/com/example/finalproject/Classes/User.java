@@ -1,6 +1,12 @@
 package com.example.finalproject.Classes;
 
 
+import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
+import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
@@ -44,20 +50,6 @@ public class User {
     public User() {
     }
 
-    public User(long id, String firstName, String lastName, Date birthDate, Double weight, String email, long homeCityId, String homeAddress, String password, String phoneNumber, boolean isAdmin, String imgSrc) {
-        this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.weight = weight;
-        this.email = email;
-        this.homeCityId = homeCityId;
-        this.homeAddress = homeAddress;
-        this.password = password;
-        this.phoneNumber = phoneNumber;
-        this.isAdmin = isAdmin;
-        this.imgSrc = imgSrc;
-    }
 
     public long getId() {
         return id;
@@ -165,5 +157,15 @@ public class User {
             if (phoneNumber.equals(s)) return true;
         }
         return false;
+    }
+    public static boolean isPasswordConfirmed(String password, String password2){return password.equals(password2);}
+
+    public static void addUserToSharedPreferences(User u, Context context){
+        SharedPreferences.Editor editor = context.getSharedPreferences(SHARED_PREFERENCES_KEY, 0).edit();
+        editor.clear();
+        editor.clear();
+        editor.putLong(USER_ID_KEY, u.getId());
+        editor.putBoolean(SHARED_PREFERENCES_KEY, true);
+        editor.commit();
     }
 }

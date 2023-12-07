@@ -81,82 +81,91 @@
                 android:id="@+id/etBirthDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="none"
-                android:hint="Birth Date:"
-                android:focusable="false"
                 android:layout_weight="1"
+                android:ems="10"
+                android:focusable="false"
+                android:hint="Birth Date:"
+                android:inputType="none"
+                android:onClick="onClick"
                 android:singleLine="true"
-                android:onClick="onClick" />
+                android:text="7/1/2000" />
 
             <EditText
                 android:id="@+id/etDecimalWeight"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="numberDecimal"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Weight(kg):"
+                android:inputType="numberDecimal"
                 android:singleLine="true"
-                android:hint="Weight(kg):" />
+                android:text="99" />
 
             <EditText
                 android:id="@+id/etPhoneNumber"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="number"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Phone Number:"
+                android:inputType="number"
                 android:singleLine="true"
-                android:hint="Phone Number:" />
+                android:text="0587339920" />
 
             <EditText
                 android:id="@+id/etTextPassword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="textPassword"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Password:"
+                android:inputType="textPassword"
                 android:singleLine="true"
-                android:hint="Password:" />
+                android:text="Password1234!" />
+
             <EditText
                 android:id="@+id/etTextPasswordConfirm"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="textPassword"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Confirm Password:"
+                android:inputType="textPassword"
                 android:singleLine="true"
-                android:hint="Confirm Password:" />
+                android:text="Password1234!" />
 
             <EditText
                 android:id="@+id/etTextEmailAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="textEmailAddress"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Email:"
+                android:inputType="textEmailAddress"
                 android:singleLine="true"
-                android:hint="Email:" />
+                android:text="testmail@mail.mail" />
 
             <EditText
                 android:id="@+id/etTextHomeCity"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="text"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="City:"
+                android:inputType="text"
                 android:singleLine="true"
-                android:hint="City:" />
+                android:text="Tel Aviv" />
 
             <EditText
                 android:id="@+id/etTextHomeAddress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="text"
                 android:layout_weight="1"
+                android:ems="10"
+                android:hint="Home Address:"
+                android:inputType="text"
                 android:singleLine="true"
-                android:hint="Home Address:" />
+                android:text="Test 1" />
             <Button
                 android:id="@+id/btnSendData"
                 android:layout_width="wrap_content"

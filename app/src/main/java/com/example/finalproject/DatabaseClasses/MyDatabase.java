@@ -13,6 +13,7 @@ import com.example.finalproject.DAOs.UserDAO;
 @Database(entities = {User.class, City.class}, version = 1, exportSchema = false)
 @TypeConverters({DateConverter.class})
 public abstract class MyDatabase extends RoomDatabase
+
 {
     private static MyDatabase INSTANCE;
     public abstract UserDAO userDAO();

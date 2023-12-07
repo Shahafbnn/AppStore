@@ -1,8 +1,15 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -15,9 +22,9 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.InitiateFunctions;
+import com.example.finalproject.DatabaseClasses.City;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.R;
@@ -31,7 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivProfilePic;
     private Dialogs dialogs;
     private SharedPreferences sharedPreferences;
-    private boolean isSpValid;
+    private boolean isSPValid;
+    private boolean isSPInitialized;
+    private boolean isUserInDB;
     private SharedPreferences.Editor editor;
     private User curUser;
     private MyDatabase myDatabase;
@@ -43,11 +52,21 @@ public class MainActivity extends AppCompatActivity {
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         dialogs = new Dialogs(this);
-
-
         myDatabase = MyDatabase.getInstance(this);
-        InitiateFunctions.initUserSharedPreferences(sharedPreferences, this, myDatabase);
+        //myDatabase = null;
+        City c = new City();
+        c.setCityName("Tel Aviv");
+        myDatabase.cityDAO().insert(c);
+
+        //shared preferences init:
+        //vals[0] = isSPValid, vals[1] = isUserInDB, vals[2] = isSPInitialized
+        //the bool array is like a c pointer, to change the actual value;
+        sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
+        curUser = InitiateFunctions.initUserSharedPreferences(sharedPreferences, myDatabase, new Boolean[]{isSPValid, isUserInDB, isSPInitialized});
+        editor = sharedPreferences.edit();
+        initViewsFromUser(curUser, isUserInDB);
     }
+
 
     //making it so it's repeatable in other classes/activities
 
@@ -55,15 +74,15 @@ public class MainActivity extends AppCompatActivity {
     //uses curUser and turns the
     public void initViewsFromUser(User user, boolean isValid){
         if(isValid){
-            String fullName = curUser.getFirstName() + " " + curUser.getLastName();
-            boolean isAdmin = User.isAdmin(curUser.getPhoneNumber());
-            if(isAdmin != curUser.isAdmin()) {
-                curUser.setAdmin(false);
-                myDatabase.userDAO().update(curUser);
+            String fullName = user.getFirstName() + " " + user.getLastName();
+            boolean isAdmin = User.isAdmin(user.getPhoneNumber());
+            if(isAdmin != user.isAdmin()) {
+                user.setAdmin(false);
+                myDatabase.userDAO().update(user);
             }
             if(isAdmin) fullName += " (Admin)";
             tvWelcome.setText("Welcome " + fullName + "!");
-            String imageSrc = curUser.getImgSrc();
+            String imageSrc = user.getImgSrc();
             if(new File(imageSrc).exists())
             {
                 Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
@@ -72,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
             else Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
             throw new RuntimeException("pfp image path does not exist: " + imageSrc);
         }
+        else tvWelcome.setText("Welcome Guest!");
     }
 
 
@@ -85,6 +105,17 @@ public class MainActivity extends AppCompatActivity {
         itemLogIn = menu.findItem(R.id.itemLogIn);
         return true;
     }
+//    private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+//            new ActivityResultContracts.StartActivityForResult(),
+//            new ActivityResultCallback<ActivityResult>() {
+//                @Override
+//                public void onActivityResult(ActivityResult result) {
+//                    if (result.getResultCode() == Activity.RESULT_OK) {
+//                        recreate();
+//                    }
+//                }
+//            }
+//    );
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -93,8 +124,8 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         else if(item==itemRegister){
-            Intent intent = new Intent(this, RegisterActivity.class);
-            startActivity(intent);
+            //Intent intent = new Intent(this, RegisterActivity.class);
+            //activityResultLauncher.launch(intent);
             return true;
         }
         else return super.onOptionsItemSelected(item);

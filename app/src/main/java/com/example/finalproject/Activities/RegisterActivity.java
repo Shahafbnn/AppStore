@@ -3,6 +3,7 @@ package com.example.finalproject.Activities;
 import static com.example.finalproject.Classes.Constants.*;
 import static com.example.finalproject.Classes.UserValidations.validate;
 
+import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -30,8 +32,6 @@ import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.PermissionClass;
 import com.example.finalproject.Classes.User;
-import com.example.finalproject.Classes.UserValidations;
-import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 
@@ -39,16 +39,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Map;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
-    Button btnSendData;
-    EditText etTextFirstName,etTextLastName,etBirthDate,etDecimalWeight,etPhoneNumber,
+    private Button btnSendData;
+    private EditText etTextFirstName,etTextLastName,etBirthDate,etDecimalWeight,etPhoneNumber,
             etTextPassword,etTextPasswordConfirm,etTextEmailAddress,etTextHomeCity,etTextHomeAddress;
-    LinkedList<User> users;
-    ImageView ivGallery,ivImage,ivCamera;
+    private ImageView ivGallery,ivImage,ivCamera;
     boolean isFromCamera, isFromGallery;
     private Uri uriPhoto;
     private Bitmap photoBitmap;
@@ -61,6 +58,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private User curUser;
     private boolean isSPValid;
     private String myDirStr;
+    private Date curUserDate;
 
     public void saveBitmapInFolder(Bitmap bitmap){
         String timeStamp = new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
@@ -137,20 +135,12 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         myDatabase = MyDatabase.getInstance(this);
-        Object o = InitiateFunctions.initUserSharedPreferences(sharedPreferences, this, myDatabase);
-        if(o instanceof String){
-            if(((String)o).equals("SP")) {
-                isSPValid = false;
-                isUserInDB = false;
-            }
-            if(((String)o).equals("User")) {
-                isSPValid = true;
-                isUserInDB = false;
-            }
-        }
-        else curUser = (User)o;
-
-
+        //shared preferences init:
+        //vals[0] = isSPValid, vals[1] = isUserInDB, vals[2] = isSPInitialized
+        //the bool array is like a c pointer, to change the actual value;
+        sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
+        editor = sharedPreferences.edit();
+        curUser = InitiateFunctions.initUserSharedPreferences(sharedPreferences, myDatabase, new Boolean[]{isSPValid, isUserInDB, isSPInitialized});
 
         btnSendData = findViewById(R.id.btnSendData);
         btnSendData.setOnClickListener(this);
@@ -176,24 +166,15 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
-        //shared preferences init:
-        sharedPreferences = getSharedPreferences("SharedPreferencesRegister", 0);
-        isSPInitialized = sharedPreferences.contains("initialized");
         if(isSPInitialized && isSPValid && isUserInDB){
             //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
             final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress};
             final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), curUser.getWeight(),curUser.getBirthDate(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail()};
-            InitiateFunctions.initUser(DATA, ETS);
+            //editValue[0] = phoneNumber, editValue[1] = email
+            InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
+            etTextPasswordConfirm.setText(curUser.getPassword());
+            if(User.isPasswordConfirmed(curUser.getPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
         }
-        else{
-            editor = sharedPreferences.edit();
-
-            //Indicate that the default shared prefs have been set
-            editor.putBoolean("initialized", true);
-
-            editor.commit();
-        }
-
     }
 
 
@@ -215,14 +196,51 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     private void sendData() {
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
-        final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress};
-        boolean isValid = InitiateFunctions.initUser(ETS);
-        if(isValid){
-            //long id, String firstName, String lastName, Date birthDate, Double weight, String email, long homeCityId, String homeAddress, String password, String phoneNumber, boolean isAdmin, String imgSrc
-            User u = new User(0, etTextFirstName.getText().toString(), etTextLastName.getText().toString(), User.getDateFromString(etTextLastName.getText().toString()), Double.parseDouble(etDecimalWeight.getText().toString()), etTextEmailAddress.getText().toString(), myDatabase.cityDAO().getCityByName(etTextHomeCity.getText().toString()).getCityId()
-                    , etTextHomeAddress.getText().toString(), etTextPassword.getText().toString(), etPhoneNumber.getText().toString(), User.isAdmin(etPhoneNumber.getText().toString()), myDirStr);
-            myDatabase.userDAO().insert(u);
+        final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
+        boolean allValid = InitiateFunctions.initUser(ETS);
+        if(!User.isPasswordConfirmed(etTextPassword.getText().toString(), etTextPasswordConfirm.getText().toString())) {
+            etTextPasswordConfirm.setError("password confirm isn't equal to password");
+            allValid = false;
         }
+        else if(allValid){
+            //long id, String firstName, String lastName, Date birthDate, Double weight, String email, long homeCityId, String homeAddress, String password, String phoneNumber, boolean isAdmin, String imgSrc
+            User u = new User();
+            u.setFirstName(etTextFirstName.getText().toString());
+            u.setLastName(etTextLastName.getText().toString());
+            u.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
+            u.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
+            u.setEmail(etTextEmailAddress.getText().toString());
+            u.setHomeCityId(myDatabase.cityDAO().getCityByName(etTextHomeCity.getText().toString()).getCityId());
+            u.setHomeAddress(etTextHomeAddress.getText().toString());
+            u.setPassword(etTextPassword.getText().toString());
+            u.setPhoneNumber(etPhoneNumber.getText().toString());
+            u.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
+            u.setImgSrc(myDirStr);
+
+            // put the user id in the sharedPreference to stay signed in.
+            long id = myDatabase.userDAO().insert(u);
+            editor.clear();
+            editor.putLong(USER_ID_KEY, id);
+            editor.putBoolean(SHARED_PREFERENCES_KEY, true);
+            editor.commit();
+
+            //clear all the EditTexts
+            for(int i = 0; i < ETS.length; i++){
+                ETS[i].setText("");
+            }
+            Toast.makeText(this, "Successful!", Toast.LENGTH_LONG).show();
+            finish();
+
+        }
+        else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
+    }
+
+    private void finishActivity(boolean result){
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
+        if(result) setResult(Activity.RESULT_OK, returnIntent);
+        else setResult(Activity.RESULT_CANCELED, returnIntent);
+        finish();
     }
 
     private void etBirthDateOnClick(){
