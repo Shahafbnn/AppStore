@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         myDatabase = MyDatabase.getInstance(this);
         //myDatabase = null;
         City c = new City();
-        c.setCityName("Tel Aviv");
+        //c.setCityName("Tel Aviv");
         myDatabase.cityDAO().insert(c);
 
         //shared preferences init:
