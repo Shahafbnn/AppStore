@@ -2,6 +2,7 @@ package com.example.finalproject.Classes;
 
 import android.content.Context;
 import android.icu.util.Calendar;
+import android.widget.EditText;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 
@@ -55,6 +56,7 @@ public class UserValidations {
         }
 
     }
+
 
     public static ValidationData validateFirstName(String firstName){
         if (firstName==null) return new ValidationData(false,  "first name cannot be null");
@@ -179,7 +181,7 @@ public class UserValidations {
         long strLen = email.length();
         if(strLen > 30) return new ValidationData(false,  "email cannot be over 30 chars long");
         String[] atSplit = email.split("@");
-        if(atSplit.length != 2) return new ValidationData(false,  "email must have only 1 '@' symbols ");
+        if(atSplit.length != 2) return new ValidationData(false,  "email must contain one '@' symbol");
         String[] dotSplit = atSplit[1].split("\\.");
         if(dotSplit.length < 2) return new ValidationData(false,  "email must have at least 1 '.' symbols ");
         boolean correct = true;

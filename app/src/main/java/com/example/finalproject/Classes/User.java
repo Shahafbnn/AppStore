@@ -1,6 +1,7 @@
 package com.example.finalproject.Classes;
 
 
+import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 
@@ -163,9 +164,8 @@ public class User {
     public static void addUserToSharedPreferences(User u, Context context){
         SharedPreferences.Editor editor = context.getSharedPreferences(SHARED_PREFERENCES_KEY, 0).edit();
         editor.clear();
-        editor.clear();
         editor.putLong(USER_ID_KEY, u.getId());
-        editor.putBoolean(SHARED_PREFERENCES_KEY, true);
-        editor.commit();
+        editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
+        editor.apply();
     }
 }

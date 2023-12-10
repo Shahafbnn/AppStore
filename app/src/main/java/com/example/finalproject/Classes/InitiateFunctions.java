@@ -5,9 +5,17 @@ import static com.example.finalproject.Classes.UserValidations.validate;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
+
+import java.io.File;
 
 public class InitiateFunctions {
 
@@ -70,6 +78,32 @@ public class InitiateFunctions {
             return null;
         }
         return myDatabase.userDAO().getUserById(id);
+    }
+
+    public static void initViewsFromUser(User user, boolean isValid, Context context, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
+        if(isValid){
+            String fullName = user.getFirstName() + " " + user.getLastName();
+            boolean isAdmin = User.isAdmin(user.getPhoneNumber());
+            if(isAdmin != user.isAdmin()) {
+                user.setAdmin(isAdmin);
+                myDatabase.userDAO().update(user);
+            }
+            if(isAdmin) fullName += " (Admin)";
+            tvWelcome.setText("Welcome " + fullName + "!");
+            String imageSrc = user.getImgSrc();
+            if(new File(imageSrc).exists())
+            {
+                Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
+                ivProfilePic.setImageBitmap(imageBitmap);
+            }
+            else {
+                Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
+                throw new RuntimeException("pfp image path does not exist: " + imageSrc);
+            }
+            Toast.makeText(context, "Log In successful", Toast.LENGTH_LONG).show();
+
+        }
+        else tvWelcome.setText("Welcome Guest!");
     }
 
 }

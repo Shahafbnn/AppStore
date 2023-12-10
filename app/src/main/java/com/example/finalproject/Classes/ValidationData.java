@@ -1,5 +1,7 @@
 package com.example.finalproject.Classes;
 
+import android.widget.EditText;
+
 public class ValidationData {
     private boolean isValid;
     private String error;
@@ -23,5 +25,9 @@ public class ValidationData {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public static void changeEditTextByValidationData(ValidationData validationData, EditText editText){
+        if(!validationData.isValid()) editText.setError(validationData.getError());
     }
 }

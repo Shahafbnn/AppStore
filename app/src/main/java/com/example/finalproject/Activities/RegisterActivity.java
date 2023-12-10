@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.net.Uri;
@@ -60,24 +61,9 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private String myDirStr;
     private Date curUserDate;
 
-    public void saveBitmapInFolder(Bitmap bitmap){
-        String timeStamp = new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
-        String foldersPhotos = "ABC";
-        File myDir = new File(Environment.getExternalStorageDirectory(), "/" + foldersPhotos);
 
-        if(!myDir.exists())
-        {
-            myDir.mkdirs();
-            myDirStr = myDir.toString();
-        }
 
-        File dest = new File(myDir, timeStamp);
-        try {
-            FileOutputStream out = new FileOutputStream(dest);
-        } catch (Exception e){
 
-        }
-    }
 
 //    @Override
 //    protected void onCreate(Bundle savedInstanceState) {
@@ -112,7 +98,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         if(isFromCamera){
                             try{
                                 photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                saveBitmapInFolder(photoBitmap);
+                                PermissionClass.saveBitmapInFolder(photoBitmap);
                             } catch (IOException e){
                                 throw new RuntimeException(e);
                             }

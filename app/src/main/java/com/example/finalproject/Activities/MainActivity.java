@@ -21,6 +21,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.InitiateFunctions;
@@ -53,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
         ivProfilePic = findViewById(R.id.ivProfilePic);
         dialogs = new Dialogs(this);
         myDatabase = MyDatabase.getInstance(this);
-        //myDatabase = null;
         City c = new City();
         //c.setCityName("Tel Aviv");
         myDatabase.cityDAO().insert(c);
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         curUser = InitiateFunctions.initUserSharedPreferences(sharedPreferences, myDatabase, new Boolean[]{isSPValid, isUserInDB, isSPInitialized});
         editor = sharedPreferences.edit();
-        initViewsFromUser(curUser, isUserInDB);
+        InitiateFunctions.initViewsFromUser(curUser, isUserInDB, this, myDatabase, tvWelcome, ivProfilePic);
     }
 
 
@@ -72,27 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     //uses curUser and turns the
-    public void initViewsFromUser(User user, boolean isValid){
-        if(isValid){
-            String fullName = user.getFirstName() + " " + user.getLastName();
-            boolean isAdmin = User.isAdmin(user.getPhoneNumber());
-            if(isAdmin != user.isAdmin()) {
-                user.setAdmin(false);
-                myDatabase.userDAO().update(user);
-            }
-            if(isAdmin) fullName += " (Admin)";
-            tvWelcome.setText("Welcome " + fullName + "!");
-            String imageSrc = user.getImgSrc();
-            if(new File(imageSrc).exists())
-            {
-                Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
-                ivProfilePic.setImageBitmap(imageBitmap);
-            }
-            else Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
-            throw new RuntimeException("pfp image path does not exist: " + imageSrc);
-        }
-        else tvWelcome.setText("Welcome Guest!");
-    }
+
 
 
 
@@ -120,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
-            dialogs.createCustomDialogLogIn();
+            dialogs.createCustomDialogLogIn(curUser, isUserInDB, this, myDatabase, tvWelcome, ivProfilePic);
             return true;
         }
         else if(item==itemRegister){
