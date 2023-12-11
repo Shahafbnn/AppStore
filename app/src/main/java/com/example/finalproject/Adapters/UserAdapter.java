@@ -1,14 +1,63 @@
 package com.example.finalproject.Adapters;
 
 import android.content.Context;
-import android.widget.ArrayAdapter;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-
+import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.User;
+import com.example.finalproject.DatabaseClasses.MyDatabase;
+import com.example.finalproject.R;
 
-public class UserAdapter extends ArrayAdapter<User> {
-    public UserAdapter(@NonNull Context context, int resource) {
-        super(context, resource);
+public class UserAdapter extends BaseAdapter {
+
+    private Context context;
+    private User[] usersArray;
+    private MyDatabase myDatabase;
+
+    public UserAdapter(Context context) {
+        this.context = context;
+        this.myDatabase = MyDatabase.getInstance(context);;
+        this.usersArray = myDatabase.userDAO().getAllUsers().toArray(new User[0]);
+    }
+
+    @Override
+    public int getCount() {
+        return usersArray.length;
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return usersArray[position];
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return usersArray[position].getId();
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View userView = inflater.inflate(R.layout.user_adapter, parent, false);
+        User user = usersArray[position];
+
+        ImageView ivUserAdapterPfp = userView.findViewById(R.id.ivUserAdapterPfp);
+        TextView tvUserAdapterFullName = userView.findViewById(R.id.tvUserAdapterFullName);
+        TextView tvUserAdapterAge = userView.findViewById(R.id.tvUserAdapterAge);
+        TextView tvUserAdapterEmail = userView.findViewById(R.id.tvUserAdapterEmail);
+        TextView tvUserAdapterCity = userView.findViewById(R.id.tvUserAdapterCity);
+        TextView tvUserAdapterWeight = userView.findViewById(R.id.tvUserAdapterWeight);
+        TextView tvUserAdapterPhoneNumber = userView.findViewById(R.id.tvUserAdapterPhoneNumber);
+
+        ivUserAdapterPfp.setImageBitmap(InitiateFunctions.getImageBitmapFromUser(user));
+        tvUserAdapterFullName.setText(user.getFullNameAdmin());
+
+
+        return userView;
     }
 }

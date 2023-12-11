@@ -82,28 +82,30 @@ public class InitiateFunctions {
 
     public static void initViewsFromUser(User user, boolean isValid, Context context, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
         if(isValid){
-            String fullName = user.getFirstName() + " " + user.getLastName();
+            String fullName = user.getFullNameAdmin();
             boolean isAdmin = User.isAdmin(user.getPhoneNumber());
             if(isAdmin != user.isAdmin()) {
                 user.setAdmin(isAdmin);
                 myDatabase.userDAO().update(user);
             }
-            if(isAdmin) fullName += " (Admin)";
             tvWelcome.setText("Welcome " + fullName + "!");
-            String imageSrc = user.getImgSrc();
-            if(new File(imageSrc).exists())
-            {
-                Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
-                ivProfilePic.setImageBitmap(imageBitmap);
-            }
-            else {
-                Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
-                throw new RuntimeException("pfp image path does not exist: " + imageSrc);
-            }
+
             Toast.makeText(context, "Log In successful", Toast.LENGTH_LONG).show();
 
         }
         else tvWelcome.setText("Welcome Guest!");
+    }
+    public static Bitmap getImageBitmapFromUser(User user){
+        String imageSrc = user.getImgSrc();
+        if(new File(imageSrc).exists())
+        {
+            Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
+            return imageBitmap;
+        }
+        else {
+            Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
+            throw new RuntimeException("pfp image path does not exist: " + imageSrc);
+        }
     }
 
 }

@@ -42,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isSPValid;
     private boolean isSPInitialized;
     private boolean isUserInDB;
+    private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
     private MyDatabase myDatabase;

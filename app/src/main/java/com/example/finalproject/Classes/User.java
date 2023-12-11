@@ -168,4 +168,10 @@ public class User {
         editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
         editor.apply();
     }
+    public String getFullNameAdmin(){
+        String fullName = this.getFirstName() + " " + this.getLastName();
+        boolean isAdmin = User.isAdmin(this.getPhoneNumber());
+        if(isAdmin) fullName += " (Admin)";
+        return fullName;
+    }
 }
