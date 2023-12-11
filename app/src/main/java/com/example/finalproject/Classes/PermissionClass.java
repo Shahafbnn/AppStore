@@ -20,6 +20,11 @@ import java.util.Date;
 
 public class PermissionClass {
 
+    /**
+     * Checks if the necessary permissions have been granted.
+     * @param act The activity where permissions are checked.
+     * @return true if all permissions are granted, false otherwise.
+     */
     public static boolean CheckPermission(Activity act){
         int resultCamera = ContextCompat.checkSelfPermission(act, CAMERA);
         int resultWriteStorage = ContextCompat.checkSelfPermission(act, WRITE_EXTERNAL_STORAGE);
@@ -28,6 +33,10 @@ public class PermissionClass {
 
         return resultCamera== PackageManager.PERMISSION_GRANTED && resultWriteStorage==PackageManager.PERMISSION_GRANTED && resultReadStorage==PackageManager.PERMISSION_GRANTED;}
 
+    /**
+     * Requests the necessary permissions.
+     * @param act The activity where permissions are requested.
+     */
     public static void RequestPerms(Activity act){
         ActivityCompat.requestPermissions(act, new String[]{CAMERA, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE}, 1);
     }

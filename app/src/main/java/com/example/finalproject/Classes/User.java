@@ -7,6 +7,7 @@ import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -143,6 +144,25 @@ public class User {
     public String getImgSrc() {
         return imgSrc;
     }
+    public Bitmap getImgBitmap(){
+        return StorageFunctions.getBitmapFromFolder(imgSrc);
+    }
+    public Double getAge(){
+        Date now = new Date();
+        long ageMillis = now.getTime() - birthDate.getTime();
+        double ageYears = ageMillis / 31556952000.0;
+
+        if (now.getMonth() < birthDate.getMonth()) {
+            ageYears--;
+        } else if (now.getMonth() == birthDate.getMonth()) {
+            if (now.getDate() < birthDate.getDate()) {
+                ageYears--;
+            }
+        }
+        return Math.round(ageYears*10)/10.0;
+    }
+
+
 
     public void setImgSrc(String imgSrc) {
         this.imgSrc = imgSrc;

@@ -18,6 +18,12 @@ import com.example.finalproject.DatabaseClasses.MyDatabase;
 import java.io.File;
 
 public class InitiateFunctions {
+    private Context context;
+
+    public InitiateFunctions(Context context) {
+        this.context = context;
+    }
+
 
     public static boolean initUser(Object[] data){
         return initUser(data, null, false, false, null, null);
@@ -59,53 +65,40 @@ public class InitiateFunctions {
         return allValid;
     }
 
-    public static User initUserSharedPreferences(SharedPreferences sharedPreferences, MyDatabase myDatabase, Boolean[] vals){
-        //vals[0] = isSPValid
-        //vals[1] = isUserInDB;
+    public static MyPair<ValidationData, User> initUserSharedPreferences(SharedPreferences sharedPreferences, MyDatabase myDatabase){
         if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {
-            vals[0] = false;
-            vals[1] = false;
-            vals[2] = false;
-            return null;
-            //throw new RuntimeException("InitiateFunctions{initUserSharedPreferences{sharedPreferences is " + sharedPreferences.toString() +"}}");
+            return new MyPair<>(new ValidationData(false, "Shared preferences is not initialized"), null);
         }
 
         long id = sharedPreferences.getLong(Constants.USER_ID_KEY, -1);
-        if(id<0){
-            //throw new RuntimeException("InitiateFunctions{initUserSharedPreferences{id is " + id +"}}");
-            vals[0] = true;
-            vals[1] = false;
-            return null;
+        User u = myDatabase.userDAO().getUserById(id);
+        if(id<0 || u == null){
+            return new MyPair<>(new ValidationData(false, "User ID is invalid or user does not exist"), null);
         }
-        return myDatabase.userDAO().getUserById(id);
+        return new MyPair<>(new ValidationData(true, null), u);
     }
 
+    public void initViewsFromUser(User user, boolean isValid, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
+        initViewsFromUser(user, isValid, context, myDatabase, tvWelcome, ivProfilePic);
+    }
     public static void initViewsFromUser(User user, boolean isValid, Context context, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
         if(isValid){
             String fullName = user.getFullNameAdmin();
             boolean isAdmin = User.isAdmin(user.getPhoneNumber());
+            //checking if the isAdmin in the db is correct, if not it updates the user.
             if(isAdmin != user.isAdmin()) {
                 user.setAdmin(isAdmin);
                 myDatabase.userDAO().update(user);
             }
+
             tvWelcome.setText("Welcome " + fullName + "!");
+            ivProfilePic.setImageBitmap(user.getImgBitmap());
 
             Toast.makeText(context, "Log In successful", Toast.LENGTH_LONG).show();
 
         }
         else tvWelcome.setText("Welcome Guest!");
     }
-    public static Bitmap getImageBitmapFromUser(User user){
-        String imageSrc = user.getImgSrc();
-        if(new File(imageSrc).exists())
-        {
-            Bitmap imageBitmap = BitmapFactory.decodeFile(imageSrc);
-            return imageBitmap;
-        }
-        else {
-            Log.e("Bitmap", "pfp image path does not exist: " + imageSrc);
-            throw new RuntimeException("pfp image path does not exist: " + imageSrc);
-        }
-    }
+
 
 }

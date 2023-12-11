@@ -1,6 +1,7 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
+import static com.example.finalproject.Classes.InitiateFunctions.*;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -23,13 +24,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.finalproject.Classes.Dialogs;
-import com.example.finalproject.Classes.InitiateFunctions;
-import com.example.finalproject.DatabaseClasses.City;
-import com.example.finalproject.DatabaseClasses.MyDatabase;
-import com.example.finalproject.Classes.User;
+import com.example.finalproject.Classes.*;
+import com.example.finalproject.DatabaseClasses.*;
 import com.example.finalproject.R;
-
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
@@ -39,18 +36,20 @@ public class MainActivity extends AppCompatActivity {
     private ImageView ivProfilePic;
     private Dialogs dialogs;
     private SharedPreferences sharedPreferences;
-    private boolean isSPValid;
-    private boolean isSPInitialized;
-    private boolean isUserInDB;
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
     private MyDatabase myDatabase;
+    private InitiateFunctions initiateFunctions;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //the function classes:
+        initiateFunctions = new InitiateFunctions(this);
+
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         dialogs = new Dialogs(this);
@@ -59,23 +58,17 @@ public class MainActivity extends AppCompatActivity {
         //c.setCityName("Tel Aviv");
         myDatabase.cityDAO().insert(c);
 
-        //shared preferences init:
-        //vals[0] = isSPValid, vals[1] = isUserInDB, vals[2] = isSPInitialized
-        //the bool array is like a c pointer, to change the actual value;
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
-        curUser = InitiateFunctions.initUserSharedPreferences(sharedPreferences, myDatabase, new Boolean[]{isSPValid, isUserInDB, isSPInitialized});
         editor = sharedPreferences.edit();
-        InitiateFunctions.initViewsFromUser(curUser, isUserInDB, this, myDatabase, tvWelcome, ivProfilePic);
+
+        //checking if the user is saved in the SP and initializing vars if it is.
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        isUserSignedIn = validationPair.getFirst().isValid();
+        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
+        else curUser = validationPair.getSecond();
+
+        initViewsFromUser(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
     }
-
-
-    //making it so it's repeatable in other classes/activities
-
-
-    //uses curUser and turns the
-
-
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -92,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
-                        recreate();
+                        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
                     }
                 }
             }
@@ -101,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
-            dialogs.createCustomDialogLogIn(curUser, isUserInDB, this, myDatabase, tvWelcome, ivProfilePic);
+            dialogs.createCustomDialogLogIn(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
             return true;
         }
         else if(item==itemRegister){

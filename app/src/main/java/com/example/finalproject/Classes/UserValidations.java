@@ -169,7 +169,7 @@ public class UserValidations {
     }
 
     public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context){
-        return validateEmail(email, true, context, false, null);
+        return validateEmail(email, isCheckingDB, context, false, null);
     }
 
     public static ValidationData validateEmail(String email, Context context, String editEmail){

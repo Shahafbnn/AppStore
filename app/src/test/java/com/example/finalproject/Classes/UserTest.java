@@ -8,6 +8,8 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
+import java.util.Date;
+
 public class UserTest extends TestCase {
 
     public void testGetFirstName() {
@@ -136,5 +138,15 @@ public class UserTest extends TestCase {
         assertEquals(false, UserValidations.validatePassword("Pp.1").isValid());
         assertEquals(false, UserValidations.validatePassword("Password123!л").isValid());
 
+    }
+
+    @Test
+    public void testGetAge() {
+        User u = new User();
+        u.setBirthDate(new Date(2005 - 1900, 1, 12));
+        assertEquals(18.833333, u.getAge(), 0.1);
+
+        u.setBirthDate(new Date(2000 - 1900, 12, 30));
+        assertEquals(22.916666666666666666666666666667, u.getAge(), 0.1);
     }
 }

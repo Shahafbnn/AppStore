@@ -1,6 +1,7 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
+import static com.example.finalproject.Classes.InitiateFunctions.initUserSharedPreferences;
 import static com.example.finalproject.Classes.UserValidations.validate;
 
 import android.app.Activity;
@@ -16,6 +17,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -31,9 +33,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
+import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.PermissionClass;
 import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User;
+import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 
@@ -53,44 +57,13 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private Bitmap photoBitmap;
 
     private SharedPreferences sharedPreferences;
-    private boolean isSPInitialized;
-    private boolean isUserInDB;
+    private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private MyDatabase myDatabase;
     private User curUser;
-    private boolean isSPValid;
     private String myDirStr;
     private Date curUserDate;
 
-
-
-
-
-//    @Override
-//    protected void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.activity_register_shared_preference);
-//
-//        sp = getSharedPreferences("SharedPreferencesSignUp", 0);
-//        editor = sp.edit();
-//
-//        // Let's say you want to store a string
-//        String key = "exampleKey";
-//        String value = "exampleValue";
-//
-//        // Store the string in SharedPreferences
-//        editor.putString(key, value);
-//        editor.apply();
-//
-//        // Now let's retrieve the string from SharedPreferences
-//        String retrievedValue = sp.getString(key, "default");
-//
-//        Log.d("SharedPreferences", "Stored value: " + sp.getString(key, null));
-//
-//        // At this point, 'retrievedValue' should be equal to 'exampleValue'
-//    }
-
-    //this object gets the result of the camera/gallery activity and sets the image in ivImage.
     ActivityResultLauncher<Intent> startFile = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
@@ -127,7 +100,12 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         //the bool array is like a c pointer, to change the actual value;
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
-        curUser = InitiateFunctions.initUserSharedPreferences(sharedPreferences, myDatabase, new Boolean[]{isSPValid, isUserInDB, isSPInitialized});
+
+        //checking if the user is saved in the SP and initializing vars if it is.
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        isUserSignedIn = validationPair.getFirst().isValid();
+        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
+        else curUser = validationPair.getSecond();
 
         btnSendData = findViewById(R.id.btnSendData);
         btnSendData.setOnClickListener(this);
@@ -153,7 +131,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
-        if(isSPInitialized && isSPValid && isUserInDB){
+        if(isUserSignedIn){
             //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
             final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress};
             final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), curUser.getWeight(),curUser.getBirthDate(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail()};
