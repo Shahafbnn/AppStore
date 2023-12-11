@@ -8,6 +8,7 @@ import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.Uri;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -144,8 +145,11 @@ public class User {
     public String getImgSrc() {
         return imgSrc;
     }
-    public Bitmap getImgBitmap(){
-        return StorageFunctions.getBitmapFromFolder(imgSrc);
+    public Bitmap getImgBitmap(Context context){
+        return StorageFunctions.getBitmapFromPath(imgSrc, context);
+    }
+    public Uri getImgUri(){
+        return StorageFunctions.getUriFromPath(imgSrc);
     }
     public Double getAge(){
         Date now = new Date();

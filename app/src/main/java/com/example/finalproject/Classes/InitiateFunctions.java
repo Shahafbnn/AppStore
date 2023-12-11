@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
+import com.example.finalproject.R;
 
 import java.io.File;
 
@@ -92,12 +93,19 @@ public class InitiateFunctions {
             }
 
             tvWelcome.setText("Welcome " + fullName + "!");
-            ivProfilePic.setImageBitmap(user.getImgBitmap());
+            ivProfilePic.setImageURI(user.getImgUri());
 
             Toast.makeText(context, "Log In successful", Toast.LENGTH_LONG).show();
 
         }
-        else tvWelcome.setText("Welcome Guest!");
+        else {
+            tvWelcome.setText("Welcome Guest!");
+            ivProfilePic.setImageResource(R.drawable.emptypfp);
+        }
+    }
+    //invalidates the user
+    public static void initViewsFromUser(TextView tvWelcome, ImageView ivProfilePic){
+        initViewsFromUser(null, false, null, null, tvWelcome, ivProfilePic);
     }
 
 

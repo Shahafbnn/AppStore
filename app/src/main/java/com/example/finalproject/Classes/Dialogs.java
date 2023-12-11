@@ -1,7 +1,11 @@
 package com.example.finalproject.Classes;
 
+import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
+import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
+
 import android.app.Dialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -57,17 +61,24 @@ public class Dialogs {
 
 
 
-    public void createCustomDialogLogIn(User user, boolean isValid, Context context, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
+    public void createCustomDialogLogIn(MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
         final Dialog dialog = new Dialog(context);
         dialog.setContentView(R.layout.log_in_dialog);
 
         // Set the custom dialog components - text, image and button
         Button btnFruitSubmit = dialog.findViewById(R.id.btnLogInSubmit);
+        EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
         btnFruitSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if(customDialogLogIn(dialog, context)) {
-                    InitiateFunctions.initViewsFromUser(user, isValid, context, myDatabase, tvWelcome, ivProfilePic);
+                    User u = myDatabase.userDAO().getUserByEmail(etEmailAddress.getText().toString());
+                    long id = u.getId();
+                    editor.clear();
+                    editor.putLong(USER_ID_KEY, id);
+                    editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
+                    editor.commit();
+                    InitiateFunctions.initViewsFromUser(u, true, context, myDatabase, tvWelcome, ivProfilePic);
                     dialog.cancel();
                 }
             }

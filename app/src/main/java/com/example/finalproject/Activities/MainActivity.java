@@ -31,7 +31,7 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MenuItem itemLogIn,itemRegister;
+    private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate;
     private TextView tvWelcome;
     private ImageView ivProfilePic;
     private Dialogs dialogs;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
         else curUser = validationPair.getSecond();
 
-        initViewsFromUser(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
+        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
     }
 
     @Override
@@ -77,6 +77,33 @@ public class MainActivity extends AppCompatActivity {
 
         itemRegister = menu.findItem(R.id.itemRegister);
         itemLogIn = menu.findItem(R.id.itemLogIn);
+        itemLogOut = menu.findItem(R.id.itemLogOut);
+        itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
+        return true;
+    }
+
+    public boolean onPrepareOptionsMenu(Menu menu)
+    {
+        //if the user is logged in the Register and Log In options disappear and a Log Out option appears.
+        itemRegister = menu.findItem(R.id.itemRegister);
+        itemLogIn = menu.findItem(R.id.itemLogIn);
+        itemLogOut = menu.findItem(R.id.itemLogOut);
+        itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
+
+        if(isUserSignedIn)
+        {
+            itemRegister.setVisible(false);
+            itemLogIn.setVisible(false);
+            itemLogOut.setVisible(true);
+            itemDataUpdate.setVisible(true);
+        }
+        else
+        {
+            itemRegister.setVisible(true);
+            itemLogIn.setVisible(true);
+            itemLogOut.setVisible(false);
+            itemDataUpdate.setVisible(false);
+        }
         return true;
     }
     private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
@@ -85,7 +112,14 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     if (result.getResultCode() == Activity.RESULT_OK) {
+                        //checking if the user is saved in the SP and initializing vars if it is.
+                        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+                        isUserSignedIn = validationPair.getFirst().isValid();
+                        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
+                        else curUser = validationPair.getSecond();
+
                         initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
+                        invalidateOptionsMenu();
                     }
                 }
             }
@@ -94,12 +128,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
-            dialogs.createCustomDialogLogIn(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
+            //rember to update the user, DO IT!
+            dialogs.createCustomDialogLogIn(myDatabase, tvWelcome, ivProfilePic, editor);
             return true;
         }
         else if(item==itemRegister){
             Intent intent = new Intent(this, RegisterActivity.class);
             activityResultLauncher.launch(intent);
+            return true;
+        }
+        else if(item==itemLogOut){
+            editor.clear();
+            editor.commit();
+            isUserSignedIn = false;
+            curUser = null;
+            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
+            invalidateOptionsMenu();
+            return true;
+        }
+        else if(item==itemDataUpdate){
+            Intent intent = new Intent(this, UsersListViewActivity.class);
+            startActivity(intent);
             return true;
         }
         else return super.onOptionsItemSelected(item);

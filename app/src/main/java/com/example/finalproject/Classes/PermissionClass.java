@@ -1,6 +1,7 @@
 package com.example.finalproject.Classes;
 
 import static android.Manifest.permission.CAMERA;
+import static android.Manifest.permission.MANAGE_EXTERNAL_STORAGE;
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
@@ -31,7 +32,9 @@ public class PermissionClass {
         int resultReadStorage = ContextCompat.checkSelfPermission(act, READ_EXTERNAL_STORAGE);
 
 
-        return resultCamera== PackageManager.PERMISSION_GRANTED && resultWriteStorage==PackageManager.PERMISSION_GRANTED && resultReadStorage==PackageManager.PERMISSION_GRANTED;}
+
+        return resultCamera== PackageManager.PERMISSION_GRANTED && resultWriteStorage==PackageManager.PERMISSION_GRANTED && resultReadStorage==PackageManager.PERMISSION_GRANTED;
+    }
 
     /**
      * Requests the necessary permissions.

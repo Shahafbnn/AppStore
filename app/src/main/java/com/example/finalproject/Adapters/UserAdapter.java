@@ -54,7 +54,7 @@ public class UserAdapter extends BaseAdapter {
         TextView tvUserAdapterWeight = userView.findViewById(R.id.tvUserAdapterWeight);
         TextView tvUserAdapterPhoneNumber = userView.findViewById(R.id.tvUserAdapterPhoneNumber);
 
-        ivUserAdapterPfp.setImageBitmap(user.getImgBitmap());
+        ivUserAdapterPfp.setImageURI(user.getImgUri());
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
         tvUserAdapterAge.setText(user.getAge().toString());
         tvUserAdapterEmail.setText(user.getEmail());

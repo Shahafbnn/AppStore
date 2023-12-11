@@ -10,12 +10,9 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -31,7 +28,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.PermissionClass;
@@ -41,10 +37,7 @@ import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -62,42 +55,55 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private MyDatabase myDatabase;
     private User curUser;
     private String myDirStr;
-    private Date curUserDate;
 
-    ActivityResultLauncher<Intent> startFile = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    if(result.getResultCode() == RESULT_OK){
-                        if(isFromCamera){
-                            try{
-                                photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                StorageFunctions.saveBitmapInFolder(photoBitmap);
-                            } catch (IOException e){
-                                throw new RuntimeException(e);
-                            }
-                        } else if (isFromGallery) {
-                            uriPhoto = result.getData().getData();
-                            try{
-                                photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                            } catch (IOException e){
-                                throw new RuntimeException(e);
-                            }
-
-                        }
-                        ivImage.setImageURI(uriPhoto);
-
-                    }
-                }
-            });
+    ActivityResultLauncher<Intent> startFile;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         myDatabase = MyDatabase.getInstance(this);
-        //shared preferences init:
-        //vals[0] = isSPValid, vals[1] = isUserInDB, vals[2] = isSPInitialized
-        //the bool array is like a c pointer, to change the actual value;
+
+        startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if(result.getResultCode() == RESULT_OK){
+                            if(isFromCamera){
+                                try{
+                                    photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
+                                    //check if the data was saved correctly
+                                    MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
+                                    if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
+                                    else {
+                                        myDirStr = null;
+                                        throw new RuntimeException("onActivityResult image saving failed.");
+                                    }
+                                } catch (IOException e){
+                                    throw new RuntimeException(e);
+                                }
+                            } else if (isFromGallery) {
+                                uriPhoto = result.getData().getData();
+                                try{
+                                    photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
+                                    //check if the data was saved correctly
+                                    MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
+                                    if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
+                                    else {
+                                        myDirStr = null;
+                                        throw new RuntimeException("onActivityResult image saving failed.");
+                                    }
+                                } catch (IOException e){
+                                    throw new RuntimeException(e);
+                                }
+
+                            }
+                            ivImage.setImageBitmap(photoBitmap);
+
+                        }
+                    }
+                });
+
+
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
@@ -152,10 +158,18 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             etBirthDateOnClick();
         }
         else if(v==ivGallery){
-            startGallery();
+            if(!PermissionClass.CheckPermission(this)){
+                PermissionClass.RequestPerms(this);
+                Log.v("Image", "RequestPerms has failed in ivGallery");
+            }
+            else startGallery();
         }
         else if(v==ivCamera){
-            startCamera();
+            if(!PermissionClass.CheckPermission(this)){
+                PermissionClass.RequestPerms(this);
+                Log.v("Image", "RequestPerms has failed in ivCamera");
+            }
+            else startCamera();
         }
     }
 
@@ -180,22 +194,22 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setPassword(etTextPassword.getText().toString());
             u.setPhoneNumber(etPhoneNumber.getText().toString());
             u.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
+            //fix that if the user doesn't insert an image it will use the default.
             u.setImgSrc(myDirStr);
 
             // put the user id in the sharedPreference to stay signed in.
             long id = myDatabase.userDAO().insert(u);
             editor.clear();
             editor.putLong(USER_ID_KEY, id);
-            editor.putBoolean(SHARED_PREFERENCES_KEY, true);
+            editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
             editor.commit();
-
-            //clear all the EditTexts
+            Log.v("sharedPreferences", "sharedPreferences.getAll(): " + sharedPreferences.getAll().toString());
+            //clear all the EditTexts even tho we close the activity.
             for(int i = 0; i < ETS.length; i++){
                 ETS[i].setText("");
             }
             Toast.makeText(this, "Successful!", Toast.LENGTH_LONG).show();
-            finish();
-
+            finishActivity(true);
         }
         else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
     }
@@ -240,7 +254,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, uriPhoto);
         startFile.launch(intent);
-
     }
     public void startGallery(){
         isFromCamera = false;
