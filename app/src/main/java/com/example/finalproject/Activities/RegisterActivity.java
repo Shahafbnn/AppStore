@@ -32,6 +32,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.PermissionClass;
+import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
@@ -98,7 +99,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                         if(isFromCamera){
                             try{
                                 photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                PermissionClass.saveBitmapInFolder(photoBitmap);
+                                StorageFunctions.saveBitmapInFolder(photoBitmap);
                             } catch (IOException e){
                                 throw new RuntimeException(e);
                             }
