@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(item==itemDataUpdate){
             Intent intent = new Intent(this, UsersListViewActivity.class);
-            startActivity(intent);
+            activityResultLauncher.launch(intent);
             return true;
         }
         else return super.onOptionsItemSelected(item);

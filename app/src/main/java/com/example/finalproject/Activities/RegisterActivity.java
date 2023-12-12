@@ -198,11 +198,18 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setImgSrc(myDirStr);
 
             // put the user id in the sharedPreference to stay signed in.
-            long id = myDatabase.userDAO().insert(u);
-            editor.clear();
-            editor.putLong(USER_ID_KEY, id);
-            editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
-            editor.commit();
+            long id;
+            if(isUserSignedIn) {
+                id = curUser.getId();
+                myDatabase.userDAO().update(u);
+            }
+            else {
+                id = myDatabase.userDAO().insert(u);
+                editor.clear();
+                editor.putLong(USER_ID_KEY, id);
+                editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
+                editor.commit();
+            }
             Log.v("sharedPreferences", "sharedPreferences.getAll(): " + sharedPreferences.getAll().toString());
             //clear all the EditTexts even tho we close the activity.
             for(int i = 0; i < ETS.length; i++){
