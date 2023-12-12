@@ -28,6 +28,20 @@ public interface UserDAO {
     @Query("SELECT * FROM tblUser Where " + Constants.USER_EMAIL_ADDRESS_KEY + " = :email")
     User getUserByEmail(String email);
 
+    @Query("SELECT * FROM tblUser WHERE " +
+            // Check if the search string is null or empty
+            "(:search IS NULL OR :search = '' OR " +
+            // If not, search for users whose first name contains the searched text
+            Constants.USER_FIRST_NAME_KEY + " LIKE :search OR " +
+            // Or whose last name contains the searched text
+            Constants.USER_LAST_NAME_KEY + " LIKE :search OR " +
+            // Or whose first name and last name combined match the searched text
+            "(" + Constants.USER_FIRST_NAME_KEY + " || ' ' || " + Constants.USER_LAST_NAME_KEY + ") LIKE :search) " +
+            "ORDER BY " +
+            // If isSortedByFirstName is 1, sort by first name
+            "CASE WHEN :isSortedByFirstName = 1 THEN " + Constants.USER_FIRST_NAME_KEY + " END ASC, " +
+            // If isSortedByLastName is 1, sort by last name
+            "CASE WHEN :isSortedByLastName = 1 THEN " + Constants.USER_LAST_NAME_KEY + " END ASC")    List<User> getUsersContainingAndSorted(String search, int isSortedByFirstName, int isSortedByLastName);
     @Insert
     long insert(User User);
 

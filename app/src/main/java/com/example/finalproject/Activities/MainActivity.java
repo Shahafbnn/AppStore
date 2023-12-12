@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         dialogs = new Dialogs(this);
         myDatabase = MyDatabase.getInstance(this);
         City c = new City();
-        //c.setCityName("Tel Aviv");
+        c.setCityName("Tel Aviv");
         myDatabase.cityDAO().insert(c);
 
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
             editor.commit();
             isUserSignedIn = false;
             curUser = null;
-            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
+            initiateFunctions.invalidateViews(tvWelcome, ivProfilePic);
             invalidateOptionsMenu();
             return true;
         }

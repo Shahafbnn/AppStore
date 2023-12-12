@@ -93,7 +93,7 @@ public class InitiateFunctions {
             }
 
             tvWelcome.setText("Welcome " + fullName + "!");
-            ivProfilePic.setImageURI(user.getImgUri());
+            ivProfilePic.setImageURI(user.getImgUri(context));
 
             Toast.makeText(context, "Log In successful", Toast.LENGTH_LONG).show();
 
@@ -104,8 +104,10 @@ public class InitiateFunctions {
         }
     }
     //invalidates the user
-    public static void initViewsFromUser(TextView tvWelcome, ImageView ivProfilePic){
-        initViewsFromUser(null, false, null, null, tvWelcome, ivProfilePic);
+    public static void invalidateViews(TextView tvWelcome, ImageView ivProfilePic){
+        tvWelcome.setText("Welcome Guest!");
+        ivProfilePic.setImageResource(R.drawable.emptypfp);
+//        initViewsFromUser(null, false, null, null, tvWelcome, ivProfilePic);
     }
 
 

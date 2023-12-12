@@ -93,6 +93,27 @@ public class UserValidations {
         return new ValidationData(false,  "last name cannot be shorter than 2 characters or longer than 10 characters");
     }
 
+    // used in the UsersListViewActivity
+    public static ValidationData validateFullName(String fullName){
+        if (fullName==null) return new ValidationData(false,  "full name cannot be null");
+        if (fullName.equals("")) return new ValidationData(true, null);
+        //it can be empty so we can search the database as non-admins in UsersListViewActivity
+        int size = fullName.length();
+        if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
+        if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
+        boolean inEnglish = true;
+        char currentChar;
+        for(int i = 0; i< size; i++){
+            currentChar = fullName.charAt(i);
+            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == ' '))) inEnglish = false;
+        }
+        if(!inEnglish) return new ValidationData(false,  "full name cannot be in another language");
+        String[] splitName = fullName.split(" ");
+        if(splitName.length > 2 || splitName.length < 1) return new ValidationData(false,  "full name can only contain one space");
+        if(splitName[0].equals("")) return new ValidationData(false,  "full name cannot start with a space");
+        return new ValidationData(true,  null);
+    }
+
 
 
     public static ValidationData validateWeight(String weight){

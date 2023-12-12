@@ -148,8 +148,8 @@ public class User {
     public Bitmap getImgBitmap(Context context){
         return StorageFunctions.getBitmapFromPath(imgSrc, context);
     }
-    public Uri getImgUri(){
-        return StorageFunctions.getUriFromPath(imgSrc);
+    public Uri getImgUri(Context context){
+        return StorageFunctions.getUriFromPath(imgSrc, context);
     }
     public Double getAge(){
         Date now = new Date();
@@ -175,8 +175,7 @@ public class User {
     public static Date getDateFromString(String date){
         String[] dates = date.split("/");
         if(dates.length != 3) return null;
-        return new Date(Integer.parseInt(dates[0]), Integer.parseInt(dates[1]), Integer.parseInt(dates[2]));
-    }
+        return new Date(Integer.parseInt(dates[2]) - 1900, Integer.parseInt(dates[1]) - 1, Integer.parseInt(dates[0]));    }
     public static boolean isAdmin(String phoneNumber){
         for (String s:Constants.ADMIN_PHONE_NUMBERS) {
             if (phoneNumber.equals(s)) return true;

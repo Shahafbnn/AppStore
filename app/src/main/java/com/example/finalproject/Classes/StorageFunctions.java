@@ -59,7 +59,8 @@ public class StorageFunctions {
         }
         return null;
     }
-    public static Uri getUriFromPath(String path){
+    public static Uri getUriFromPath(String path, Context context){
+        if(path==null) return Uri.parse("android.resource://" + context.getPackageName() + "/" + R.drawable.emptypfp);
         File f = new File(path);
         if(f.exists()) return Uri.parse(path);
         else {
