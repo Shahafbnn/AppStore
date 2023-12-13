@@ -4,6 +4,7 @@ import static com.example.finalproject.Classes.Constants.REGISTER_ACTIVITY_RETUR
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.initUserSharedPreferences;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -53,6 +54,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private User curUser;
     private MyDatabase myDatabase;
     private int registerActivityResult;
+    private OnBackPressedCallback callback;
 
     private boolean isSortedByFirstName, isSortedByLastName;
     @Override
@@ -102,13 +104,18 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             llSearchUser.setVisibility(View.VISIBLE);
             llSortUser.setVisibility(View.VISIBLE);
         }
+
+        callback = new OnBackPressedCallback(true /* enabled by default */) {
+            @Override
+            public void handleOnBackPressed() {
+                finishActivity(registerActivityResult);
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, callback);
+
+        // The callback can be enabled or disabled here or in handleOnBackPressed()
     }
 
-    @Override
-    public void onBackPressed() {
-        finishActivity(registerActivityResult);
-        super.onBackPressed();
-    }
 
     public void finishActivity(int result){
         Intent returnIntent = new Intent();
@@ -129,7 +136,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         }
         else {
             usersList = new ArrayList<>();
-            usersList.add(curUser);
+            usersList.add(myDatabase.userDAO().getUserById(curUser.getId()));
             lvUsers.invalidateViews();
         }
     }
@@ -197,8 +204,8 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         builder.setNegativeButton("Cancel", new AlertDialogClick(delUser, this));
         AlertDialog dialog = builder.create();
         dialog.show();
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.RED);
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN);
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.RED);
     }
     private class AlertDialogClick implements DialogInterface.OnClickListener {
         private User delUser;

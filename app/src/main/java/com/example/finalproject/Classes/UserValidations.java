@@ -26,38 +26,38 @@ public class UserValidations {
         //editValue[0] = phoneNumber, editValue[1] = email
         switch (type) {
             case FIRST_NAME:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate FIRST_NAME is the wrong type: "+toValidate+"}}");
                 return validateFirstName((String)toValidate);
             case LAST_NAME:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate LAST_NAME is the wrong type: "+toValidate+"}}");
                 return validateLastName((String)toValidate);
             case WEIGHT:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate WEIGHT is the wrong type: "+toValidate+"}}");
                 return validateWeight((String) toValidate);
             case PHONE_NUMBER:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate PHONE_NUMBER is the wrong type: "+toValidate+"}}");
                 if(usesDB && isValue) return validatePhoneNumber((String)toValidate, context, editValue[0]);
                 if(usesDB) return validatePhoneNumber((String)toValidate, true, context, false, null);
                 return validatePhoneNumber((String)toValidate);
             case PASSWORD:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate PASSWORD is the wrong type: "+toValidate+"}}");
                 return validatePassword((String)toValidate);
             case EMAIL:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate EMAIL is the wrong type: "+toValidate+"}}");
                 if(usesDB && isValue) return validateEmail((String)toValidate, context, editValue[1]);
                 if(usesDB) return validateEmail((String)toValidate, true, context, false, null);
                 else return validateEmail((String)toValidate);
             case BIRTH_DATE:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate BIRTH_DATE is the wrong type: "+toValidate+"}}");
                 return validateBirthDate((String) toValidate);
             case CITY:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate CITY is the wrong type: "+toValidate+"}}");
                 return validateCity((String) toValidate, context);
             case ADDRESS:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate is the wrong type}}");
+                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate ADDRESS is the wrong type: "+toValidate+"}}");
                 return validateAddress((String) toValidate);
             default:
-                throw new RuntimeException("UserValidations{validate{Wrong ValidateTypes}}");
+                throw new RuntimeException("UserValidations{validate{default Wrong ValidateTypes}}");
         }
 
     }
@@ -81,16 +81,16 @@ public class UserValidations {
     }
 
 
-    public static ValidationData validateLastName(String firstName){
-        if (firstName==null) return new ValidationData(false,  "last name cannot be null");
-        if (firstName.equals("")) return new ValidationData(false,  "last name cannot be empty");
-        int size = firstName.length();
-        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new ValidationData(false,  "name must start with an uppercase English letter");
+    public static ValidationData validateLastName(String lastName){
+        if (lastName==null) return new ValidationData(false,  "last name cannot be null");
+        if (lastName.equals("")) return new ValidationData(false,  "last name cannot be empty");
+        int size = lastName.length();
+        if(size>=1 && !(lastName.charAt(0) >= 'A' && lastName.charAt(0) <= 'Z')) return new ValidationData(false,  "name must start with an uppercase English letter");
         if (size >= 2 && size <= 10){
             boolean inEnglish = true;
             char currentChar;
             for(int i = 0; i< size; i++){
-                currentChar = firstName.charAt(i);
+                currentChar = lastName.charAt(i);
                 if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) inEnglish = false;
             }
             return new ValidationData(inEnglish,  "last name cannot be in another language");
@@ -202,6 +202,7 @@ public class UserValidations {
         return validateEmail(email, true, context, true, editEmail);
     }
     public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context, boolean isEditEmail, String editEmail){
+        //editEmail is the connected user, isEditEmail represents if it should be used or not.
         if(email==null) return new ValidationData(false,  "email cannot be null");
         if (email.equals("")) return new ValidationData(false,  "email cannot be empty");
         long strLen = email.length();
@@ -218,7 +219,8 @@ public class UserValidations {
         }
         if(isCheckingDB){
             MyDatabase myDatabase = MyDatabase.getInstance(context);
-            if(myDatabase.userDAO().getUserByEmail(email) != null || (isEditEmail && (!editEmail.equals(email)))) return new ValidationData(false,  "email is already in use");
+            boolean inDB = myDatabase.userDAO().getUserByEmail(email) != null;
+            if(inDB && (!isEditEmail || !email.equals(editEmail))) return new ValidationData(false,  "email is already in use");
         }
         return new ValidationData(correct,  "email can only contain English chars, '@'s or '.'s");
     }
@@ -294,7 +296,8 @@ public class UserValidations {
         if(len < 3 || len > 13) return new ValidationData(false, "phone number cannot be shorter than 3 chars or longer than 13 chars");
         if(isCheckingDB){
             MyDatabase myDatabase = MyDatabase.getInstance(context);
-            if(!myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty() || (isEditPhoneNumber && (!editPhoneNumber.equals(phoneNumber)))) return new ValidationData(false,  "phone number is already in use");
+            boolean inDB = !myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty();
+            if(inDB && (!isEditPhoneNumber || !phoneNumber.equals(editPhoneNumber))) return new ValidationData(false,  "email is already in use");
         }
         return new ValidationData(phoneNumber.matches("05(1[25][0-9]{2}|[02-46-8][0-9]{3}|055([23]{2}[0-9]|4[41]0|43[0-9]|5[105][0-9]|6[876][0-9]|7[2107][0-9]|8[987][0-9]|9[^0][0-9]))[0-9]{4}"), "phone number must have a valid prefix");
     }

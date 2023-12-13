@@ -137,13 +137,28 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
+        boolean setDevData = false;
+        if(setDevData){
+            etTextFirstName.setText("Eli");
+            etTextLastName.setText("BaBye");
+            etDecimalWeight.setText("99");
+            etPhoneNumber.setText("0586773392");
+            etTextPassword.setText("Pass1234!");
+            etTextPasswordConfirm.setText(etTextPassword.getText().toString());
+            etTextEmailAddress.setText("email@email.email");
+            etTextHomeCity.setText("Abbirim");
+            etTextHomeAddress.setText("Home 1");
+            etBirthDate.setText("13/12/2000");
+
+        }
         if(isUserSignedIn){
             final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
-            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), curUser.getWeight(),curUser.getBirthDate(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
+            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
             //editValue[0] = phoneNumber, editValue[1] = email
             InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
             etTextPasswordConfirm.setText(curUser.getPassword());
-            if(User.isPasswordConfirmed(curUser.getPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
+            if(!User.isPasswordConfirmed(curUser.getPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
+            ivImage.setImageURI(curUser.getImgUri(this));
         }
     }
 
@@ -176,7 +191,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
         final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
         boolean allValid;
-        Object[] data = new Object[ETS.length];
+        final Object[] data = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
         for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
         if(isUserSignedIn){
             //editValue[0] = phoneNumber, editValue[1] = email
@@ -206,6 +221,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
 
             if(isUserSignedIn) {
+                u.setId(curUser.getId());
                 myDatabase.userDAO().update(u);
                 curUser = u;
             }

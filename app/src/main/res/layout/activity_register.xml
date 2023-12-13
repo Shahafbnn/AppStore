@@ -63,7 +63,7 @@
                 android:hint="First Name:"
                 android:layout_weight="1"
                 android:singleLine="true"
-                android:text="Eli" />
+ />
 
             <EditText
                 android:id="@+id/etTextLastName"
@@ -75,7 +75,7 @@
                 android:singleLine="true"
                 android:layout_weight="1"
 
-                android:hint="Last Name:" />
+/>
 
             <EditText
                 android:id="@+id/etBirthDate"
@@ -88,7 +88,7 @@
                 android:inputType="none"
                 android:onClick="onClick"
                 android:singleLine="true"
-                android:text="7/1/2000" />
+ />
 
             <EditText
                 android:id="@+id/etDecimalWeight"
@@ -99,7 +99,7 @@
                 android:hint="Weight(kg):"
                 android:inputType="numberDecimal"
                 android:singleLine="true"
-                android:text="99" />
+ />
 
             <EditText
                 android:id="@+id/etPhoneNumber"
@@ -110,7 +110,7 @@
                 android:hint="Phone Number:"
                 android:inputType="number"
                 android:singleLine="true"
-                android:text="0587339920" />
+ />
 
             <EditText
                 android:id="@+id/etTextPassword"
@@ -120,8 +120,7 @@
                 android:ems="10"
                 android:hint="Password:"
                 android:inputType="textPassword"
-                android:singleLine="true"
-                android:text="Password1234!" />
+                android:singleLine="true" />
 
             <EditText
                 android:id="@+id/etTextPasswordConfirm"
@@ -131,8 +130,7 @@
                 android:ems="10"
                 android:hint="Confirm Password:"
                 android:inputType="textPassword"
-                android:singleLine="true"
-                android:text="Password1234!" />
+                android:singleLine="true" />
 
             <EditText
                 android:id="@+id/etTextEmailAddress"
@@ -143,7 +141,7 @@
                 android:hint="Email:"
                 android:inputType="textEmailAddress"
                 android:singleLine="true"
-                android:text="testmail@mail.mail" />
+/>
 
             <EditText
                 android:id="@+id/etTextHomeCity"
@@ -154,7 +152,7 @@
                 android:hint="City:"
                 android:inputType="text"
                 android:singleLine="true"
-                android:text="Tel Aviv" />
+ />
 
             <EditText
                 android:id="@+id/etTextHomeAddress"
@@ -165,7 +163,7 @@
                 android:hint="Home Address:"
                 android:inputType="text"
                 android:singleLine="true"
-                android:text="Test 1" />
+ />
             <Button
                 android:id="@+id/btnSendData"
                 android:layout_width="wrap_content"

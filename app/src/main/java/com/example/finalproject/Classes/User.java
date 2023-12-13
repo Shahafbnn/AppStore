@@ -19,6 +19,7 @@ import androidx.room.TypeConverters;
 import com.example.finalproject.DatabaseClasses.City;
 import com.example.finalproject.DatabaseClasses.DateConverter;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 @Entity (tableName = "tblUser", foreignKeys = @ForeignKey(entity = City.class, parentColumns = Constants.CITY_ID_KEY, childColumns = Constants.CITY_ID_KEY, onDelete = ForeignKey.CASCADE, onUpdate = ForeignKey.CASCADE))
@@ -172,6 +173,14 @@ public class User {
         this.imgSrc = imgSrc;
     }
 
+    public String birthdateToString(){
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        return formatter.format(birthDate);
+    }
+    public static String dateToString(Date date){
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        return formatter.format(date);
+    }
     public static Date getDateFromString(String date){
         String[] dates = date.split("/");
         if(dates.length != 3) return null;

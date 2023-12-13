@@ -48,10 +48,11 @@ public class InitiateFunctions {
             else if(usesDB) v = validate(data[i], types[i], context);
             else v = validate(data[i], types[i]);
             if(!v.isValid()) allValid = false;
-            if(usesEt){
-                if(v.isValid()) et[i].setText(data[i].toString());
+            if (usesEt) {
+                if (v.isValid()) et[i].setText(data[i].toString());
                 else et[i].setError(v.getError());
             }
+
         }
         return allValid;
     }
