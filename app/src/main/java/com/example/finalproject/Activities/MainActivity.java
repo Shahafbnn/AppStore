@@ -54,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
         ivProfilePic = findViewById(R.id.ivProfilePic);
         dialogs = new Dialogs(this);
         myDatabase = MyDatabase.getInstance(this);
-        City c = new City();
-        c.setCityName("Tel Aviv");
-        myDatabase.cityDAO().insert(c);
+        if(myDatabase.cityDAO().getAllCities().isEmpty()) {
+            CitiesArray.addCities(myDatabase);
+        }
 
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();

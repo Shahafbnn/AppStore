@@ -11,6 +11,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -25,6 +28,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.finalproject.Adapters.UserAdapter;
+import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.UserValidations;
@@ -126,8 +130,12 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         else {
             usersList = new ArrayList<>();
             usersList.add(curUser);
+            lvUsers.invalidateViews();
         }
     }
+
+
+
 
 
     @Override
@@ -161,7 +169,56 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
 
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        createAlertDialog(usersList.get(position));
         return false;
+    }
+
+    public void deleteUser(User delUser){
+        if(delUser.getId() == curUser.getId()){
+            editor.clear();
+            editor.commit();
+            curUser = null;
+            isUserSignedIn = false;
+            myDatabase.userDAO().delete(delUser);
+            Toast.makeText(this, "You deleted yourself!", Toast.LENGTH_LONG).show();
+            finishActivity(Activity.RESULT_OK);
+        }
+        myDatabase.userDAO().delete(delUser);
+        lvUsers.invalidateViews();
+
+
+    }
+    public void createAlertDialog(User delUser){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete User");
+        builder.setMessage("Are you sure?");
+        builder.setCancelable(true);
+        builder.setPositiveButton("Delete", new AlertDialogClick(delUser, this));
+        builder.setNegativeButton("Cancel", new AlertDialogClick(delUser, this));
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.RED);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.GREEN);
+    }
+    private class AlertDialogClick implements DialogInterface.OnClickListener {
+        private User delUser;
+        private Context context;
+        public AlertDialogClick(User delUser, Context context){
+            this.delUser = delUser;
+            this.context = context;
+        }
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            if (which == dialog.BUTTON_POSITIVE) {
+                dialog.dismiss();
+                deleteUser(delUser);
+            }
+
+            if (which == dialog.BUTTON_NEGATIVE) {
+                Toast.makeText(context, "Canceled", Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+            }
+        }
     }
 
     private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
@@ -170,6 +227,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     registerActivityResult = result.getResultCode();
+                    userListSorter();
                 }
             }
     );

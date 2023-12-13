@@ -27,21 +27,25 @@ public class InitiateFunctions {
 
 
     public static boolean initUser(Object[] data){
-        return initUser(data, null, false, false, null, null);
+        return initUser(data, false, null, false, null, false, null);
     }
 
     public static boolean initUser(Object[] data, EditText[] et){
-        return initUser(data, et, true, false, null, null);
+        return initUser(data, true, et, true, null, false, null);
+    }
+    public static boolean initUser(Object[] data, EditText[] et ,Context context){
+        return initUser(data, true, et, true, context, false, null);
     }
     public static boolean initUser(Object[] data, EditText[] et ,Context context, String[] editValue){
-        return initUser(data, et, true, true, context, editValue);
+        return initUser(data, true, et, true, context, true, editValue);
     }
-    public static boolean initUser(Object[] data, EditText[] et, boolean usesEt, boolean usesDB ,Context context, String[] editValue){
+    public static boolean initUser(Object[] data, boolean usesEt, EditText[] et, boolean usesDB ,Context context, boolean usesEditValue, String[] editValue){
         UserValidations.ValidateTypes[] types = Constants.getTypes();
         ValidationData v;
         boolean allValid = true;
         for(int i = 0; i < types.length; i++){
-            if(usesDB) v = validate(data[i], types[i], true, context, editValue);
+            if(usesDB && usesEditValue) v = validate(data[i], types[i], context, editValue);
+            else if(usesDB) v = validate(data[i], types[i], context);
             else v = validate(data[i], types[i]);
             if(!v.isValid()) allValid = false;
             if(usesEt){
@@ -51,20 +55,32 @@ public class InitiateFunctions {
         }
         return allValid;
     }
-    public static boolean initUser(EditText[] et){
-        UserValidations.ValidateTypes[] types = Constants.getTypes();
-        ValidationData v;
-        boolean allValid = true;
-        for(int i = 0; i < types.length; i++){
-            v = validate(et[i].getText().toString(), types[i]);
-            if(!v.isValid()) allValid = false;
 
-            //if(v.isValid()) et[i].setText(et[i].toString());
-            if(!v.isValid()) et[i].setError(v.getError());
+//    public static boolean initUser(EditText[] et){
+//        Object[] data = new Object[et.length];
+//        for(int i = 0; i < et.length; i++) data[i] = et[i].getText().toString();
+//        return initUser(data, et, true, false, null, null);
+//    }
+//
+//    public static boolean initUser(EditText[] et ,Context context, String[] editValue){
+//        Object[] data = new Object[et.length];
+//        for(int i = 0; i < et.length; i++) data[i] = et[i].getText().toString();
+//        return initUser(data, et, true, true, context, editValue);
+//    }
 
-        }
-        return allValid;
-    }
+//    public static boolean initUser(EditText[] et){
+//        UserValidations.ValidateTypes[] types = Constants.getTypes();
+//        ValidationData v;
+//        boolean allValid = true;
+//        for(int i = 0; i < types.length; i++){
+//            v = validate(et[i].getText().toString(), types[i]);
+//            if(!v.isValid()) {
+//                allValid = false;
+//                et[i].setError(v.getError());
+//            }
+//        }
+//        return allValid;
+//    }
 
     public static MyPair<ValidationData, User> initUserSharedPreferences(SharedPreferences sharedPreferences, MyDatabase myDatabase){
         if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {

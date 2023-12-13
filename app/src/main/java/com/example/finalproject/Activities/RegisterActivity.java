@@ -138,9 +138,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
         if(isUserSignedIn){
-            //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
-            final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress};
-            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), curUser.getWeight(),curUser.getBirthDate(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail()};
+            final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
+            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), curUser.getWeight(),curUser.getBirthDate(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
             //editValue[0] = phoneNumber, editValue[1] = email
             InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
             etTextPasswordConfirm.setText(curUser.getPassword());
@@ -176,7 +175,15 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private void sendData() {
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
         final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
-        boolean allValid = InitiateFunctions.initUser(ETS);
+        boolean allValid;
+        Object[] data = new Object[ETS.length];
+        for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
+        if(isUserSignedIn){
+            //editValue[0] = phoneNumber, editValue[1] = email
+            allValid = InitiateFunctions.initUser(data, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
+        }else{
+            allValid = InitiateFunctions.initUser(data, ETS, this);
+        }
         if(!User.isPasswordConfirmed(etTextPassword.getText().toString(), etTextPasswordConfirm.getText().toString())) {
             etTextPasswordConfirm.setError("password confirm isn't equal to password");
             allValid = false;
@@ -197,14 +204,14 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             //fix that if the user doesn't insert an image it will use the default.
             u.setImgSrc(myDirStr);
 
-            // put the user id in the sharedPreference to stay signed in.
-            long id;
+
             if(isUserSignedIn) {
-                id = curUser.getId();
                 myDatabase.userDAO().update(u);
+                curUser = u;
             }
             else {
-                id = myDatabase.userDAO().insert(u);
+                // put the user id in the sharedPreference to stay signed in.
+                long id = myDatabase.userDAO().insert(u);
                 editor.clear();
                 editor.putLong(USER_ID_KEY, id);
                 editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
