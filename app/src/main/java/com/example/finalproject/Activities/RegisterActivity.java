@@ -191,7 +191,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
         final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
         boolean allValid;
-        final Object[] data = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
+        final Object[] data = {etTextFirstName.getText().toString(), etTextLastName.getText().toString(), etDecimalWeight.getText().toString(),
+                etBirthDate.getText().toString(), etPhoneNumber.getText().toString(), etTextPassword.getText().toString(), etTextEmailAddress.getText().toString(), etTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString()};
         for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
         if(isUserSignedIn){
             //editValue[0] = phoneNumber, editValue[1] = email
@@ -211,16 +212,16 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
             u.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
             u.setEmail(etTextEmailAddress.getText().toString());
-            u.setHomeCityId(myDatabase.cityDAO().getCityByName(etTextHomeCity.getText().toString()).getCityId());
+            u.setHomeCityId(myDatabase.cityDAO().getCityByName(etTextHomeCity.getText().toString().toUpperCase()).getCityId());
             u.setHomeAddress(etTextHomeAddress.getText().toString());
             u.setPassword(etTextPassword.getText().toString());
             u.setPhoneNumber(etPhoneNumber.getText().toString());
             u.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
-            //fix that if the user doesn't insert an image it will use the default.
             u.setImgSrc(myDirStr);
 
 
             if(isUserSignedIn) {
+                if(myDirStr==null) u.setImgSrc(curUser.getImgSrc());
                 u.setId(curUser.getId());
                 myDatabase.userDAO().update(u);
                 curUser = u;

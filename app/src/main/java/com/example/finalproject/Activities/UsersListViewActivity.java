@@ -90,8 +90,10 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
         else curUser = validationPair.getSecond();
 
-        userListSorter();
+        usersList = new ArrayList<>();
         userAdapter = new UserAdapter(this, usersList);
+
+        userListSorter();
         lvUsers.setAdapter(userAdapter);
         lvUsers.setOnItemClickListener(this);
         lvUsers.setOnItemLongClickListener(this);
@@ -130,14 +132,15 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             ValidationData validateFullName = UserValidations.validateFullName(etSearchUser.getText().toString());
             if (!validateFullName.isValid()) etSearchUser.setError(validateFullName.getError());
             else {
-                usersList = myDatabase.userDAO().getUsersContainingAndSorted(etSearchUser.getText().toString(), isSortedByFirstName ? 1 : 0, isSortedByLastName ? 1 : 0);
-                lvUsers.invalidateViews();
+                usersList.clear();
+                usersList.addAll(myDatabase.userDAO().getUsersContainingAndSorted(etSearchUser.getText().toString(), isSortedByFirstName ? 1 : 0, isSortedByLastName ? 1 : 0));
+                userAdapter.notifyDataSetChanged();
             }
         }
         else {
-            usersList = new ArrayList<>();
+            usersList.clear();
             usersList.add(myDatabase.userDAO().getUserById(curUser.getId()));
-            lvUsers.invalidateViews();
+            userAdapter.notifyDataSetChanged();
         }
     }
 

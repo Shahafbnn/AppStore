@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -68,6 +69,27 @@ public class MainActivity extends AppCompatActivity {
         else curUser = validationPair.getSecond();
 
         initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
+        Context c = this;
+        activityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            //checking if the user is saved in the SP and initializing vars if it is.
+                            MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+                            isUserSignedIn = validationPair.getFirst().isValid();
+                            if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
+                            else {
+                                curUser = validationPair.getSecond();
+                                ivProfilePic.setImageURI(curUser.getImgUri(c));
+                            }
+                            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
+                            invalidateOptionsMenu();
+                        }
+                    }
+                }
+        );
     }
 
     @Override
@@ -106,24 +128,7 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-    private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    if (result.getResultCode() == Activity.RESULT_OK) {
-                        //checking if the user is saved in the SP and initializing vars if it is.
-                        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
-                        isUserSignedIn = validationPair.getFirst().isValid();
-                        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-                        else curUser = validationPair.getSecond();
-
-                        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
-                        invalidateOptionsMenu();
-                    }
-                }
-            }
-    );
+    private ActivityResultLauncher<Intent> activityResultLauncher;
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {

@@ -71,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:ems="10"
                 android:inputType="text"
-                android:text="Baba"
+                android:hint="Last Name:"
                 android:singleLine="true"
                 android:layout_weight="1"
 
