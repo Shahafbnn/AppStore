@@ -155,6 +155,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             if (isSortedByFirstName)
                 btnSortByFirstName.setBackgroundColor(Color.rgb(128, 128, 128));
             else btnSortByFirstName.setBackgroundColor(Color.MAGENTA);
+            userListSorter();
 
         } else if (v==btnSortByLastName) {
             isSortedByLastName = !isSortedByLastName;

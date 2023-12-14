@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".Activities.UsersListViewActivity"
+    android:background="@drawable/white_wallpaper"
     android:orientation="vertical">
 
     <LinearLayout
@@ -55,12 +56,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="9"
+            android:singleLine="true"
             android:inputType="text"
             android:hint="Search User" />
-
-
-
-
     </LinearLayout>
 
     <ListView

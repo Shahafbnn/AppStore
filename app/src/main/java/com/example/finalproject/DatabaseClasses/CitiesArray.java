@@ -8,7 +8,10 @@ import java.util.List;
 
 public class CitiesArray {
 
-    public static List<String> listCitiesIsrael;
+    public static String[] getArrCities() {
+        return arrCities;
+    }
+
     private static String[] arrCities =
             {
            "A'SAM",

@@ -16,6 +16,8 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -34,16 +36,19 @@ import com.example.finalproject.Classes.PermissionClass;
 import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.ValidationData;
+import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 
 import java.io.IOException;
+import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
     private Button btnSendData;
     private EditText etTextFirstName,etTextLastName,etBirthDate,etDecimalWeight,etPhoneNumber,
-            etTextPassword,etTextPasswordConfirm,etTextEmailAddress,etTextHomeCity,etTextHomeAddress;
+            etTextPassword,etTextPasswordConfirm,etTextEmailAddress, etTextHomeAddress;
+    private AutoCompleteTextView actvTextHomeCity;
     private ImageView ivGallery,ivImage,ivCamera;
     boolean isFromCamera, isFromGallery;
     private Uri uriPhoto;
@@ -76,10 +81,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                     if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
                                     else {
                                         myDirStr = null;
-                                        throw new RuntimeException("onActivityResult image saving failed.");
+                                        Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
                                     }
                                 } catch (IOException e){
-                                    throw new RuntimeException(e);
+                                    Log.e("Runtime Exception", "" + e);
                                 }
                             } else if (isFromGallery) {
                                 uriPhoto = result.getData().getData();
@@ -90,10 +95,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                     if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
                                     else {
                                         myDirStr = null;
-                                        throw new RuntimeException("onActivityResult image saving failed.");
+                                        Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
                                     }
                                 } catch (IOException e){
-                                    throw new RuntimeException(e);
+                                    Log.e("Runtime Exception", "" + e);
                                 }
 
                             }
@@ -125,7 +130,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         etTextPassword = findViewById(R.id.etTextPassword);
         etTextPasswordConfirm = findViewById(R.id.etTextPasswordConfirm);
         etTextEmailAddress = findViewById(R.id.etTextEmailAddress);
-        etTextHomeCity = findViewById(R.id.etTextHomeCity);
+        actvTextHomeCity = (AutoCompleteTextView) findViewById(R.id.actvTextHomeCity);
         etTextHomeAddress = findViewById(R.id.etTextHomeAddress);
 
         ivGallery = findViewById(R.id.ivGallery);
@@ -137,28 +142,62 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
-        boolean setDevData = false;
-        if(setDevData){
-            etTextFirstName.setText("Eli");
-            etTextLastName.setText("BaBye");
-            etDecimalWeight.setText("99");
-            etPhoneNumber.setText("0586773392");
-            etTextPassword.setText("Pass1234!");
-            etTextPasswordConfirm.setText(etTextPassword.getText().toString());
-            etTextEmailAddress.setText("email@email.email");
-            etTextHomeCity.setText("Abbirim");
-            etTextHomeAddress.setText("Home 1");
-            etBirthDate.setText("13/12/2000");
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, CitiesArray.getArrCities());
 
-        }
+        actvTextHomeCity.setAdapter(adapter);
+
+
         if(isUserSignedIn){
-            final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
+            final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, actvTextHomeCity, etTextHomeAddress};
             final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
             //editValue[0] = phoneNumber, editValue[1] = email
             InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
             etTextPasswordConfirm.setText(curUser.getPassword());
             if(!User.isPasswordConfirmed(curUser.getPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
             ivImage.setImageURI(curUser.getImgUri(this));
+        }
+
+        // ignore this
+        boolean setDevData = false;
+        if(setDevData){
+            char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
+            String specialFirstName = "";
+            String specialLastName = "";
+
+            Random rand = new Random();
+            int num = rand.nextInt(7) + 3;
+            for(int i = 0; i < num; i++){
+                if(i == 0){
+                    specialFirstName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
+                    specialLastName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
+                }
+                specialFirstName += nameStr[rand.nextInt(nameStr.length)];
+                specialLastName += nameStr[rand.nextInt(nameStr.length)];
+            }
+//            User addUser = new User();
+//            addUser.setFirstName(specialFirstName);
+//            addUser.setLastName(specialLastName);
+//            addUser.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
+//            addUser.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
+//            addUser.setEmail(etTextEmailAddress.getText().toString());
+//            addUser.setHomeCityId(myDatabase.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
+//            addUser.setHomeAddress(etTextHomeAddress.getText().toString());
+//            addUser.setPassword(etTextPassword.getText().toString());
+//            addUser.setPhoneNumber(etPhoneNumber.getText().toString());
+//            addUser.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
+//            addUser.setImgSrc(myDirStr);
+
+            etTextFirstName.setText(specialFirstName);
+            etTextLastName.setText(specialLastName);
+            etDecimalWeight.setText("99");
+            etPhoneNumber.setText("05867733" + (rand.nextInt(90) + 10));
+            etTextPassword.setText("Pass1234!");
+            etTextPasswordConfirm.setText(etTextPassword.getText().toString());
+            etTextEmailAddress.setText("email"+(rand.nextInt(90) + 10)+"@email.email");
+            actvTextHomeCity.setText("Abbirim");
+            etTextHomeAddress.setText("Home 1");
+            etBirthDate.setText("13/12/2000");
+
         }
     }
 
@@ -169,12 +208,14 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             sendData();
         }
         else if(v==etBirthDate){
+            etBirthDate.setError(null);
             etBirthDateOnClick();
         }
         else if(v==ivGallery){
             if(!PermissionClass.CheckPermission(this)){
                 PermissionClass.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivGallery");
+                Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }
             else startGallery();
         }
@@ -182,6 +223,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             if(!PermissionClass.CheckPermission(this)){
                 PermissionClass.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivCamera");
+                Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }
             else startCamera();
         }
@@ -189,11 +231,11 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     private void sendData() {
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
-        final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, etTextHomeCity, etTextHomeAddress};
+        final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, actvTextHomeCity, etTextHomeAddress};
         boolean allValid;
         final Object[] data = {etTextFirstName.getText().toString(), etTextLastName.getText().toString(), etDecimalWeight.getText().toString(),
-                etBirthDate.getText().toString(), etPhoneNumber.getText().toString(), etTextPassword.getText().toString(), etTextEmailAddress.getText().toString(), etTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString()};
-        for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
+                etBirthDate.getText().toString(), etPhoneNumber.getText().toString(), etTextPassword.getText().toString(), etTextEmailAddress.getText().toString(), actvTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString()};
+        //for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
         if(isUserSignedIn){
             //editValue[0] = phoneNumber, editValue[1] = email
             allValid = InitiateFunctions.initUser(data, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
@@ -202,6 +244,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         }
         if(!User.isPasswordConfirmed(etTextPassword.getText().toString(), etTextPasswordConfirm.getText().toString())) {
             etTextPasswordConfirm.setError("password confirm isn't equal to password");
+            Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
             allValid = false;
         }
         else if(allValid){
@@ -212,7 +255,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
             u.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
             u.setEmail(etTextEmailAddress.getText().toString());
-            u.setHomeCityId(myDatabase.cityDAO().getCityByName(etTextHomeCity.getText().toString().toUpperCase()).getCityId());
+            u.setHomeCityId(myDatabase.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
             u.setHomeAddress(etTextHomeAddress.getText().toString());
             u.setPassword(etTextPassword.getText().toString());
             u.setPhoneNumber(etPhoneNumber.getText().toString());
@@ -236,10 +279,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             }
             Log.v("sharedPreferences", "sharedPreferences.getAll(): " + sharedPreferences.getAll().toString());
             //clear all the EditTexts even tho we close the activity.
-            for(int i = 0; i < ETS.length; i++){
-                ETS[i].setText("");
-            }
-            Toast.makeText(this, "Successful!", Toast.LENGTH_LONG).show();
+//            for(int i = 0; i < ETS.length; i++){
+//                ETS[i].setText("");
+//            }
+            //Toast.makeText(this, "Successful!", Toast.LENGTH_LONG).show();
             finishActivity(true);
         }
         else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
@@ -262,7 +305,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
             @Override
             public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-                String time = dayOfMonth + "/" + month + "/" + year;
+                String time = dayOfMonth + "/" + (month + 1) + "/" + year;
                 etBirthDate.setText(time);
 //                    Toast myToast = Toast.makeText(getApplicationContext(), time, Toast.LENGTH_LONG);
 //                    myToast.show();

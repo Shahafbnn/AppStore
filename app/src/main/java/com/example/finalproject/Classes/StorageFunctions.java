@@ -23,7 +23,7 @@ public class StorageFunctions {
         File myDir = new File(Environment.getExternalStorageDirectory(), "/Pictures/" + foldersPhotos);
 
         if (!myDir.exists()) {
-            if(!myDir.mkdir()) throw new RuntimeException("myDir.mkdirs() has failed");
+            if(!myDir.mkdir()) Log.e("Runtime Exception", "" + "myDir.mkdirs() has failed");
         }
 
         File dest = new File(myDir, timeStamp);

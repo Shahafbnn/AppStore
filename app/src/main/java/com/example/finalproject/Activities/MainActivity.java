@@ -1,6 +1,8 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
+import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.*;
 
 import androidx.activity.result.ActivityResult;
@@ -12,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -25,6 +28,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -39,13 +44,13 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate, itemAboutMe;
     private TextView tvWelcome;
     private ImageView ivProfilePic;
-    private Dialogs dialogs;
     private SharedPreferences sharedPreferences;
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
     private MyDatabase myDatabase;
     private InitiateFunctions initiateFunctions;
+    private Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
-        dialogs = new Dialogs(this);
         myDatabase = MyDatabase.getInstance(this);
         if(myDatabase.cityDAO().getAllCities().isEmpty()) {
             CitiesArray.addCities(myDatabase);
@@ -100,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_sign_in_menu, menu);
+        this.menu = menu;
 
         itemRegister = menu.findItem(R.id.itemRegister);
         itemLogIn = menu.findItem(R.id.itemLogIn);
@@ -117,6 +122,11 @@ public class MainActivity extends AppCompatActivity {
         itemLogOut = menu.findItem(R.id.itemLogOut);
         itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
 
+        changeOptionMenuItemsVisibility();
+        return true;
+    }
+
+    private void changeOptionMenuItemsVisibility(){
         if(isUserSignedIn)
         {
             itemRegister.setVisible(false);
@@ -131,7 +141,6 @@ public class MainActivity extends AppCompatActivity {
             itemLogOut.setVisible(false);
             itemDataUpdate.setVisible(false);
         }
-        return true;
     }
     private ActivityResultLauncher<Intent> activityResultLauncher;
 
@@ -139,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
             //rember to update the user, DO IT!
-            dialogs.createCustomDialogLogIn(myDatabase, tvWelcome, ivProfilePic, editor);
+            createCustomDialogLogIn(myDatabase, tvWelcome, ivProfilePic, editor);
             return true;
         }
         else if(item==itemRegister){
@@ -213,6 +222,37 @@ public class MainActivity extends AppCompatActivity {
                 dialog.dismiss();
             }
         }
+    }
+
+    public void createCustomDialogLogIn(MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.log_in_dialog);
+        Context context = this;
+        // Set the custom dialog components - text, image and button
+        Button btnFruitSubmit = dialog.findViewById(R.id.btnLogInSubmit);
+        EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
+        btnFruitSubmit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(Dialogs.customDialogLogIn(dialog, context)) {
+                    User u = myDatabase.userDAO().getUserByEmail(etEmailAddress.getText().toString());
+                    long id = u.getId();
+                    editor.clear();
+                    editor.putLong(USER_ID_KEY, id);
+                    editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
+                    editor.commit();
+                    InitiateFunctions.initViewsFromUser(u, true, context, myDatabase, tvWelcome, ivProfilePic);
+                    //checking if the user is saved in the SP and initializing vars if it is.
+                    MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+                    isUserSignedIn = validationPair.getFirst().isValid();
+                    if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
+                    else curUser = validationPair.getSecond();
+                    onPrepareOptionsMenu(menu);
+                    dialog.cancel();
+                }
+            }
+        });
+        dialog.show();
     }
 
 }

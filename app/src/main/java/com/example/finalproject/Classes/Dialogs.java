@@ -25,14 +25,8 @@ import com.example.finalproject.R;
 
 public class Dialogs {
 
-    private Context context;
-
-    public Dialogs(Context context) {
-        this.context = context;
-    }
-
     //create the dialog item's OnClickListeners and others.
-    private boolean customDialogLogIn(Dialog dialog, Context context){
+    public static boolean customDialogLogIn(Dialog dialog, Context context){
         EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
         EditText etTextPassword = dialog.findViewById(R.id.etTextPassword);
         //Button btnLogInSubmit = dialog.findViewById(R.id.btnLogInSubmit);
@@ -51,7 +45,7 @@ public class Dialogs {
         }
         return false;
     }
-    private boolean checkLogIn(Context context, String email, String password){
+    private static boolean checkLogIn(Context context, String email, String password){
         User u = MyDatabase.getInstance(context).userDAO().getUserByEmail(email);
         if(u == null) {
             Toast.makeText(context, "User doesn't exist!", Toast.LENGTH_LONG).show();
@@ -67,30 +61,7 @@ public class Dialogs {
 
 
 
-    public void createCustomDialogLogIn(MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
-        final Dialog dialog = new Dialog(context);
-        dialog.setContentView(R.layout.log_in_dialog);
 
-        // Set the custom dialog components - text, image and button
-        Button btnFruitSubmit = dialog.findViewById(R.id.btnLogInSubmit);
-        EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
-        btnFruitSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(customDialogLogIn(dialog, context)) {
-                    User u = myDatabase.userDAO().getUserByEmail(etEmailAddress.getText().toString());
-                    long id = u.getId();
-                    editor.clear();
-                    editor.putLong(USER_ID_KEY, id);
-                    editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
-                    editor.commit();
-                    InitiateFunctions.initViewsFromUser(u, true, context, myDatabase, tvWelcome, ivProfilePic);
-                    dialog.cancel();
-                }
-            }
-        });
-        dialog.show();
-    }
 
 
 }

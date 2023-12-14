@@ -2,6 +2,7 @@ package com.example.finalproject.Classes;
 
 import android.content.Context;
 import android.icu.util.Calendar;
+import android.util.Log;
 import android.widget.EditText;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
@@ -26,38 +27,39 @@ public class UserValidations {
         //editValue[0] = phoneNumber, editValue[1] = email
         switch (type) {
             case FIRST_NAME:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate FIRST_NAME is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate FIRST_NAME is the wrong type: "+toValidate+"}}");
                 return validateFirstName((String)toValidate);
             case LAST_NAME:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate LAST_NAME is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate LAST_NAME is the wrong type: "+toValidate+"}}");
                 return validateLastName((String)toValidate);
             case WEIGHT:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate WEIGHT is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate WEIGHT is the wrong type: "+toValidate+"}}");
                 return validateWeight((String) toValidate);
             case PHONE_NUMBER:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate PHONE_NUMBER is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate PHONE_NUMBER is the wrong type: "+toValidate+"}}");
                 if(usesDB && isValue) return validatePhoneNumber((String)toValidate, context, editValue[0]);
                 if(usesDB) return validatePhoneNumber((String)toValidate, true, context, false, null);
                 return validatePhoneNumber((String)toValidate);
             case PASSWORD:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate PASSWORD is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate PASSWORD is the wrong type: "+toValidate+"}}");
                 return validatePassword((String)toValidate);
             case EMAIL:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate EMAIL is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate EMAIL is the wrong type: "+toValidate+"}}");
                 if(usesDB && isValue) return validateEmail((String)toValidate, context, editValue[1]);
                 if(usesDB) return validateEmail((String)toValidate, true, context, false, null);
                 else return validateEmail((String)toValidate);
             case BIRTH_DATE:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate BIRTH_DATE is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate BIRTH_DATE is the wrong type: "+toValidate+"}}");
                 return validateBirthDate((String) toValidate);
             case CITY:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate CITY is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate CITY is the wrong type: "+toValidate+"}}");
                 return validateCity((String) toValidate, context);
             case ADDRESS:
-                if(!(toValidate instanceof String)) throw new RuntimeException("UserValidations{validate{toValidate ADDRESS is the wrong type: "+toValidate+"}}");
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate ADDRESS is the wrong type: "+toValidate+"}}");
                 return validateAddress((String) toValidate);
             default:
-                throw new RuntimeException("UserValidations{validate{default Wrong ValidateTypes}}");
+                Log.e("Runtime Exception", "" + "UserValidations{validate{default Wrong ValidateTypes}}");
+                return new ValidationData(false, "UserValidations{validate{default Wrong ValidateTypes}}");
         }
 
     }
@@ -75,7 +77,7 @@ public class UserValidations {
                 currentChar = firstName.charAt(i);
                 if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) inEnglish = false;
             }
-            return new ValidationData(inEnglish,  "first name cannot be in another language");
+            return new ValidationData(inEnglish,  "first name must only be in English");
         }
         return new ValidationData(false,  "first name cannot be shorter than 2 characters or longer than 10 characters");
     }
@@ -93,7 +95,7 @@ public class UserValidations {
                 currentChar = lastName.charAt(i);
                 if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) inEnglish = false;
             }
-            return new ValidationData(inEnglish,  "last name cannot be in another language");
+            return new ValidationData(inEnglish,  "last name must only be in English");
         }
         return new ValidationData(false,  "last name cannot be shorter than 2 characters or longer than 10 characters");
     }
@@ -104,15 +106,16 @@ public class UserValidations {
         if (fullName.equals("")) return new ValidationData(true, null);
         //it can be empty so we can search the database as non-admins in UsersListViewActivity
         int size = fullName.length();
-        if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
-        if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
+        //if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
+        //if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
+        if (size >= 21) return new ValidationData(false,  "full name cannot be longer than 21 characters");
         boolean inEnglish = true;
         char currentChar;
         for(int i = 0; i< size; i++){
             currentChar = fullName.charAt(i);
             if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == ' '))) inEnglish = false;
         }
-        if(!inEnglish) return new ValidationData(false,  "full name cannot be in another language");
+        if(!inEnglish) return new ValidationData(false,  "full name can only be in English or contain a space");
         String[] splitName = fullName.split(" ");
         if(splitName.length > 2 || splitName.length < 1) return new ValidationData(false,  "full name can only contain one space");
         if(splitName[0].equals("")) return new ValidationData(false,  "full name cannot start with a space");
@@ -154,7 +157,7 @@ public class UserValidations {
 
         if (weight==null) return new ValidationData(false,  "weight cannot be null");
         //if (weight==new Double(null)) return new ValidationData(false,  "weight cannot be null");
-        if(weight <= 0) return new ValidationData(false,  "weight cannot be negative or contains -");
+        if(weight < 0) return new ValidationData(false,  "weight cannot be negative or contain -");
         if(weight < 20) return new ValidationData(false,  "weight cannot be smaller than 20kg");
         if(weight > 300) return new ValidationData(false,  "weight cannot be larger than 300kg");
 
@@ -207,10 +210,20 @@ public class UserValidations {
         if (email.equals("")) return new ValidationData(false,  "email cannot be empty");
         long strLen = email.length();
         if(strLen > 30) return new ValidationData(false,  "email cannot be over 30 chars long");
-        String[] atSplit = email.split("@");
-        if(atSplit.length != 2) return new ValidationData(false,  "email must contain one '@' symbol");
-        String[] dotSplit = atSplit[1].split("\\.");
-        if(dotSplit.length < 2) return new ValidationData(false,  "email must have at least 1 '.' symbols ");
+        String[] atSplitEmail = email.split("@");
+        if(atSplitEmail.length != 2) return new ValidationData(false,  "email must contain one '@' symbol");
+        if(atSplitEmail[0] == null || atSplitEmail[0].equals("")) return new ValidationData(false,  "email must contain something before the '@' symbol");
+        if(atSplitEmail[1] == null || atSplitEmail[1].equals("")) return new ValidationData(false,  "email must contain something before the '@' symbol");
+
+        String[] dotSplitAll = email.split("\\.");
+        if(dotSplitAll.length < 2) return new ValidationData(false,  "email must have at least 1 '.' symbols ");
+
+        for(int i = 0; i < dotSplitAll.length; i++){
+            if(dotSplitAll[i]==null||dotSplitAll[i].equals("")||dotSplitAll[i].equals("@")||dotSplitAll[i].equals(".")) return new ValidationData(false,  "email must contain an english letter before and after a '.' symbol");
+        }
+
+        String[] dotSplitAfter = atSplitEmail[1].split("\\.");
+        if(dotSplitAfter.length < 2) return new ValidationData(false,  "email must have at least 1 '.' symbol after the '@' symbol ");
         boolean correct = true;
         char currentChar;
         for(int i = 0; i< strLen; i++){
@@ -252,21 +265,21 @@ public class UserValidations {
         if(!hasLowercaseEnglish || !hasUppercaseEnglish || !hasSpecial || !hasNumber) {
             String error = "password must contain ";
             short correctsNum = 0;
-            if(hasLowercaseEnglish) {
+            if(!hasLowercaseEnglish) {
                 error += "a lowercase English char ";
                 correctsNum++;
             }
-            if(hasUppercaseEnglish) {
+            if(!hasUppercaseEnglish) {
                 if(correctsNum > 0) error += ", ";
                 error += "an uppercase English char ";
                 correctsNum++;
             }
-            if(hasSpecial) {
+            if(!hasSpecial) {
                 if(correctsNum > 0) error += ", ";
                 error += "a special char ";
                 correctsNum++;
             }
-            if(hasNumber) {
+            if(!hasNumber) {
                 if(correctsNum > 0) error += "and ";
                 error += "a decimal digit (0-9 number) ";
                 correctsNum++;
