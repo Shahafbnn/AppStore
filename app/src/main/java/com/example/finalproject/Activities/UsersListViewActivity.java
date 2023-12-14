@@ -180,7 +180,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         createAlertDialog(usersList.get(position));
-        return false;
+        return true;
     }
 
     public void deleteUser(User delUser){

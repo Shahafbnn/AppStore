@@ -11,16 +11,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -32,7 +36,7 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate;
+    private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate, itemAboutMe;
     private TextView tvWelcome;
     private ImageView ivProfilePic;
     private Dialogs dialogs;
@@ -101,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
         itemLogIn = menu.findItem(R.id.itemLogIn);
         itemLogOut = menu.findItem(R.id.itemLogOut);
         itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
+        itemAboutMe = menu.findItem(R.id.itemAboutMe);
         return true;
     }
 
@@ -156,7 +161,58 @@ public class MainActivity extends AppCompatActivity {
             activityResultLauncher.launch(intent);
             return true;
         }
+        else if(item==itemAboutMe){
+            createAlertDialog();
+            return true;
+        }
         else return super.onOptionsItemSelected(item);
+    }
+
+    public void createAlertDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("About: ");
+        String userName = "Guest";
+        String aboutTheApp = "About my app store -\n" +
+                "This application will be a digital app store for downloading apps on the phone.\n" +
+                "Options:\n" +
+                "1. The Log In options which are: Log in, Register, Log out, Update data, user deletion, and the about page! \n" +
+                "2. Search apps by name\n" +
+                "3. Search for apps using voice search\n" +
+                "4. Search history\n" +
+                "5. A category page that includes: news, games, social networks, entertainment, work and more.\n" +
+                "6. Uploading apps to the store.\n" +
+                "7. Installing apps from the store.\n" +
+                "8. Sharing apps to another app such as sharing a message to WhatsApp.\n" +
+                "9. Displaying application information to users including: application name, application creator, amount of downloads, application size, application phone permissions such as camera permissions.\n" +
+                "10. The app creator's page where all the apps they uploaded are displayed.\n" +
+                "11. Average rating of a creator's apps.\n" +
+                "12 Public app rating shown to all users on the app's download page.\n" +
+                "13. Public comments about the app from users who have installed it.\n" +
+                "14. The rating of the responses by the users.\n" +
+                "15. A page of \"more apps\" in the same category as the app you selected.\n" +
+                "16. App settings which include: changing the color of the background and buttons and more.\n" +
+                "17. Recently added apps page.\n" +
+                "18. Popular apps page with the highest rating and number of installation apps.\n" +
+                "19. Suggested apps page based on your search history and app rating.";
+        if(isUserSignedIn) userName = curUser.getFullNameAdmin();
+        builder.setMessage("Hello " + userName + "!\nI am a computer science student, I live in Israel, and for this project I chose to make an app store!\n" +
+                aboutTheApp);
+        builder.setCancelable(true);
+        builder.setPositiveButton("Cancel", new AlertDialogClick());
+//        builder.setNegativeButton("Cancel", new AlertDialogClick());
+        AlertDialog dialog = builder.create();
+        dialog.show();
+//        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN);
+//        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.RED);
+    }
+
+    private class AlertDialogClick implements DialogInterface.OnClickListener {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            if (which == dialog.BUTTON_POSITIVE) {
+                dialog.dismiss();
+            }
+        }
     }
 
 }
