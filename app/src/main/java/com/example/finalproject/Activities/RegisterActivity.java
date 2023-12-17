@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.icu.util.Calendar;
+import android.icu.util.GregorianCalendar;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -297,10 +298,20 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     }
 
     private void etBirthDateOnClick(){
-        final Calendar calendar = Calendar.getInstance();
+        String lastDate = etBirthDate.getText().toString();
+        boolean isLastDate = !lastDate.equals("");
+        Calendar calendar = Calendar.getInstance();
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int month = calendar.get(Calendar.MONTH);
         int year = calendar.get(Calendar.YEAR);
+        if(isLastDate){
+            Calendar lastCal = Calendar.getInstance();
+            lastCal.setTime(User.getDateFromString(lastDate));
+            day = lastCal.get(Calendar.DAY_OF_MONTH);
+            month = lastCal.get(Calendar.MONTH);
+            year = lastCal.get(Calendar.YEAR);
+        }
+
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, new DatePickerDialog.OnDateSetListener() {
             @Override

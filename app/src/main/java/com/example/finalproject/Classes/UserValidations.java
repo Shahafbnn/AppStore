@@ -65,62 +65,71 @@ public class UserValidations {
     }
 
 
-    public static ValidationData validateFirstName(String firstName){
-        if (firstName==null) return new ValidationData(false,  "first name cannot be null");
-        if (firstName.equals("")) return new ValidationData(false,  "first name cannot be empty");
-        int size = firstName.length();
-        if(size>=1 && !(firstName.charAt(0) >= 'A' && firstName.charAt(0) <= 'Z')) return new ValidationData(false,  "first name must start with an uppercase English letter");
-        if (size >= 2 && size <= 10){
-            boolean inEnglish = true;
-            char currentChar;
-            for(int i = 0; i< size; i++){
-                currentChar = firstName.charAt(i);
-                if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) inEnglish = false;
+    public static ValidationData validateName(String name, String nameKind, boolean isQuery){
+        if (name==null) return new ValidationData(false,  nameKind + " name cannot be null");
+        if (name.equals("")) return new ValidationData(false,  nameKind + " name cannot be empty");
+        int size = name.length();
+        if(isQuery && size>=1 && !((name.charAt(0) >= 'A' && name.charAt(0) <= 'Z') || (name.charAt(0) >= 'a' && name.charAt(0) <= 'z'))) return new ValidationData(false,  "name must start with an English letter");
+        boolean hasEnglish = false;
+        if (!(size >= 2 && size <= 30)) return new ValidationData(false,  nameKind + " name cannot be shorter than 2 characters or longer than 30 characters");
+        if(isQuery && (name.charAt(size-1) == ' ' || name.charAt(size-1) == '-')) return new ValidationData(false,  nameKind + " name cannot end with a space or hyphen");
+
+        char currentChar;
+        boolean lastHasSpecial;
+        for(int i = 0; i< size; i++){
+            currentChar = name.charAt(i);
+            if((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') ) hasEnglish = true;
+            lastHasSpecial = i != 0 && (name.charAt(i - 1) != ' ' || name.charAt(i - 1) != '-' || name.charAt(i - 1) != '.' || name.charAt(i - 1) != '\'');
+
+            if((currentChar == ' ')) {
+                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple spaces in a row");
             }
-            return new ValidationData(inEnglish,  "first name must only be in English");
+            if((currentChar == '-')) {
+                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple hyphens in a row");
+            }
+            if((currentChar == '.')) {
+                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple points in a row");
+            }
+            if((currentChar == '\'')) {
+                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple apostrophes in a row");
+            }
+            if(!hasEnglish) return new ValidationData(false,  nameKind + " name must only contain English, space, hyphen, point or apostrophe chars");
         }
-        return new ValidationData(false,  "first name cannot be shorter than 2 characters or longer than 10 characters");
+        return new ValidationData(true, null);
     }
 
 
+    public static ValidationData validateFirstName(String firstName){
+        return validateName(firstName, "first", false);
+    }
     public static ValidationData validateLastName(String lastName){
-        if (lastName==null) return new ValidationData(false,  "last name cannot be null");
-        if (lastName.equals("")) return new ValidationData(false,  "last name cannot be empty");
-        int size = lastName.length();
-        if(size>=1 && !(lastName.charAt(0) >= 'A' && lastName.charAt(0) <= 'Z')) return new ValidationData(false,  "name must start with an uppercase English letter");
-        if (size >= 2 && size <= 10){
-            boolean inEnglish = true;
-            char currentChar;
-            for(int i = 0; i< size; i++){
-                currentChar = lastName.charAt(i);
-                if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) inEnglish = false;
-            }
-            return new ValidationData(inEnglish,  "last name must only be in English");
-        }
-        return new ValidationData(false,  "last name cannot be shorter than 2 characters or longer than 10 characters");
+        return validateName(lastName, "last", false);
     }
 
     // used in the UsersListViewActivity
     public static ValidationData validateFullName(String fullName){
-        if (fullName==null) return new ValidationData(false,  "full name cannot be null");
-        if (fullName.equals("")) return new ValidationData(true, null);
-        //it can be empty so we can search the database as non-admins in UsersListViewActivity
-        int size = fullName.length();
-        //if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
-        //if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
-        if (size >= 21) return new ValidationData(false,  "full name cannot be longer than 21 characters");
-        boolean inEnglish = true;
-        char currentChar;
-        for(int i = 0; i< size; i++){
-            currentChar = fullName.charAt(i);
-            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == ' '))) inEnglish = false;
-        }
-        if(!inEnglish) return new ValidationData(false,  "full name can only be in English or contain a space");
-        String[] splitName = fullName.split(" ");
-        if(splitName.length > 2 || splitName.length < 1) return new ValidationData(false,  "full name can only contain one space");
-        if(splitName[0].equals("")) return new ValidationData(false,  "full name cannot start with a space");
-        return new ValidationData(true,  null);
+        return validateName(fullName, "full", true);
     }
+//    public static ValidationData validateFullName(String fullName){
+//        if (fullName==null) return new ValidationData(false,  "full name cannot be null");
+//        if (fullName.equals("")) return new ValidationData(true, null);
+//        //it can be empty so we can search the database as non-admins in UsersListViewActivity
+//        int size = fullName.length();
+//        //if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
+//        //if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
+//        if (size >= 21) return new ValidationData(false,  "full name cannot be longer than 21 characters");
+//        boolean inEnglish = true;
+//        char currentChar;
+//        for(int i = 0; i< size; i++){
+//            currentChar = fullName.charAt(i);
+//            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == ' '))) inEnglish = false;
+//        }
+//        if(!inEnglish) return new ValidationData(false,  "full name can only be in English or contain a space");
+//        String[] splitName = fullName.split(" ");
+//        if(splitName.length > 2 || splitName.length < 1) return new ValidationData(false,  "full name can only contain one space");
+//        if(splitName[0].equals("")) return new ValidationData(false,  "full name cannot start with a space");
+//        return new ValidationData(true,  null);
+//    }
 
 
 
@@ -330,6 +339,20 @@ public class UserValidations {
         long strLen = address.length();
         if(strLen > 30) return new ValidationData(false,  "address cannot be over 30 chars long");
         if(strLen < 3) return new ValidationData(false,  "address cannot be under 3 chars long");
+        String[] addresses = address.split(" ");
+        if(addresses.length != 2) return new ValidationData(false,  "address must contain one space only");
+        if(addresses[0]==null || addresses[0].equals("")) return new ValidationData(false,  "address must contain english characters before the space");
+        if(addresses[1]==null || addresses[1].equals("")) return new ValidationData(false,  "address must contain numbers after the space");
+        if(!(addresses[0].toCharArray()[0] >= 'A' && addresses[0].toCharArray()[0] <= 'Z')) return new ValidationData(false,  "address must contain an english character before the space starting with a capital.");
+        boolean inEnglish = true;
+        char currentChar;
+        for(int i = 0; i< strLen; i++){
+            currentChar = address.charAt(i);
+            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar >= '0' && currentChar <= '9') || (currentChar == ' '))) inEnglish = false;
+        }
+        if(!inEnglish) return new ValidationData(false,  "address can only contain English chars, numbers and a space.");
+
+
         return new ValidationData(true, null);
     }
 }

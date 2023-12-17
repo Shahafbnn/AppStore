@@ -120,6 +120,10 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
 
 
     public void finishActivity(int result){
+        setReturnIntents(result);
+        finish();
+    }
+    public void setReturnIntents(int result){
         Intent returnIntent = new Intent();
         returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
         if(result == Activity.RESULT_OK) setResult(Activity.RESULT_OK, returnIntent);
@@ -167,6 +171,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         } else if (v==btnSearchUser) {
             userListSorter();
         }
+
     }
 
     @Override
