@@ -3,7 +3,6 @@ package com.example.finalproject.Classes;
 import android.content.Context;
 import android.icu.util.Calendar;
 import android.util.Log;
-import android.widget.EditText;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 
@@ -147,7 +146,7 @@ public class UserValidations {
         if(weight[0].contains("-")) return new ValidationData(false,  "weight cannot be negative or contain -");
         String[] weightStringArray = weight[0].split("\\.");
         if(weightStringArray.length > 2) return new ValidationData(false,  "weight must have 1 dot only");
-        if(weightStringArray.length <= 0) weight[0] = "0.0";
+        if(weightStringArray.length == 0) weight[0] = "0.0";
 
         double weightNum;
 
@@ -227,8 +226,9 @@ public class UserValidations {
         String[] dotSplitAll = email.split("\\.");
         if(dotSplitAll.length < 2) return new ValidationData(false,  "email must have at least 1 '.' symbols ");
 
-        for(int i = 0; i < dotSplitAll.length; i++){
-            if(dotSplitAll[i]==null||dotSplitAll[i].equals("")||dotSplitAll[i].equals("@")||dotSplitAll[i].equals(".")) return new ValidationData(false,  "email must contain an english letter before and after a '.' symbol");
+        for (String s : dotSplitAll) {
+            if (s == null || s.equals("") || s.equals("@") || s.equals("."))
+                return new ValidationData(false, "email must contain an english letter before and after a '.' symbol");
         }
 
         String[] dotSplitAfter = atSplitEmail[1].split("\\.");
@@ -306,7 +306,7 @@ public class UserValidations {
         return validatePhoneNumber(phoneNumber, true, context);
     }
     public static ValidationData validatePhoneNumber(String phoneNumber, boolean isCheckingDB, Context context){
-        return validatePhoneNumber(phoneNumber, true, context, false, null);
+        return validatePhoneNumber(phoneNumber, isCheckingDB, context, false, null);
     }
     public static ValidationData validatePhoneNumber(String phoneNumber, Context context, String editPhoneNumber){
         return validatePhoneNumber(phoneNumber, true, context, true, editPhoneNumber);

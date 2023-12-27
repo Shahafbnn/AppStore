@@ -190,6 +190,10 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     }
 
     public void deleteUser(User delUser){
+        if(delUser.isAdmin()){
+            Toast.makeText(this, "You can't delete and admin!", Toast.LENGTH_LONG).show();
+            finishActivity(Activity.RESULT_CANCELED);
+        }
         if(delUser.getId() == curUser.getId()){
             editor.clear();
             editor.commit();
