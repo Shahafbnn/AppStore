@@ -310,7 +310,7 @@ public class UserValidations {
         if(phoneNumber==null) return new ValidationData(false,  "phone number cannot be null");
         if (phoneNumber.equals("")) return new ValidationData(false,  "phone number cannot be empty");
         long len  = phoneNumber.length();
-        if(len < 3 || len > 13) return new ValidationData(false, "phone number cannot be shorter than 3 chars or longer than 13 chars");
+        if(len == 10) return new ValidationData(false, "phone number must be 10 chars long");
         if(isCheckingDB){
             MyDatabase myDatabase = MyDatabase.getInstance(context);
             boolean inDB = !myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty();
