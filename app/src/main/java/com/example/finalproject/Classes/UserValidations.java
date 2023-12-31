@@ -104,26 +104,6 @@ public class UserValidations {
     public static ValidationData validateFullName(String fullName){
         return validateName(fullName, "full", true);
     }
-//    public static ValidationData validateFullName(String fullName){
-//        if (fullName==null) return new ValidationData(false,  "full name cannot be null");
-//        if (fullName.equals("")) return new ValidationData(true, null);
-//        //it can be empty so we can search the database as non-admins in UsersListViewActivity
-//        int size = fullName.length();
-//        //if(size>=1 && !(fullName.charAt(0) >= 'A' && fullName.charAt(0) <= 'Z')) return new ValidationData(false,  "full name must start with an uppercase English letter");
-//        //if (!(size >= 2 && size <= 21)) return new ValidationData(false,  "full name cannot be shorter than 2 characters or longer than 21 characters");
-//        if (size >= 21) return new ValidationData(false,  "full name cannot be longer than 21 characters");
-//        boolean inEnglish = true;
-//        char currentChar;
-//        for(int i = 0; i< size; i++){
-//            currentChar = fullName.charAt(i);
-//            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == ' '))) inEnglish = false;
-//        }
-//        if(!inEnglish) return new ValidationData(false,  "full name can only be in English or contain a space");
-//        String[] splitName = fullName.split(" ");
-//        if(splitName.length > 2 || splitName.length < 1) return new ValidationData(false,  "full name can only contain one space");
-//        if(splitName[0].equals("")) return new ValidationData(false,  "full name cannot start with a space");
-//        return new ValidationData(true,  null);
-//    }
 
 
 
@@ -179,7 +159,6 @@ public class UserValidations {
         if(date==null) return new ValidationData(false,  "birth date cannot be null");
         final Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        if(cal==null) return new ValidationData(false,  "birth date cannot be null");
         //create a new calendar to check if the age is under 16y
         final Calendar age = Calendar.getInstance();
         age.add(Calendar.YEAR, -16);
@@ -237,7 +216,7 @@ public class UserValidations {
         if(isCheckingDB){
             MyDatabase myDatabase = MyDatabase.getInstance(context);
             boolean inDB = myDatabase.userDAO().getUserByEmail(email) != null;
-            if(inDB && (!isEditEmail || !email.equals(editEmail))) return new ValidationData(false,  "email is already in use");
+            if(inDB && (!isEditEmail || !email.equalsIgnoreCase(editEmail))) return new ValidationData(false,  "email is already in use");
         }
         return new ValidationData(correct,  "email can only contain English chars, '@'s or '.'s");
     }
@@ -338,7 +317,8 @@ public class UserValidations {
         if(addresses.length != 2) return new ValidationData(false,  "address must have one space");
         if(addresses[0]==null || addresses[0].equals("")) return new ValidationData(false,  "address must contain english characters before the space");
         if(addresses[1]==null || addresses[1].equals("")) return new ValidationData(false,  "address must contain numbers after the space");
-        char firstChar = addresses[0].toCharArray()[0];
+
+        //check if it conforms to LETTERS NUMBERS
         for (char cur:addresses[0].toCharArray()) {
             if(!((cur >= 'A' && cur <= 'Z') || (cur >= 'a' && cur <= 'z'))) return new ValidationData(false,  "address must be an only in English before the space");
         }
