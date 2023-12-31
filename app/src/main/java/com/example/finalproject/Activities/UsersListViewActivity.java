@@ -84,11 +84,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
-        //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
-        isUserSignedIn = validationPair.getFirst().isValid();
-        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-        else curUser = validationPair.getSecond();
+        initUser();
 
         usersList = new ArrayList<>();
         userAdapter = new UserAdapter(this, usersList);
@@ -117,7 +113,13 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
 
         // The callback can be enabled or disabled here or in handleOnBackPressed()
     }
-
+    private void initUser(){
+        //checking if the user is saved in the SP and initializing vars if it is.
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        isUserSignedIn = validationPair.getFirst().isValid();
+        if(!isUserSignedIn) Log.v("debug", validationPair.getFirst().getError());
+        else curUser = validationPair.getSecond();
+    }
 
     public void finishActivity(int result){
         setReturnIntents(result);
@@ -248,7 +250,8 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     registerActivityResult = result.getResultCode();
-                    Log.v("activityResultLauncher", "activityResultLauncher Activated");
+                    if(registerActivityResult == Activity.RESULT_OK) initUser();
+                    //Log.v("debug", "activityResultLauncher Activated, isAdmin: " + curUser.isAdmin());
                     userListSorter();
                 }
             }

@@ -70,7 +70,7 @@ public class UserValidations {
         int size = name.length();
         if(!isQuery && size>=1 && !((name.charAt(0) >= 'A' && name.charAt(0) <= 'Z') || (name.charAt(0) >= 'a' && name.charAt(0) <= 'z'))) return new ValidationData(false,  "name must start with an English letter");
         boolean hasEnglish = false;
-        if (!(size >= 2 && size <= 30)) return new ValidationData(false,  nameKind + " name cannot be shorter than 2 characters or longer than 30 characters");
+        if (!isQuery && !(size >= 2 && size <= 30)) return new ValidationData(false,  nameKind + " name cannot be shorter than 2 characters or longer than 30 characters");
 
         long specialCount = 0;
         char currentChar;

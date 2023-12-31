@@ -158,7 +158,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         }
 
         // ignore this
-        boolean setDevData = true;
+        boolean setDevData = false;
         if(setDevData){
             char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
             String specialFirstName = "";
