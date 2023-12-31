@@ -65,35 +65,30 @@ public class UserValidations {
 
 
     public static ValidationData validateName(String name, String nameKind, boolean isQuery){
-        if (name==null) return new ValidationData(false,  nameKind + " name cannot be null");
-        if (name.equals("")) return new ValidationData(false,  nameKind + " name cannot be empty");
+        if (!isQuery && name==null) return new ValidationData(false,  nameKind + " name cannot be null");
+        if (!isQuery && name.equals("")) return new ValidationData(false,  nameKind + " name cannot be empty");
         int size = name.length();
-        if(isQuery && size>=1 && !((name.charAt(0) >= 'A' && name.charAt(0) <= 'Z') || (name.charAt(0) >= 'a' && name.charAt(0) <= 'z'))) return new ValidationData(false,  "name must start with an English letter");
+        if(!isQuery && size>=1 && !((name.charAt(0) >= 'A' && name.charAt(0) <= 'Z') || (name.charAt(0) >= 'a' && name.charAt(0) <= 'z'))) return new ValidationData(false,  "name must start with an English letter");
         boolean hasEnglish = false;
         if (!(size >= 2 && size <= 30)) return new ValidationData(false,  nameKind + " name cannot be shorter than 2 characters or longer than 30 characters");
-        if(isQuery && (name.charAt(size-1) == ' ' || name.charAt(size-1) == '-')) return new ValidationData(false,  nameKind + " name cannot end with a space or hyphen");
 
+        long spaceCount = 0;
         char currentChar;
         boolean lastHasSpecial;
         for(int i = 0; i< size; i++){
             currentChar = name.charAt(i);
             if((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') ) hasEnglish = true;
-            lastHasSpecial = i != 0 && (name.charAt(i - 1) != ' ' || name.charAt(i - 1) != '-' || name.charAt(i - 1) != '.' || name.charAt(i - 1) != '\'');
-
-            if((currentChar == ' ')) {
-                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple spaces in a row");
+            if(nameKind.equals("first") && !((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) return new ValidationData(false,   "first name must only be in English");
+            lastHasSpecial = i != 0 && (name.charAt(i - 1) == ' ');
+            if(name.charAt(i) == ' ') spaceCount++;
+            if(!nameKind.equals("first") && spaceCount > 1) return new ValidationData(false,  nameKind + " name cannot have multiple spaces");
+            if(!nameKind.equals("first") && lastHasSpecial && (currentChar == ' ')){
+                return new ValidationData(false,  nameKind + " name cannot have multiple spaces in a row");
             }
-            if((currentChar == '-')) {
-                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple hyphens in a row");
-            }
-            if((currentChar == '.')) {
-                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple points in a row");
-            }
-            if((currentChar == '\'')) {
-                if(lastHasSpecial) return new ValidationData(false,  nameKind + " name cannot have multiple apostrophes in a row");
-            }
-            if(!hasEnglish) return new ValidationData(false,  nameKind + " name must only contain English, space, hyphen, point or apostrophe chars");
+            if(!hasEnglish) return new ValidationData(false,  nameKind + " name must only contain English or space");
         }
+        if(!isQuery && name.charAt(size-1) == ' ') return new ValidationData(false,  nameKind + " name cannot end with a space");
+
         return new ValidationData(true, null);
     }
 
@@ -319,7 +314,7 @@ public class UserValidations {
         if(isCheckingDB){
             MyDatabase myDatabase = MyDatabase.getInstance(context);
             boolean inDB = !myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty();
-            if(inDB && (!isEditPhoneNumber || !phoneNumber.equals(editPhoneNumber))) return new ValidationData(false,  "email is already in use");
+            if(inDB && (!isEditPhoneNumber || !phoneNumber.equals(editPhoneNumber))) return new ValidationData(false,  "phone number is already in use");
         }
         return new ValidationData(phoneNumber.matches("05(1[25][0-9]{2}|[02-46-8][0-9]{3}|055([23]{2}[0-9]|4[41]0|43[0-9]|5[105][0-9]|6[876][0-9]|7[2107][0-9]|8[987][0-9]|9[^0][0-9]))[0-9]{4}"), "phone number must have a valid prefix");
     }
@@ -340,10 +335,16 @@ public class UserValidations {
         if(strLen > 30) return new ValidationData(false,  "address cannot be over 30 chars long");
         if(strLen < 3) return new ValidationData(false,  "address cannot be under 3 chars long");
         String[] addresses = address.split(" ");
-        if(addresses.length != 2) return new ValidationData(false,  "address must contain one space only");
+        if(addresses.length != 2) return new ValidationData(false,  "address must have one space");
         if(addresses[0]==null || addresses[0].equals("")) return new ValidationData(false,  "address must contain english characters before the space");
         if(addresses[1]==null || addresses[1].equals("")) return new ValidationData(false,  "address must contain numbers after the space");
-        if(!(addresses[0].toCharArray()[0] >= 'A' && addresses[0].toCharArray()[0] <= 'Z')) return new ValidationData(false,  "address must contain an english character before the space starting with a capital.");
+        char firstChar = addresses[0].toCharArray()[0];
+        for (char cur:addresses[0].toCharArray()) {
+            if(!((cur >= 'A' && cur <= 'Z') || (cur >= 'a' && cur <= 'z'))) return new ValidationData(false,  "address must be an only in English before the space");
+        }
+        for (char cur:addresses[1].toCharArray()) {
+            if(!(cur >= '0' && cur <= '9')) return new ValidationData(false,  "address must be only a number after the space");
+        }
         boolean inEnglish = true;
         char currentChar;
         for(int i = 0; i< strLen; i++){

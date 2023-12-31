@@ -2,7 +2,6 @@ package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
 import static com.example.finalproject.Classes.InitiateFunctions.initUserSharedPreferences;
-import static com.example.finalproject.Classes.UserValidations.validate;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
