@@ -76,13 +76,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                             if(isFromCamera){
                                 try{
                                     photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                    //check if the data was saved correctly
-                                    MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
-                                    if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
-                                    else {
-                                        myDirStr = null;
-                                        Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
-                                    }
                                 } catch (IOException e){
                                     Log.e("Runtime Exception", "" + e);
                                 }
@@ -90,13 +83,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                 uriPhoto = result.getData().getData();
                                 try{
                                     photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                    //check if the data was saved correctly
-                                    MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
-                                    if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
-                                    else {
-                                        myDirStr = null;
-                                        Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
-                                    }
                                 } catch (IOException e){
                                     Log.e("Runtime Exception", "" + e);
                                 }
@@ -201,7 +187,15 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         }
     }
 
-
+    private void saveBitmap(){
+        //check if the data was saved correctly
+        MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
+        if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
+        else {
+            myDirStr = null;
+            Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
+        }
+    }
     @Override
     public void onClick(View v) {
         if(v==btnSendData){
@@ -260,7 +254,9 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setPassword(etTextPassword.getText().toString());
             u.setPhoneNumber(etPhoneNumber.getText().toString());
             u.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
+            saveBitmap();
             u.setImgSrc(myDirStr);
+
 
 
             if(isUserSignedIn) {
