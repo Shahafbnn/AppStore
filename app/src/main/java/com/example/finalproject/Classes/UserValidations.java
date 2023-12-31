@@ -72,22 +72,22 @@ public class UserValidations {
         boolean hasEnglish = false;
         if (!(size >= 2 && size <= 30)) return new ValidationData(false,  nameKind + " name cannot be shorter than 2 characters or longer than 30 characters");
 
-        long spaceCount = 0;
+        long specialCount = 0;
         char currentChar;
         boolean lastHasSpecial;
         for(int i = 0; i< size; i++){
             currentChar = name.charAt(i);
             if((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') ) hasEnglish = true;
             if(nameKind.equals("first") && !((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) return new ValidationData(false,   "first name must only be in English");
-            lastHasSpecial = i != 0 && (name.charAt(i - 1) == ' ');
-            if(name.charAt(i) == ' ') spaceCount++;
-            if(!nameKind.equals("first") && spaceCount > 1) return new ValidationData(false,  nameKind + " name cannot have multiple spaces");
-            if(!nameKind.equals("first") && lastHasSpecial && (currentChar == ' ')){
-                return new ValidationData(false,  nameKind + " name cannot have multiple spaces in a row");
+            lastHasSpecial = i != 0 && ((name.charAt(i - 1) == ' ') || (name.charAt(i - 1) == '-'));
+            if(name.charAt(i) == ' ' || name.charAt(i) == '-') specialCount++;
+            if(!nameKind.equals("first") && specialCount > 1) return new ValidationData(false,  nameKind + " name cannot have multiple special chars");
+            if(!nameKind.equals("first") && lastHasSpecial){
+                if (currentChar == ' ' || currentChar == '-') return new ValidationData(false,  nameKind + " name cannot have multiple special chars in a row");
             }
-            if(!hasEnglish) return new ValidationData(false,  nameKind + " name must only contain English or space");
+            if(!hasEnglish) return new ValidationData(false,  nameKind + " name must only contain English, space or a hyphen");
         }
-        if(!isQuery && name.charAt(size-1) == ' ') return new ValidationData(false,  nameKind + " name cannot end with a space");
+        if(!isQuery && (name.charAt(size-1) == ' ' || name.charAt(size-1) == '-')) return new ValidationData(false,  nameKind + " name cannot end with a special char");
 
         return new ValidationData(true, null);
     }

@@ -248,6 +248,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                 @Override
                 public void onActivityResult(ActivityResult result) {
                     registerActivityResult = result.getResultCode();
+                    Log.v("activityResultLauncher", "activityResultLauncher Activated");
                     userListSorter();
                 }
             }
