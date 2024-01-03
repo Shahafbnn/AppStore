@@ -13,7 +13,7 @@
         android:id="@+id/tvAppName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="name" />
+        android:text="app name" />
 
     <ImageView
         android:id="@+id/ivAppImage"
@@ -26,7 +26,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:clickable="true"
-        android:onClick="this"
         android:text="creator" />
 
     <TextView
@@ -41,11 +40,27 @@
         android:layout_height="wrap_content"
         android:text="size mb:" />
 
+
     <TextView
         android:id="@+id/tvAppPerms"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Perms: " />
+        android:clickable="true"
+        android:text="> Perms: " />
+
+
+    <ScrollView
+        android:id="@+id/svAppPerms"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/llAppPerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
 
     <RatingBar
         android:id="@+id/rbAppAvgRating"
@@ -65,4 +80,46 @@
         android:layout_height="50dp"
         android:scaleType="fitXY"
         app:srcCompat="@drawable/share_icon" />
+
+    <RatingBar
+        android:id="@+id/rbAppUserRating"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnAppSendUserReview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Send" />
+
+        <EditText
+            android:id="@+id/etAppReview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:hint="Leave Review Here"
+            android:inputType="text"
+            android:layout_weight="20"/>
+
+
+
+</LinearLayout>
+    <ScrollView
+        android:id="@+id/svAppReviews"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+        </LinearLayout>
+    </ScrollView>
 </LinearLayout>
