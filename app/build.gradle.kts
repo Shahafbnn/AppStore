@@ -1,5 +1,7 @@
 plugins {
     id("com.android.application")
+    id("com.google.gms.google-services")
+
 }
 
 android {
@@ -47,6 +49,9 @@ dependencies {
     //the dependencies to switch between activities:
     implementation("androidx.viewpager2:viewpager2:1.0.0")
     implementation("com.google.android.material:material:1.4.0")
+
+    //firebase
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
 
 
 }
