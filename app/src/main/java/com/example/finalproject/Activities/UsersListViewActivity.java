@@ -9,6 +9,7 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -36,6 +37,14 @@ import com.example.finalproject.Classes.UserValidations;
 import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +61,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
-    private MyDatabase myDatabase;
+    private FirebaseFirestore db;
     private int registerActivityResult;
     private OnBackPressedCallback callback;
 
@@ -80,7 +89,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         isSortedByFirstName = isSortedByLastName = false;
 
 
-        myDatabase = MyDatabase.getInstance(this);
+        db = FirebaseFirestore.getInstance();
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
@@ -115,7 +124,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     }
     private void initUser(){
         //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
         isUserSignedIn = validationPair.getFirst().isValid();
         if(!isUserSignedIn) Log.v("debug", validationPair.getFirst().getError());
         else curUser = validationPair.getSecond();
@@ -133,19 +142,72 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         finish();
     }
 
+    private List<User> getUsersContainingAndSorted(String search, boolean isSortedByFirstName, boolean isSortedByLastName){
+        List<User> usersList = new ArrayList<>();
+
+        Query query = db.collection("users");
+
+        if (isSortedByFirstName) {
+            query = query.orderBy("userFirstName", Query.Direction.ASCENDING);
+        }
+
+        // If isSortedByLastName is true, sort by last name
+        if (isSortedByLastName) {
+            query = query.orderBy("userLastName", Query.Direction.ASCENDING);
+        }
+        boolean[] finished = new boolean[]{false};
+        query.get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                User user = document.toObject(User.class);
+                                if((search == null || search.isEmpty())) usersList.add(user);
+                                else if(user.getFullNameAdmin().contains(search)) usersList.add(user);
+                            }
+                        } else {
+                            Log.w("user", "Error getting documents.", task.getException());
+                        }
+                        finished[0] = true;
+                    }
+                });
+        while(!finished[0]) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        return usersList;
+    }
     private void userListSorter(){
         if(curUser.isAdmin()) {
             ValidationData validateFullName = UserValidations.validateFullName(etSearchUser.getText().toString());
             if (!validateFullName.isValid()) etSearchUser.setError(validateFullName.getError());
             else {
                 usersList.clear();
-                usersList.addAll(myDatabase.userDAO().getUsersContainingAndSorted(etSearchUser.getText().toString(), isSortedByFirstName ? 1 : 0, isSortedByLastName ? 1 : 0));
+                usersList.addAll(getUsersContainingAndSorted(etSearchUser.getText().toString(), isSortedByFirstName, isSortedByLastName));
                 userAdapter.notifyDataSetChanged();
             }
         }
         else {
             usersList.clear();
-            usersList.add(myDatabase.userDAO().getUserById(curUser.getId()));
+            db.collection("users")
+                    .document(curUser.getId())  // replace 'curUser.getId()' with the ID of the user you want to retrieve
+                    .get()
+                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                        @Override
+                        public void onSuccess(DocumentSnapshot documentSnapshot) {
+                            if (documentSnapshot.exists()) {
+                                User user = documentSnapshot.toObject(User.class);
+                                usersList.add(user);
+                                // Now the 'user' object has been added to 'usersList'
+                            } else {
+                                Log.d("user", "No such document");
+                            }
+                        }
+                    });
             userAdapter.notifyDataSetChanged();
         }
     }
@@ -197,16 +259,20 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             finishActivity(Activity.RESULT_CANCELED);
             return;
         }
-        if(delUser.getId() == curUser.getId()){
+        if(delUser.getId().equals(curUser.getId())){
             editor.clear();
             editor.commit();
             curUser = null;
             isUserSignedIn = false;
-            myDatabase.userDAO().delete(delUser);
+            db.collection("users")
+                    .document(delUser.getId())
+                    .delete();
             Toast.makeText(this, "You deleted yourself!", Toast.LENGTH_LONG).show();
             finishActivity(Activity.RESULT_OK);
         }
-        myDatabase.userDAO().delete(delUser);
+        db.collection("users")
+                .document(delUser.getId())
+                .delete();
         lvUsers.invalidateViews();
 
 

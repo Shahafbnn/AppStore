@@ -1,8 +1,19 @@
 package com.example.finalproject.DatabaseClasses;
 
 import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import com.example.finalproject.DAOs.CityDAO;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.List;
 
@@ -1279,14 +1290,32 @@ public class CitiesArray {
            "ZVIYYA",
           };
 
-    public static void addCities(MyDatabase myDatabase) {
-
+    public static void addCities(FirebaseFirestore db) {
+        final City[] existingCity = new City[1];
         for (String cityName : arrCities) {
-            City existingCity = myDatabase.cityDAO().getCityByName(cityName);
-            if (existingCity == null) {
+            db.collection("cities")
+                    .whereEqualTo("cityName", cityName)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot document : task.getResult()) {
+                                    Log.d("city", document.getId() + " => " + document.getData());
+                                    // Convert the document into a City object
+                                    existingCity[0] = document.toObject(City.class);
+                                    // Now you can use the 'existingCity' object
+                                }
+                            } else {
+                                Log.w("city", "Error getting documents.", task.getException());
+                            }
+                        }
+                    });
+            if (existingCity[0] == null) {
                 City newCity = new City();
                 newCity.setCityName(cityName);
-                myDatabase.cityDAO().insert(newCity);
+                db.collection("cities").add(newCity);
+
             }
         }
     }

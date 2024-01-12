@@ -11,6 +11,7 @@ import android.widget.TextView;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
@@ -18,11 +19,11 @@ public class UserAdapter extends BaseAdapter {
 
     private Context context;
     private List<User> users;
-    private MyDatabase myDatabase;
+    private FirebaseFirestore db;
 
     public UserAdapter(Context context, List<User> usersArray) {
         this.context = context;
-        this.myDatabase = MyDatabase.getInstance(context);;
+        this.db = FirebaseFirestore.getInstance();
         this.users = usersArray;
     }
 
@@ -38,7 +39,7 @@ public class UserAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return users.get(position).getId();
+        return Long.parseLong(users.get(position).getId());
     }
 
     @Override
@@ -59,7 +60,7 @@ public class UserAdapter extends BaseAdapter {
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
         tvUserAdapterAge.setText(user.getAge().toString());
         tvUserAdapterEmail.setText(user.getEmail());
-        tvUserAdapterCity.setText(myDatabase.cityDAO().getCityById(user.getHomeCityId()).getCityName());
+        tvUserAdapterCity.setText(user.getHomeCityName());
         tvUserAdapterWeight.setText(Double.toString(user.getWeight()));
         tvUserAdapterPhoneNumber.setText(user.getPhoneNumber());
 

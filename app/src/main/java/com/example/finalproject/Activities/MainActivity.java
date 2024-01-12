@@ -37,6 +37,11 @@ import android.widget.Toast;
 import com.example.finalproject.Classes.*;
 import com.example.finalproject.DatabaseClasses.*;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.*;
+
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
@@ -48,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
-    private MyDatabase myDatabase;
+    private FirebaseFirestore db;
     private InitiateFunctions initiateFunctions;
     private Menu menu;
 
@@ -62,21 +67,35 @@ public class MainActivity extends AppCompatActivity {
 
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
-        myDatabase = MyDatabase.getInstance(this);
-        if(myDatabase.cityDAO().getAllCities().isEmpty()) {
-            CitiesArray.addCities(myDatabase);
+        db = FirebaseFirestore.getInstance();
+        boolean[] isEmpty = new boolean[1];
+        db.collection("cities")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            isEmpty[0] = task.getResult().isEmpty();
+                            // Now you can use 'isEmpty' to check if the collection is empty
+                        } else {
+                            Log.w("city", "Error getting documents.", task.getException());
+                        }
+                    }
+                });
+        if(isEmpty[0]) {
+            CitiesArray.addCities(db);
         }
 
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
         //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
         isUserSignedIn = validationPair.getFirst().isValid();
         if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
         else curUser = validationPair.getSecond();
 
-        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, this, myDatabase, tvWelcome, ivProfilePic);
+        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, this, db, tvWelcome, ivProfilePic);
         Context c = this;
         activityResultLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -85,14 +104,14 @@ public class MainActivity extends AppCompatActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getResultCode() == Activity.RESULT_OK) {
                             //checking if the user is saved in the SP and initializing vars if it is.
-                            MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+                            MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
                             isUserSignedIn = validationPair.getFirst().isValid();
                             if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
                             else {
                                 curUser = validationPair.getSecond();
                                 ivProfilePic.setImageURI(curUser.getImgUri(c));
                             }
-                            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, myDatabase, tvWelcome, ivProfilePic);
+                            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, db, tvWelcome, ivProfilePic);
                             invalidateOptionsMenu();
                         }
                     }
@@ -148,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
             //rember to update the user, DO IT!
-            createCustomDialogLogIn(myDatabase, tvWelcome, ivProfilePic, editor);
+            createCustomDialogLogIn(db, tvWelcome, ivProfilePic, editor);
             return true;
         }
         else if(item==itemRegister){
@@ -224,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void createCustomDialogLogIn(MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
+    public void createCustomDialogLogIn(FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.log_in_dialog);
         Context context = this;
@@ -235,15 +254,32 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(Dialogs.customDialogLogIn(dialog, context)) {
-                    User u = myDatabase.userDAO().getUserByEmail(etEmailAddress.getText().toString());
-                    long id = u.getId();
+
+                    final User[] user = new User[1];
+                    db.collection("users")
+                            .whereEqualTo("userEmail", etEmailAddress.getText().toString())
+                            .get()
+                            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                @Override
+                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                    if (task.isSuccessful()) {
+                                        for (QueryDocumentSnapshot document : task.getResult()) {
+                                            user[0] = document.toObject(User.class);
+                                            // You can convert the document into a User object here
+                                        }
+                                    } else {
+                                        Log.w("user", "Error getting documents.", task.getException());
+                                    }
+                                }
+                            });
+                    String id = user[0].getId();
                     editor.clear();
-                    editor.putLong(USER_ID_KEY, id);
+                    editor.putString(USER_ID_KEY, id);
                     editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
                     editor.commit();
-                    InitiateFunctions.initViewsFromUser(u, true, context, myDatabase, tvWelcome, ivProfilePic);
+                    InitiateFunctions.initViewsFromUser(user[0], true, context, db, tvWelcome, ivProfilePic);
                     //checking if the user is saved in the SP and initializing vars if it is.
-                    MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+                    MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
                     isUserSignedIn = validationPair.getFirst().isValid();
                     if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
                     else curUser = validationPair.getSecond();

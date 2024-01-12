@@ -7,6 +7,7 @@ import android.util.Log;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class UserValidations {
 
@@ -151,8 +152,8 @@ public class UserValidations {
         if(date==null) return new ValidationData(false,  "date cannot be null");
         if(date.equals("")) return new ValidationData(false,  "date cannot be empty");
 
-        Date d = User.getDateFromString(date);
-        if(d==null) return new ValidationData(false,  "date must be NN/NN/NNNN");
+        Date d = Objects.requireNonNull(User.getDateFromString(date)).toDate();
+        //if(d==null) return new ValidationData(false,  "date must be NN/NN/NNNN");
         return validateBirthDate(d);
     }
     public static ValidationData validateBirthDate(Date date){
@@ -214,8 +215,8 @@ public class UserValidations {
             if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == '@') || (currentChar == '.') || (currentChar >= '0' && currentChar <= '9'))) correct = false;
         }
         if(isCheckingDB){
-            MyDatabase myDatabase = MyDatabase.getInstance(context);
-            boolean inDB = myDatabase.userDAO().getUserByEmail(email) != null;
+            FirebaseFirestore db = MyDatabase.getInstance(context);
+            boolean inDB = FirebaseFirestore.getInstance().collection("users").getUserByEmail(email) != null;
             if(inDB && (!isEditEmail || !email.equalsIgnoreCase(editEmail))) return new ValidationData(false,  "email is already in use");
         }
         return new ValidationData(correct,  "email can only contain English chars, '@'s or '.'s");
@@ -291,8 +292,8 @@ public class UserValidations {
         long len  = phoneNumber.length();
         if(len != 10) return new ValidationData(false, "phone number must be 10 chars long");
         if(isCheckingDB){
-            MyDatabase myDatabase = MyDatabase.getInstance(context);
-            boolean inDB = !myDatabase.userDAO().getUsersByPhoneNumber(phoneNumber).isEmpty();
+            FirebaseFirestore db = MyDatabase.getInstance(context);
+            boolean inDB = !FirebaseFirestore.getInstance().collection("users").getUsersByPhoneNumber(phoneNumber).isEmpty();
             if(inDB && (!isEditPhoneNumber || !phoneNumber.equals(editPhoneNumber))) return new ValidationData(false,  "phone number is already in use");
         }
         return new ValidationData(phoneNumber.matches("05(1[25][0-9]{2}|[02-46-8][0-9]{3}|055([23]{2}[0-9]|4[41]0|43[0-9]|5[105][0-9]|6[876][0-9]|7[2107][0-9]|8[987][0-9]|9[^0][0-9]))[0-9]{4}"), "phone number must have a valid prefix");

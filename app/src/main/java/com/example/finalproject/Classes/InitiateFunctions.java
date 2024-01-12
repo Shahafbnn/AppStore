@@ -15,6 +15,9 @@ import android.widget.Toast;
 
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
 
@@ -83,30 +86,42 @@ public class InitiateFunctions {
 //        return allValid;
 //    }
 
-    public static MyPair<ValidationData, User> initUserSharedPreferences(SharedPreferences sharedPreferences, MyDatabase myDatabase){
+    public static MyPair<ValidationData, User> initUserSharedPreferences(SharedPreferences sharedPreferences, FirebaseFirestore db){
         if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {
             return new MyPair<>(new ValidationData(false, "Shared preferences is not initialized"), null);
         }
 
-        long id = sharedPreferences.getLong(Constants.USER_ID_KEY, -1);
-        User u = myDatabase.userDAO().getUserById(id);
-        if(id<0 || u == null){
+        String id = sharedPreferences.getString(Constants.USER_ID_KEY, "-1");
+        final User[] user = new User[1];
+        db.collection("users").document(id).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                if (documentSnapshot.exists()) {
+                    user[0] = documentSnapshot.toObject(User.class);
+                    // 'user' is the User object retrieved from Firestore
+                } else {
+                    Log.d("user", "No such user");
+                }
+            }
+        });
+
+        if(id.equals("-1") || user[0] == null){
             return new MyPair<>(new ValidationData(false, "User ID is invalid or user does not exist"), null);
         }
-        return new MyPair<>(new ValidationData(true, null), u);
+        return new MyPair<>(new ValidationData(true, null), user[0]);
     }
 
-    public void initViewsFromUser(User user, boolean isValid, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
-        initViewsFromUser(user, isValid, context, myDatabase, tvWelcome, ivProfilePic);
+    public void initViewsFromUser(User user, boolean isValid, FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic){
+        initViewsFromUser(user, isValid, context, db, tvWelcome, ivProfilePic);
     }
-    public static void initViewsFromUser(User user, boolean isValid, Context context, MyDatabase myDatabase, TextView tvWelcome, ImageView ivProfilePic){
+    public static void initViewsFromUser(User user, boolean isValid, Context context, FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic){
         if(isValid){
             String fullName = user.getFullNameAdmin();
             boolean isAdmin = User.isAdmin(user.getPhoneNumber());
             //checking if the isAdmin in the db is correct, if not it updates the user.
             if(isAdmin != user.isAdmin()) {
                 user.setAdmin(isAdmin);
-                myDatabase.userDAO().update(user);
+                FirebaseFirestore.getInstance().collection("users").document(String.valueOf(user.getId())).set(user);
             }
 
             tvWelcome.setText("Welcome " + fullName + "!");

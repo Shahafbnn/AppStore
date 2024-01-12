@@ -39,8 +39,12 @@ import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Random;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
@@ -57,7 +61,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private SharedPreferences sharedPreferences;
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
-    private MyDatabase myDatabase;
+    private FirebaseFirestore db;
     private User curUser;
     private String myDirStr;
 
@@ -66,7 +70,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        myDatabase = MyDatabase.getInstance(this);
+        db = FirebaseFirestore.getInstance();
 
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -99,7 +103,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         editor = sharedPreferences.edit();
 
         //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, myDatabase);
+        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
         isUserSignedIn = validationPair.getFirst().isValid();
         if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
         else curUser = validationPair.getSecond();
@@ -135,7 +139,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(isUserSignedIn){
             final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, actvTextHomeCity, etTextHomeAddress};
-            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), myDatabase.cityDAO().getCityById(curUser.getHomeCityId()).getCityName(), curUser.getHomeAddress()};
+            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), curUser.getHomeCityName(), curUser.getHomeAddress()};
             //editValue[0] = phoneNumber, editValue[1] = email
             InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
             etTextPasswordConfirm.setText(curUser.getPassword());
@@ -166,7 +170,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 //            addUser.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
 //            addUser.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
 //            addUser.setEmail(etTextEmailAddress.getText().toString());
-//            addUser.setHomeCityId(myDatabase.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
+//            addUser.setHomeCityId(db.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
 //            addUser.setHomeAddress(etTextHomeAddress.getText().toString());
 //            addUser.setPassword(etTextPassword.getText().toString());
 //            addUser.setPhoneNumber(etPhoneNumber.getText().toString());
@@ -249,7 +253,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             u.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
             u.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
             u.setEmail(etTextEmailAddress.getText().toString());
-            u.setHomeCityId(myDatabase.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
+//            u.setHomeCityId(db.collection("cities").whereEqualTo("cityName", actvTextHomeCity.getText().toString().toUpperCase()));
+            u.setHomeCityName(actvTextHomeCity.getText().toString().toUpperCase());
             u.setHomeAddress(etTextHomeAddress.getText().toString());
             u.setPassword(etTextPassword.getText().toString());
             u.setPhoneNumber(etPhoneNumber.getText().toString());
@@ -262,14 +267,22 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             if(isUserSignedIn) {
                 if(myDirStr==null) u.setImgSrc(curUser.getImgSrc());
                 u.setId(curUser.getId());
-                myDatabase.userDAO().update(u);
+                db.collection("users").document(String.valueOf(u.getId())).set(u);
                 curUser = u;
             }
             else {
                 // put the user id in the sharedPreference to stay signed in.
-                long id = myDatabase.userDAO().insert(u);
+                final String[] id = new String[1];
+                db.collection("Users").add(u)
+                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                            @Override
+                            public void onSuccess(DocumentReference documentReference) {
+                                id[0] = documentReference.getId();
+                                // 'id' is the ID of the newly added user
+                            }
+                        });
                 editor.clear();
-                editor.putLong(USER_ID_KEY, id);
+                editor.putString(USER_ID_KEY, id[0]);
                 editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
                 editor.commit();
             }
@@ -301,7 +314,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         int year = calendar.get(Calendar.YEAR);
         if(isLastDate){
             Calendar lastCal = Calendar.getInstance();
-            lastCal.setTime(User.getDateFromString(lastDate));
+            lastCal.setTime((Objects.requireNonNull(User.getDateFromString(lastDate)).toDate()));
             day = lastCal.get(Calendar.DAY_OF_MONTH);
             month = lastCal.get(Calendar.MONTH);
             year = lastCal.get(Calendar.YEAR);
