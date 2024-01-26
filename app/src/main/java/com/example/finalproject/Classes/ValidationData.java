@@ -27,7 +27,4 @@ public class ValidationData {
         this.error = error;
     }
 
-    public static void changeEditTextByValidationData(ValidationData validationData, EditText editText){
-        if(!validationData.isValid()) editText.setError(validationData.getError());
-    }
 }

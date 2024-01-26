@@ -9,7 +9,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.User;
-import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 

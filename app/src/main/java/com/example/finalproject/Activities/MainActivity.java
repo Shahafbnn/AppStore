@@ -5,23 +5,14 @@ import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.*;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -35,14 +26,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.finalproject.Classes.*;
-import com.example.finalproject.DatabaseClasses.*;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.*;
-
-import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,80 +38,71 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvWelcome;
     private ImageView ivProfilePic;
     private SharedPreferences sharedPreferences;
-    private boolean isUserSignedIn;
+    private Boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
     private FirebaseFirestore db;
-    private InitiateFunctions initiateFunctions;
-    private Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //the function classes:
-        initiateFunctions = new InitiateFunctions(this);
-
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         db = FirebaseFirestore.getInstance();
-        boolean[] isEmpty = new boolean[1];
-        db.collection("cities")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            isEmpty[0] = task.getResult().isEmpty();
-                            // Now you can use 'isEmpty' to check if the collection is empty
-                        } else {
-                            Log.w("city", "Error getting documents.", task.getException());
-                        }
-                    }
-                });
-        if(isEmpty[0]) {
-            CitiesArray.addCities(db);
-        }
+
 
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
-        //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
-        isUserSignedIn = validationPair.getFirst().isValid();
-        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-        else curUser = validationPair.getSecond();
+        //we set it when we get the user from firestore
+        isUserSignedIn = null;
+        curUser = null;
 
-        initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, this, db, tvWelcome, ivProfilePic);
-        Context c = this;
-        activityResultLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == Activity.RESULT_OK) {
-                            //checking if the user is saved in the SP and initializing vars if it is.
-                            MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
-                            isUserSignedIn = validationPair.getFirst().isValid();
-                            if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-                            else {
-                                curUser = validationPair.getSecond();
-                                ivProfilePic.setImageURI(curUser.getImgUri(c));
-                            }
-                            initiateFunctions.initViewsFromUser(curUser, isUserSignedIn, db, tvWelcome, ivProfilePic);
-                            invalidateOptionsMenu();
+        //if the user DOESN'T exist in the Shared Preferences, we set the activity for a guest.
+        if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {
+            isUserSignedIn = false;
+            reloadActivity();
+        }
+        String id = sharedPreferences.getString(Constants.USER_ID_KEY, "");
+        if(id.isEmpty()){
+            isUserSignedIn = false;
+            reloadActivity();
+        }
+        else {
+            db.collection("users").document(id).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot documentSnapshot = task.getResult();
+                        if (documentSnapshot.exists()) {
+                            //set the user data
+                            curUser = documentSnapshot.toObject(User.class);
+                            curUser.setId(documentSnapshot.getId());
+
+                            isUserSignedIn = true;
+                            setSharedPreferencesData(id);
+
+                        } else {
+                            isUserSignedIn = false;
                         }
+                    } else {
+                        isUserSignedIn = false;
+                        Log.d("debug", "initUserSharedPreferences get failed with ", task.getException());
                     }
+                    //reload the activity based on the new data
+                    reloadActivity();
                 }
-        );
+            });
+        }
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_sign_in_menu, menu);
-        this.menu = menu;
 
         itemRegister = menu.findItem(R.id.itemRegister);
         itemLogIn = menu.findItem(R.id.itemLogIn);
@@ -141,12 +120,22 @@ public class MainActivity extends AppCompatActivity {
         itemLogOut = menu.findItem(R.id.itemLogOut);
         itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
 
-        changeOptionMenuItemsVisibility();
+        itemRegister.setVisible(false);
+        itemLogIn.setVisible(false);
+        itemLogOut.setVisible(false);
+        itemDataUpdate.setVisible(false);
+        Toast.makeText(this, "Loading logged in data, please wait", Toast.LENGTH_LONG).show();
         return true;
     }
 
-    private void changeOptionMenuItemsVisibility(){
-        if(isUserSignedIn)
+    private void changeOptionMenuItemsVisibility(Boolean isUserSignedIn){
+        if(isUserSignedIn == null){
+            itemRegister.setVisible(false);
+            itemLogIn.setVisible(false);
+            itemLogOut.setVisible(false);
+            itemDataUpdate.setVisible(false);
+        }
+        else if(isUserSignedIn)
         {
             itemRegister.setVisible(false);
             itemLogIn.setVisible(false);
@@ -160,19 +149,17 @@ public class MainActivity extends AppCompatActivity {
             itemLogOut.setVisible(false);
             itemDataUpdate.setVisible(false);
         }
+        invalidateOptionsMenu();
     }
-    private ActivityResultLauncher<Intent> activityResultLauncher;
-
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if(item==itemLogIn){
-            //rember to update the user, DO IT!
-            createCustomDialogLogIn(db, tvWelcome, ivProfilePic, editor);
+            createCustomDialogLogIn();
             return true;
         }
         else if(item==itemRegister){
             Intent intent = new Intent(this, RegisterActivity.class);
-            activityResultLauncher.launch(intent);
+            startActivity(intent);
             return true;
         }
         else if(item==itemLogOut){
@@ -180,13 +167,13 @@ public class MainActivity extends AppCompatActivity {
             editor.commit();
             isUserSignedIn = false;
             curUser = null;
-            initiateFunctions.invalidateViews(tvWelcome, ivProfilePic);
+            invalidateViews(tvWelcome, ivProfilePic);
             invalidateOptionsMenu();
             return true;
         }
         else if(item==itemDataUpdate){
             Intent intent = new Intent(this, UsersListViewActivity.class);
-            activityResultLauncher.launch(intent);
+            startActivity(intent);
             return true;
         }
         else if(item==itemAboutMe){
@@ -195,8 +182,25 @@ public class MainActivity extends AppCompatActivity {
         }
         else return super.onOptionsItemSelected(item);
     }
-
-    public void createAlertDialog(){
+    private void reloadActivity(){
+        changeOptionMenuItemsVisibility(isUserSignedIn);
+        initViewsFromUser(curUser, isUserSignedIn, getApplicationContext(), db, tvWelcome, ivProfilePic);
+    }
+    public void setSharedPreferencesData(String id){
+        editor.clear();
+        editor.putString(USER_ID_KEY, id);
+        editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
+        editor.commit();
+    }
+    private void createAlertDialog(){
+        class AlertDialogClick implements DialogInterface.OnClickListener {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (which == dialog.BUTTON_POSITIVE) {
+                    dialog.dismiss();
+                }
+            }
+        }
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("About: ");
         String userName = "Guest";
@@ -227,35 +231,22 @@ public class MainActivity extends AppCompatActivity {
                 aboutTheApp);
         builder.setCancelable(true);
         builder.setPositiveButton("Cancel", new AlertDialogClick());
-//        builder.setNegativeButton("Cancel", new AlertDialogClick());
         AlertDialog dialog = builder.create();
         dialog.show();
-//        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(Color.GREEN);
-//        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.RED);
     }
-
-    private class AlertDialogClick implements DialogInterface.OnClickListener {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            if (which == dialog.BUTTON_POSITIVE) {
-                dialog.dismiss();
-            }
-        }
-    }
-
-    public void createCustomDialogLogIn(FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic, SharedPreferences.Editor editor){
+    private void createCustomDialogLogIn(){
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.log_in_dialog);
-        Context context = this;
-        // Set the custom dialog components - text, image and button
-        Button btnFruitSubmit = dialog.findViewById(R.id.btnLogInSubmit);
+
+        Button btnLogInSubmit = dialog.findViewById(R.id.btnLogInSubmit);
         EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
-        btnFruitSubmit.setOnClickListener(new View.OnClickListener() {
+        EditText etTextPassword = dialog.findViewById(R.id.etTextPassword);
+
+        btnLogInSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(Dialogs.customDialogLogIn(dialog, context)) {
+                if(validateCustomDialogLogInData(dialog)) {
 
-                    final User[] user = new User[1];
                     db.collection("users")
                             .whereEqualTo("userEmail", etEmailAddress.getText().toString())
                             .get()
@@ -263,32 +254,54 @@ public class MainActivity extends AppCompatActivity {
                                 @Override
                                 public void onComplete(@NonNull Task<QuerySnapshot> task) {
                                     if (task.isSuccessful()) {
-                                        for (QueryDocumentSnapshot document : task.getResult()) {
-                                            user[0] = document.toObject(User.class);
-                                            // You can convert the document into a User object here
+                                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                            if(documentSnapshot.exists()){
+                                                User user = documentSnapshot.toObject(User.class);
+                                                if(user.getPassword().equals(etTextPassword.getText().toString())){
+                                                    isUserSignedIn = true;
+                                                    curUser = user;
+                                                    curUser.setId(documentSnapshot.getId());
+                                                    setSharedPreferencesData(documentSnapshot.getId());
+                                                    reloadActivity();
+                                                    Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
+                                                    dialog.cancel();
+                                                }
+                                                else {
+                                                    etTextPassword.setError("Incorrect password!");
+                                                }
+
+                                            }
+                                            else{
+                                                etEmailAddress.setError("User does not exist!");
+                                            }
                                         }
                                     } else {
-                                        Log.w("user", "Error getting documents.", task.getException());
+                                        Log.w("user", "Task unsuccessful", task.getException());
                                     }
                                 }
                             });
-                    String id = user[0].getId();
-                    editor.clear();
-                    editor.putString(USER_ID_KEY, id);
-                    editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
-                    editor.commit();
-                    InitiateFunctions.initViewsFromUser(user[0], true, context, db, tvWelcome, ivProfilePic);
-                    //checking if the user is saved in the SP and initializing vars if it is.
-                    MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
-                    isUserSignedIn = validationPair.getFirst().isValid();
-                    if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-                    else curUser = validationPair.getSecond();
-                    onPrepareOptionsMenu(menu);
-                    dialog.cancel();
                 }
             }
         });
         dialog.show();
     }
+    private static boolean validateCustomDialogLogInData(Dialog dialog){
+        EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
+        EditText etTextPassword = dialog.findViewById(R.id.etTextPassword);
+        //Button btnLogInSubmit = dialog.findViewById(R.id.btnLogInSubmit);
+        String emailAddress = etEmailAddress.getText().toString();
+        String textPassword = etTextPassword.getText().toString();
+
+        //validates if the fields correspond to the rules.
+        ValidationData emailValidation = UserValidations.validateEmail(emailAddress);
+        ValidationData passwordValidation = UserValidations.validatePassword(textPassword);
+
+        //changes the ET error based on the validation.
+        if(!emailValidation.isValid()) etEmailAddress.setError(emailValidation.getError());
+        if(!passwordValidation.isValid()) etTextPassword.setError(passwordValidation.getError());
+
+        return emailValidation.isValid() && passwordValidation.isValid();
+    }
+
 
 }

@@ -30,12 +30,10 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.finalproject.Adapters.UserAdapter;
-import com.example.finalproject.Classes.Dialogs;
 import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.UserValidations;
 import com.example.finalproject.Classes.ValidationData;
-import com.example.finalproject.DatabaseClasses.MyDatabase;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;

@@ -5,21 +5,20 @@ import static com.example.finalproject.Classes.UserValidations.validate;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.finalproject.DatabaseClasses.MyDatabase;
+import androidx.annotation.NonNull;
+
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-
-import java.io.File;
 
 public class InitiateFunctions {
     private Context context;
@@ -86,30 +85,34 @@ public class InitiateFunctions {
 //        return allValid;
 //    }
 
-    public static MyPair<ValidationData, User> initUserSharedPreferences(SharedPreferences sharedPreferences, FirebaseFirestore db){
+    public interface FirestoreCallback {
+        void onCallback(User user);
+    }
+
+    public static void initUserSharedPreferences(SharedPreferences sharedPreferences, FirebaseFirestore db, Context context, Activity activity){
         if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {
-            return new MyPair<>(new ValidationData(false, "Shared preferences is not initialized"), null);
+            Toast.makeText(context, "No user logged in", Toast.LENGTH_LONG).show();
+            return;
         }
 
         String id = sharedPreferences.getString(Constants.USER_ID_KEY, "-1");
-        final User[] user = new User[1];
-        db.collection("users").document(id).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+        db.collection("users").document(id).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onSuccess(DocumentSnapshot documentSnapshot) {
-                if (documentSnapshot.exists()) {
-                    user[0] = documentSnapshot.toObject(User.class);
-                    // 'user' is the User object retrieved from Firestore
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful()) {
+                    DocumentSnapshot documentSnapshot = task.getResult();
+                    if (documentSnapshot.exists()) {
+                        User user = documentSnapshot.toObject(User.class);
+                    } else {
+                        Toast.makeText(context, "user doesn't exist", Toast.LENGTH_LONG).show();
+                    }
                 } else {
-                    Log.d("user", "No such user");
+                    Log.d("debug", "initUserSharedPreferences get failed with ", task.getException());
                 }
             }
         });
-
-        if(id.equals("-1") || user[0] == null){
-            return new MyPair<>(new ValidationData(false, "User ID is invalid or user does not exist"), null);
-        }
-        return new MyPair<>(new ValidationData(true, null), user[0]);
     }
+
 
     public void initViewsFromUser(User user, boolean isValid, FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic){
         initViewsFromUser(user, isValid, context, db, tvWelcome, ivProfilePic);
@@ -121,7 +124,9 @@ public class InitiateFunctions {
             //checking if the isAdmin in the db is correct, if not it updates the user.
             if(isAdmin != user.isAdmin()) {
                 user.setAdmin(isAdmin);
-                FirebaseFirestore.getInstance().collection("users").document(String.valueOf(user.getId())).set(user);
+                // needed to get the document with the ID so we won't create a new user with a new ID each update.
+                // I don't know yet if i should use update or set here. and if I use update does it only update the changed variables?
+                db.collection("users").document(user.getId()).set(user);
             }
 
             tvWelcome.setText("Welcome " + fullName + "!");

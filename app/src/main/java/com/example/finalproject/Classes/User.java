@@ -33,7 +33,6 @@ public class User {
     public User() {
     }
 
-
     public String getId() {
         return id;
     }
@@ -66,11 +65,11 @@ public class User {
         this.birthDate = birthDate;
     }
 
-    public double getWeight() {
+    public Double getWeight() {
         return weight;
     }
 
-    public void setWeight(double weight) {
+    public void setWeight(Double weight) {
         this.weight = weight;
     }
 
@@ -173,10 +172,10 @@ public class User {
     }
     public static boolean isPasswordConfirmed(String password, String password2){return password.equals(password2);}
 
-    public static void addUserToSharedPreferences(User u, Context context){
+    public static void addUserIdToSharedPreferences(String id, Context context){
         SharedPreferences.Editor editor = context.getSharedPreferences(SHARED_PREFERENCES_KEY, 0).edit();
         editor.clear();
-        editor.putString(USER_ID_KEY, u.getId());
+        editor.putString(USER_ID_KEY, id);
         editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
         editor.apply();
     }
