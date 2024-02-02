@@ -1,29 +1,28 @@
 package com.example.finalproject.DatabaseClasses;
 
-import androidx.room.ColumnInfo;
-import androidx.room.Entity;
-import androidx.room.PrimaryKey;
-
 import com.example.finalproject.Classes.Constants;
 
-@Entity(tableName = "tblCity")
 public class City {
-
-    @ColumnInfo(name = Constants.CITY_ID_KEY)
-    @PrimaryKey(autoGenerate = true)
-    private long cityId;
-
-    @ColumnInfo(name = Constants.CITY_NAME_KEY)
+    private String cityId;
     private String cityName;
 
     public City() {
     }
+    //test
+    public City(String cityName) {
+        this.cityName = cityName;
+    }
+    public City(String cityName, String cityId) {
+        this.cityName = cityName;
+        this.cityId = cityId;
+    }
 
-    public long getCityId() {
+
+    public String getCityId() {
         return cityId;
     }
 
-    public void setCityId(long cityId) {
+    public void setCityId(String cityId) {
         this.cityId = cityId;
     }
 

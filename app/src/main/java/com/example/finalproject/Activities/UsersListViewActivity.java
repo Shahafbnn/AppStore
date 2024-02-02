@@ -1,25 +1,27 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.REGISTER_ACTIVITY_RETURN_DATA_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
-import static com.example.finalproject.Classes.InitiateFunctions.initUserSharedPreferences;
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.icu.text.SimpleDateFormat;
+import android.icu.util.Calendar;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -30,7 +32,8 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.finalproject.Adapters.UserAdapter;
-import com.example.finalproject.Classes.MyPair;
+import com.example.finalproject.Classes.Constants;
+import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.UserValidations;
 import com.example.finalproject.Classes.ValidationData;
@@ -38,8 +41,11 @@ import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -60,8 +66,9 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private SharedPreferences.Editor editor;
     private User curUser;
     private FirebaseFirestore db;
-    private int registerActivityResult;
-    private OnBackPressedCallback callback;
+    private ProgressDialog waitProgressDialog;
+    private CollectionReference collectionReference;
+    private Query query;
 
     private boolean isSortedByFirstName, isSortedByLastName;
     @Override
@@ -90,18 +97,111 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         db = FirebaseFirestore.getInstance();
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
+        collectionReference = db.collection("users");
 
-        initUser();
+        //getting the user from the intent
+        curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+        isUserSignedIn = curUser != null;
+
 
         usersList = new ArrayList<>();
         userAdapter = new UserAdapter(this, usersList);
+
+        if(curUser.isUserIsAdmin()){
+        }else{
+            usersList.add(curUser);
+            db.collection("users").document(curUser.getUserId());
+        }
+        createLoadingScreen();
+        class ProgressThread extends Thread{
+            private boolean isRunning;
+            private boolean isListReceived;
+            private ProgressDialog waitProgressDialog;
+
+            public ProgressThread(ProgressDialog waitProgressDialog) {
+                this.isRunning = true;
+                isListReceived = false;
+                this.waitProgressDialog = waitProgressDialog;
+            }
+
+            @Override
+            public void run() {
+                super.run();
+                long sleepTime = 1000;
+                while(isRunning && waitProgressDialog.getProgress() >= waitProgressDialog.getMax()){
+                    if(isListReceived){
+                        sleepTime = 10;
+                    }
+
+                    if(waitProgressDialog.getProgress() < 90 || isListReceived){
+                        waitProgressDialog.incrementProgressBy(1);
+                    }
+
+                    try {
+                        sleep(sleepTime);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                waitProgressDialog.dismiss();
+                interrupt();
+
+            }
+
+            public boolean isRunning() {
+                return isRunning;
+            }
+
+            public void setRunning(boolean running) {
+                isRunning = running;
+            }
+
+            public boolean isListReceived() {
+                return isListReceived;
+            }
+
+            public void setListReceived(boolean listReceived) {
+                isListReceived = listReceived;
+            }
+        }
+
+
+        Handler progressThreadHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(@NonNull Message msg) {
+                return false;
+            }
+        });
+
+        ProgressThread progressThread = new ProgressThread(waitProgressDialog);
+        progressThread.start();
+
+
+        db.collection("users").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    User temp;
+                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                        temp = documentSnapshot.toObject(User.class);
+                        temp.setUserId(documentSnapshot.getId());
+                        usersList.add(temp);
+                    }
+                    progressThread.setListReceived(true);
+                } else {
+                    Log.d("debug", "Error getting documents: ", task.getException());
+                }
+            }
+        });
+
+
 
         userListSorter();
         lvUsers.setAdapter(userAdapter);
         lvUsers.setOnItemClickListener(this);
         lvUsers.setOnItemLongClickListener(this);
 
-        if(!curUser.isAdmin()){
+        if(!curUser.isUserIsAdmin()){
             llSearchUser.setVisibility(View.GONE);
             llSortUser.setVisibility(View.GONE);
         }
@@ -110,26 +210,24 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             llSortUser.setVisibility(View.VISIBLE);
         }
 
-        callback = new OnBackPressedCallback(true /* enabled by default */) {
-            @Override
-            public void handleOnBackPressed() {
-                finishActivity(registerActivityResult);
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);
-
         // The callback can be enabled or disabled here or in handleOnBackPressed()
     }
-    private void initUser(){
-        //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
-        isUserSignedIn = validationPair.getFirst().isValid();
-        if(!isUserSignedIn) Log.v("debug", validationPair.getFirst().getError());
-        else curUser = validationPair.getSecond();
+
+    private void createLoadingScreen(){
+        waitProgressDialog = new ProgressDialog(this);
+        waitProgressDialog.setMax(100);
+        waitProgressDialog.setMessage("Its loading....");
+        waitProgressDialog.setTitle("ProgressDialog bar example");
+        waitProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        waitProgressDialog.show();
     }
 
-    public void finishActivity(int result){
-        setReturnIntents(result);
+    private void updateList(){
+
+    }
+
+    public void finishActivity(){
+        //setReturnIntents(result);
         finish();
     }
     public void setReturnIntents(int result){
@@ -180,7 +278,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         return usersList;
     }
     private void userListSorter(){
-        if(curUser.isAdmin()) {
+        if(curUser.isUserIsAdmin()) {
             ValidationData validateFullName = UserValidations.validateFullName(etSearchUser.getText().toString());
             if (!validateFullName.isValid()) etSearchUser.setError(validateFullName.getError());
             else {
@@ -192,7 +290,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         else {
             usersList.clear();
             db.collection("users")
-                    .document(curUser.getId())  // replace 'curUser.getId()' with the ID of the user you want to retrieve
+                    .document(curUser.getUserId())  // replace 'curUser.getId()' with the ID of the user you want to retrieve
                     .get()
                     .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                         @Override
@@ -238,44 +336,40 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if((!usersList.isEmpty()) && usersList.get(position).getId() == curUser.getId()){
+        if((!usersList.isEmpty()) && usersList.get(position).getUserId() == curUser.getUserId()){
             Intent intent = new Intent(this, RegisterActivity.class);
-            activityResultLauncher.launch(intent);
+            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+            startActivity(intent);
         }
         else Toast.makeText(this, "You can only edit yourself!", Toast.LENGTH_LONG).show();
     }
 
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        createAlertDialog(usersList.get(position));
+        createDeleteAlertDialog(usersList.get(position));
         return true;
     }
 
     public void deleteUser(User delUser){
-        if(delUser.isAdmin()){
-            Toast.makeText(this, "You can't delete and admin!", Toast.LENGTH_LONG).show();
-            finishActivity(Activity.RESULT_CANCELED);
+        if(delUser.isUserIsAdmin()){
+            Toast.makeText(this, "You can't delete an admin!", Toast.LENGTH_LONG).show();
             return;
         }
-        if(delUser.getId().equals(curUser.getId())){
+        if(delUser.getUserId().equals(curUser.getUserId())){
             editor.clear();
             editor.commit();
             curUser = null;
             isUserSignedIn = false;
-            db.collection("users")
-                    .document(delUser.getId())
-                    .delete();
+            InitiateFunctions.deleteUserFromFirestore(delUser);
             Toast.makeText(this, "You deleted yourself!", Toast.LENGTH_LONG).show();
-            finishActivity(Activity.RESULT_OK);
+            finishActivity();
         }
-        db.collection("users")
-                .document(delUser.getId())
-                .delete();
+        InitiateFunctions.deleteUserFromFirestore(delUser);
         lvUsers.invalidateViews();
 
 
     }
-    public void createAlertDialog(User delUser){
+    public void createDeleteAlertDialog(User delUser){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Delete User");
         builder.setMessage("Are you sure?");
@@ -307,17 +401,4 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             }
         }
     }
-
-    private ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    registerActivityResult = result.getResultCode();
-                    if(registerActivityResult == Activity.RESULT_OK) initUser();
-                    //Log.v("debug", "activityResultLauncher Activated, isAdmin: " + curUser.isAdmin());
-                    userListSorter();
-                }
-            }
-    );
 }

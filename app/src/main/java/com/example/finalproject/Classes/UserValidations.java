@@ -15,15 +15,6 @@ public class UserValidations {
         FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER, PASSWORD, EMAIL, BIRTH_DATE, CITY, ADDRESS
     }
     public static <T> ValidationData validate(T toValidate, ValidateTypes type){
-        return validate(toValidate, type, false, null, false, null);
-    }
-    public static <T> ValidationData validate(T toValidate, ValidateTypes type ,Context context){
-        return validate(toValidate, type, true, context, false, null);
-    }
-    public static <T> ValidationData validate(T toValidate, ValidateTypes type ,Context context, String[] editValue){
-        return validate(toValidate, type, true, context, true, editValue);
-    }
-    public static <T> ValidationData validate(T toValidate, ValidateTypes type, boolean usesDB ,Context context, boolean isValue, String[] editValue){
         //editValue[0] = phoneNumber, editValue[1] = email
         switch (type) {
             case FIRST_NAME:
@@ -37,23 +28,19 @@ public class UserValidations {
                 return validateWeight((String) toValidate);
             case PHONE_NUMBER:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate PHONE_NUMBER is the wrong type: "+toValidate+"}}");
-                if(usesDB && isValue) return validatePhoneNumber((String)toValidate, context, editValue[0]);
-                if(usesDB) return validatePhoneNumber((String)toValidate, true, context, false, null);
                 return validatePhoneNumber((String)toValidate);
             case PASSWORD:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate PASSWORD is the wrong type: "+toValidate+"}}");
                 return validatePassword((String)toValidate);
             case EMAIL:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate EMAIL is the wrong type: "+toValidate+"}}");
-                if(usesDB && isValue) return validateEmail((String)toValidate, context, editValue[1]);
-                if(usesDB) return validateEmail((String)toValidate, true, context, false, null);
                 else return validateEmail((String)toValidate);
             case BIRTH_DATE:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate BIRTH_DATE is the wrong type: "+toValidate+"}}");
                 return validateBirthDate((String) toValidate);
             case CITY:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate CITY is the wrong type: "+toValidate+"}}");
-                return validateCity((String) toValidate, context);
+                return validateCity((String) toValidate);
             case ADDRESS:
                 if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate ADDRESS is the wrong type: "+toValidate+"}}");
                 return validateAddress((String) toValidate);
@@ -152,7 +139,7 @@ public class UserValidations {
         if(date==null) return new ValidationData(false,  "date cannot be null");
         if(date.equals("")) return new ValidationData(false,  "date cannot be empty");
 
-        Date d = Objects.requireNonNull(User.getDateFromString(date)).toDate();
+        Date d = Objects.requireNonNull(User.getDateFromString(date));
         //if(d==null) return new ValidationData(false,  "date must be NN/NN/NNNN");
         return validateBirthDate(d);
     }
@@ -174,20 +161,6 @@ public class UserValidations {
     }
 
     public static ValidationData validateEmail(String email){
-        return validateEmail(email, false, null);
-    }
-    public static ValidationData validateEmail(String email, Context context){
-        return validateEmail(email, true, context);
-    }
-
-    public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context){
-        return validateEmail(email, isCheckingDB, context, false, null);
-    }
-
-    public static ValidationData validateEmail(String email, Context context, String editEmail){
-        return validateEmail(email, true, context, true, editEmail);
-    }
-    public static ValidationData validateEmail(String email, boolean isCheckingDB, Context context, boolean isEditEmail, String editEmail){
         //editEmail is the connected user, isEditEmail represents if it should be used or not.
         if(email==null) return new ValidationData(false,  "email cannot be null");
         if (email.equals("")) return new ValidationData(false,  "email cannot be empty");
@@ -213,11 +186,6 @@ public class UserValidations {
         for(int i = 0; i< strLen; i++){
             currentChar = email.charAt(i);
             if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z') || (currentChar == '@') || (currentChar == '.') || (currentChar >= '0' && currentChar <= '9'))) correct = false;
-        }
-        if(isCheckingDB){
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            boolean inDB = db.collection("users").getUserByEmail(email) != null;
-            if(inDB && (!isEditEmail || !email.equalsIgnoreCase(editEmail))) return new ValidationData(false,  "email is already in use");
         }
         return new ValidationData(correct,  "email can only contain English chars, '@'s or '.'s");
     }
@@ -275,36 +243,18 @@ public class UserValidations {
     }
 
     public static ValidationData validatePhoneNumber(String phoneNumber){
-        return validatePhoneNumber(phoneNumber, false, null);
-    }
-    public static ValidationData validatePhoneNumber(String phoneNumber, Context context){
-        return validatePhoneNumber(phoneNumber, true, context);
-    }
-    public static ValidationData validatePhoneNumber(String phoneNumber, boolean isCheckingDB, Context context){
-        return validatePhoneNumber(phoneNumber, isCheckingDB, context, false, null);
-    }
-    public static ValidationData validatePhoneNumber(String phoneNumber, Context context, String editPhoneNumber){
-        return validatePhoneNumber(phoneNumber, true, context, true, editPhoneNumber);
-    }
-    public static ValidationData validatePhoneNumber(String phoneNumber, boolean isCheckingDB, Context context, boolean isEditPhoneNumber, String editPhoneNumber){
         if(phoneNumber==null) return new ValidationData(false,  "phone number cannot be null");
         if (phoneNumber.equals("")) return new ValidationData(false,  "phone number cannot be empty");
         long len  = phoneNumber.length();
         if(len != 10) return new ValidationData(false, "phone number must be 10 chars long");
-        if(isCheckingDB){
-            FirebaseFirestore db = FirebaseFirestore.getInstance();
-            boolean inDB = !db.collection("users").getUsersByPhoneNumber(phoneNumber).isEmpty();
-            if(inDB && (!isEditPhoneNumber || !phoneNumber.equals(editPhoneNumber))) return new ValidationData(false,  "phone number is already in use");
-        }
         return new ValidationData(phoneNumber.matches("05(1[25][0-9]{2}|[02-46-8][0-9]{3}|055([23]{2}[0-9]|4[41]0|43[0-9]|5[105][0-9]|6[876][0-9]|7[2107][0-9]|8[987][0-9]|9[^0][0-9]))[0-9]{4}"), "phone number must have a valid prefix");
     }
-    public static ValidationData validateCity(String city, Context context){
+    public static ValidationData validateCity(String city){
         if(city==null) return new ValidationData(false,  "city cannot be null");
         if (city.equals("")) return new ValidationData(false,  "city cannot be empty");
         long strLen = city.length();
         if(strLen > 30) return new ValidationData(false,  "city cannot be over 30 chars long");
         if(strLen < 2) return new ValidationData(false,  "city cannot be under 6 chars long");
-        if(FirebaseFirestore.getInstance().cityDAO().getCityByName(city.toUpperCase()) == null) return new ValidationData(false,  "city doesn't exist");
         return new ValidationData(true, null);
     }
 

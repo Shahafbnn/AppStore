@@ -38,7 +38,7 @@ public class UserAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
-        return Long.parseLong(users.get(position).getId());
+        return Long.parseLong(users.get(position).getUserId());
     }
 
     @Override
@@ -58,10 +58,10 @@ public class UserAdapter extends BaseAdapter {
         ivUserAdapterPfp.setImageURI(user.getImgUri(context));
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
         tvUserAdapterAge.setText(user.getAge().toString());
-        tvUserAdapterEmail.setText(user.getEmail());
+        tvUserAdapterEmail.setText(user.getUserEmail());
         tvUserAdapterCity.setText(user.getHomeCityName());
-        tvUserAdapterWeight.setText(Double.toString(user.getWeight()));
-        tvUserAdapterPhoneNumber.setText(user.getPhoneNumber());
+        tvUserAdapterWeight.setText(Double.toString(user.getUserWeight()));
+        tvUserAdapterPhoneNumber.setText(user.getUserPhoneNumber());
 
         return userView;
     }

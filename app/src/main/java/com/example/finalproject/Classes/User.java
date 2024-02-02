@@ -10,75 +10,76 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import com.google.firebase.Timestamp;
 
 
-public class User {
+public class User implements Serializable {
 
-    private String id;
-    private String firstName;
-    private String lastName;
-    private Timestamp birthDate;
-    private Double weight;
-    private String email;
-    private String homeCityName;
-    private String homeAddress;
-    private String password;
-    private String phoneNumber;
-    private boolean isAdmin;
-    private String imgSrc;
+    private String userId;
+    private String userFirstName;
+    private String userLastName;
+    private Date userBirthDate;
+    private Double userWeight;
+    private String userEmail;
+    private String homeCityName; //should it be the ID?
+    private String userHomeAddress;
+    private String userPassword;
+    private String userPhoneNumber;
+    private boolean userIsAdmin;
+    private String userImgSrc;
 
     public User() {
     }
 
-    public String getId() {
-        return id;
+    public String getUserId() {
+        return userId;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getUserFirstName() {
+        return userFirstName;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public void setUserFirstName(String userFirstName) {
+        this.userFirstName = userFirstName;
     }
 
-    public String getLastName() {
-        return lastName;
+    public String getUserLastName() {
+        return userLastName;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setUserLastName(String userLastName) {
+        this.userLastName = userLastName;
     }
 
-    public Timestamp getBirthDate() {
-        return birthDate;
+    public Date getUserBirthDate() {
+        return userBirthDate;
     }
 
-    public void setBirthDate(Timestamp birthDate) {
-        this.birthDate = birthDate;
+    public void setUserBirthDate(Date userBirthDate) {
+        this.userBirthDate = userBirthDate;
     }
 
-    public Double getWeight() {
-        return weight;
+    public Double getUserWeight() {
+        return userWeight;
     }
 
-    public void setWeight(Double weight) {
-        this.weight = weight;
+    public void setUserWeight(Double userWeight) {
+        this.userWeight = userWeight;
     }
 
-    public String getEmail() {
-        return email;
+    public String getUserEmail() {
+        return userEmail;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 
     public String getHomeCityName() {
@@ -89,50 +90,50 @@ public class User {
         this.homeCityName = homeCityId;
     }
 
-    public String getHomeAddress() {
-        return homeAddress;
+    public String getUserHomeAddress() {
+        return userHomeAddress;
     }
 
-    public void setHomeAddress(String homeAddress) {
-        this.homeAddress = homeAddress;
+    public void setUserHomeAddress(String userHomeAddress) {
+        this.userHomeAddress = userHomeAddress;
     }
 
-    public String getPassword() {
-        return password;
+    public String getUserPassword() {
+        return userPassword;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getUserPhoneNumber() {
+        return userPhoneNumber;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
+    public void setUserPhoneNumber(String userPhoneNumber) {
+        this.userPhoneNumber = userPhoneNumber;
     }
 
-    public boolean isAdmin() {
-        return isAdmin;
+    public boolean isUserIsAdmin() {
+        return userIsAdmin;
     }
 
-    public void setAdmin(boolean admin) {
-        isAdmin = admin;
+    public void setUserIsAdmin(boolean userIsAdmin) {
+        this.userIsAdmin = userIsAdmin;
     }
 
-    public String getImgSrc() {
-        return imgSrc;
+    public String getUserImgSrc() {
+        return userImgSrc;
     }
     public Bitmap getImgBitmap(Context context){
-        return StorageFunctions.getBitmapFromPath(imgSrc, context);
+        return StorageFunctions.getBitmapFromPath(userImgSrc, context);
     }
     public Uri getImgUri(Context context){
-        return StorageFunctions.getUriFromPath(imgSrc, context);
+        return StorageFunctions.getUriFromPath(userImgSrc, context);
     }
     public Double getAge(){
         Date now = new Date();
-        Date birth = birthDate.toDate();
+        Date birth = userBirthDate;
         long ageMillis = now.getTime() - birth.getTime();
         double ageYears = ageMillis / 31556952000.0;
 
@@ -148,22 +149,22 @@ public class User {
 
 
 
-    public void setImgSrc(String imgSrc) {
-        this.imgSrc = imgSrc;
+    public void setUserImgSrc(String userImgSrc) {
+        this.userImgSrc = userImgSrc;
     }
 
     public String birthdateToString(){
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        return formatter.format(birthDate);
+        return formatter.format(userBirthDate);
     }
     public static String dateToString(Date date){
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
         return formatter.format(date);
     }
-    public static Timestamp getDateFromString(String date){
+    public static Date getDateFromString(String date){
         String[] dates = date.split("/");
         if(dates.length != 3) return null;
-        return new Timestamp(new Date(Integer.parseInt(dates[2]) - 1900, Integer.parseInt(dates[1]) - 1, Integer.parseInt(dates[0])));    }
+        return new Date(Integer.parseInt(dates[2]) - 1900, Integer.parseInt(dates[1]) - 1, Integer.parseInt(dates[0]));    }
     public static boolean isAdmin(String phoneNumber){
         for (String s:Constants.ADMIN_PHONE_NUMBERS) {
             if (phoneNumber.equals(s)) return true;
@@ -180,9 +181,27 @@ public class User {
         editor.apply();
     }
     public String getFullNameAdmin(){
-        String fullName = this.getFirstName() + " " + this.getLastName();
-        boolean isAdmin = User.isAdmin(this.getPhoneNumber());
+        String fullName = this.getUserFirstName() + " " + this.getUserLastName();
+        boolean isAdmin = User.isAdmin(this.getUserPhoneNumber());
         if(isAdmin) fullName += " (Admin)";
         return fullName;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "userId='" + userId + '\'' +
+                ", userFirstName='" + userFirstName + '\'' +
+                ", userLastName='" + userLastName + '\'' +
+                ", userBirthDate=" + userBirthDate +
+                ", userWeight=" + userWeight +
+                ", userEmail='" + userEmail + '\'' +
+                ", homeCityName='" + homeCityName + '\'' +
+                ", userHomeAddress='" + userHomeAddress + '\'' +
+                ", userPassword='" + userPassword + '\'' +
+                ", userPhoneNumber='" + userPhoneNumber + '\'' +
+                ", userIsAdmin=" + userIsAdmin +
+                ", userImgSrc='" + userImgSrc + '\'' +
+                '}';
     }
 }

@@ -1,10 +1,13 @@
 package com.example.finalproject.Activities;
 
-import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
-import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.*;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,8 +25,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.finalproject.Classes.*;
 import com.example.finalproject.R;
@@ -32,57 +35,85 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.*;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate, itemAboutMe;
     private TextView tvWelcome;
     private ImageView ivProfilePic;
+    private RadioButton rbMainActivity, rbCategoryActivity;
     private SharedPreferences sharedPreferences;
     private Boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private User curUser;
     private FirebaseFirestore db;
+    private DocumentReference userDocRef;
+    //private EventListener<DocumentSnapshot> snapshotListener;
+    private boolean reloadActivityInMenuOptionsPrepare;
+    private Boolean isMenuPrepared;
+    private boolean reloadActivity;
+    private OnCompleteListener<DocumentSnapshot> userGetOnCompleteListener;
+
+    // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
+    // It retrieves the User object from the returned Intent and updates the current user and sign-in status.
+    private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if(result != null && result.getData() != null){
+                        User user = (User)result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+                        if(user != null){
+                            curUser = user;
+                            isUserSignedIn = true;
+                            InitiateFunctions.setSharedPreferencesData(editor, user.getUserId());
+                            //reload activity if isMenuPrepared is true;
+                            conditionalReloadActivity();
+                        }
+                    }
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize views and Firestore instance
+        rbMainActivity = findViewById(R.id.rbMainActivity);
+        rbMainActivity.setOnClickListener(this);
+        rbCategoryActivity = findViewById(R.id.rbCategoryActivity);
+        rbCategoryActivity.setOnClickListener(this);
+        
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         db = FirebaseFirestore.getInstance();
 
-
+        // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
+        Log.v("debug", "sharedPreferences data at onCreate: " + sharedPreferences.getAll());
 
-        //we set it when we get the user from firestore
-        isUserSignedIn = null;
-        curUser = null;
-
-        //if the user DOESN'T exist in the Shared Preferences, we set the activity for a guest.
-        if (sharedPreferences==null || !sharedPreferences.contains(Constants.SHARED_PREFERENCES_INITIALIZED_KEY)) {
+        // Check if the user is already signed in
+        String id = sharedPreferences.getString(Constants.USER_ID_KEY, "-1");
+        if(id.equals("-1")){
             isUserSignedIn = false;
-            reloadActivity();
-        }
-        String id = sharedPreferences.getString(Constants.USER_ID_KEY, "");
-        if(id.isEmpty()){
-            isUserSignedIn = false;
-            reloadActivity();
+            setConditionalReloadActivityData();
         }
         else {
-            db.collection("users").document(id).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+            // Fetch the user data from Firestore
+            db.collection("users").document(id).get().addOnCompleteListener((@NonNull Task<DocumentSnapshot> task) -> {
+                Log.v("debug", "user get at onCreate: " + task.getResult().toString() + ", is successful: " + task.isSuccessful());
                     if (task.isSuccessful()) {
                         DocumentSnapshot documentSnapshot = task.getResult();
-                        if (documentSnapshot.exists()) {
+                        User user = documentSnapshot.toObject(User.class);
+                        if (user != null) {
                             //set the user data
-                            curUser = documentSnapshot.toObject(User.class);
-                            curUser.setId(documentSnapshot.getId());
-
+                            curUser = user;
+                            curUser.setUserId(id);
                             isUserSignedIn = true;
-                            setSharedPreferencesData(id);
+                            InitiateFunctions.setSharedPreferencesData(editor ,id);
+                            Log.v("debug", "user get at onCreate after 2nd check: " + curUser.toString());
 
                         } else {
                             isUserSignedIn = false;
@@ -91,13 +122,17 @@ public class MainActivity extends AppCompatActivity {
                         isUserSignedIn = false;
                         Log.d("debug", "initUserSharedPreferences get failed with ", task.getException());
                     }
-                    //reload the activity based on the new data
-                    reloadActivity();
-                }
-            });
+                    // Reload the activity based on the new data
+                    conditionalReloadActivity();
+                });
         }
 
-    }
+        // Reload the activity if the menu is already prepared
+        if(isMenuPrepared != null){
+            if(reloadActivity) reloadActivity();
+        }
+        else reloadActivityInMenuOptionsPrepare = true;
+    } //onCreate's end
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -112,19 +147,25 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public boolean onPrepareOptionsMenu(Menu menu)
-    {
+    public boolean onPrepareOptionsMenu(Menu menu) {
         //if the user is logged in the Register and Log In options disappear and a Log Out option appears.
-        itemRegister = menu.findItem(R.id.itemRegister);
-        itemLogIn = menu.findItem(R.id.itemLogIn);
-        itemLogOut = menu.findItem(R.id.itemLogOut);
-        itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
+        if(isMenuPrepared == null){
+            itemRegister = menu.findItem(R.id.itemRegister);
+            itemLogIn = menu.findItem(R.id.itemLogIn);
+            itemLogOut = menu.findItem(R.id.itemLogOut);
+            itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
 
-        itemRegister.setVisible(false);
-        itemLogIn.setVisible(false);
-        itemLogOut.setVisible(false);
-        itemDataUpdate.setVisible(false);
-        Toast.makeText(this, "Loading logged in data, please wait", Toast.LENGTH_LONG).show();
+            itemRegister.setVisible(false);
+            itemLogIn.setVisible(false);
+            itemLogOut.setVisible(false);
+            itemDataUpdate.setVisible(false);
+            if(reloadActivityInMenuOptionsPrepare) {
+                reloadActivity();
+                reloadActivityInMenuOptionsPrepare = false;
+            }
+            isMenuPrepared = true;
+        }
+        changeOptionMenuItemsVisibility(isUserSignedIn);
         return true;
     }
 
@@ -159,7 +200,8 @@ public class MainActivity extends AppCompatActivity {
         }
         else if(item==itemRegister){
             Intent intent = new Intent(this, RegisterActivity.class);
-            startActivity(intent);
+            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+            activityResultLauncher.launch(intent);
             return true;
         }
         else if(item==itemLogOut){
@@ -167,13 +209,15 @@ public class MainActivity extends AppCompatActivity {
             editor.commit();
             isUserSignedIn = false;
             curUser = null;
+            reloadActivity();
             invalidateViews(tvWelcome, ivProfilePic);
             invalidateOptionsMenu();
             return true;
         }
         else if(item==itemDataUpdate){
             Intent intent = new Intent(this, UsersListViewActivity.class);
-            startActivity(intent);
+            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+            activityResultLauncher.launch(intent);
             return true;
         }
         else if(item==itemAboutMe){
@@ -184,13 +228,15 @@ public class MainActivity extends AppCompatActivity {
     }
     private void reloadActivity(){
         changeOptionMenuItemsVisibility(isUserSignedIn);
-        initViewsFromUser(curUser, isUserSignedIn, getApplicationContext(), db, tvWelcome, ivProfilePic);
+        initViewsFromUser(curUser, isUserSignedIn, this, db, tvWelcome, ivProfilePic);
     }
-    public void setSharedPreferencesData(String id){
-        editor.clear();
-        editor.putString(USER_ID_KEY, id);
-        editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
-        editor.commit();
+    private void conditionalReloadActivity(){
+        if(isMenuPrepared != null) reloadActivity();
+        else reloadActivityInMenuOptionsPrepare = true;
+    }
+    private void setConditionalReloadActivityData(){
+        if(isMenuPrepared != null) reloadActivity = true;
+        else reloadActivityInMenuOptionsPrepare = true;
     }
     private void createAlertDialog(){
         class AlertDialogClick implements DialogInterface.OnClickListener {
@@ -257,13 +303,15 @@ public class MainActivity extends AppCompatActivity {
                                         for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
                                             if(documentSnapshot.exists()){
                                                 User user = documentSnapshot.toObject(User.class);
-                                                if(user.getPassword().equals(etTextPassword.getText().toString())){
+                                                if(user.getUserPassword().equals(etTextPassword.getText().toString())){
                                                     isUserSignedIn = true;
                                                     curUser = user;
-                                                    curUser.setId(documentSnapshot.getId());
-                                                    setSharedPreferencesData(documentSnapshot.getId());
+                                                    curUser.setUserId(documentSnapshot.getId());
+
+                                                    InitiateFunctions.setSharedPreferencesData(editor ,documentSnapshot.getId());
+
                                                     reloadActivity();
-                                                    Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
+                                                    //Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
                                                     dialog.cancel();
                                                 }
                                                 else {
@@ -302,6 +350,14 @@ public class MainActivity extends AppCompatActivity {
 
         return emailValidation.isValid() && passwordValidation.isValid();
     }
+    @Override
+    public void onClick(View v) {
+        if (v==rbCategoryActivity) {
+            Intent intent = new Intent(this, CategoryActivity.class);
+            startActivity(intent);
+        }
+    }
+
 
 
 }

@@ -1,7 +1,6 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
-import static com.example.finalproject.Classes.InitiateFunctions.initUserSharedPreferences;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -27,8 +26,10 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.PermissionClass;
@@ -37,9 +38,16 @@ import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -57,10 +65,11 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private Bitmap photoBitmap;
 
     private SharedPreferences sharedPreferences;
+    private User curUser;
     private boolean isUserSignedIn;
     private SharedPreferences.Editor editor;
     private FirebaseFirestore db;
-    private User curUser;
+
     private String myDirStr;
 
     ActivityResultLauncher<Intent> startFile;
@@ -97,14 +106,13 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 });
 
 
+
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
 
-        //checking if the user is saved in the SP and initializing vars if it is.
-        MyPair<ValidationData, User> validationPair = initUserSharedPreferences(sharedPreferences, db);
-        isUserSignedIn = validationPair.getFirst().isValid();
-        if(!isUserSignedIn) Log.v("SignIn", validationPair.getFirst().getError());
-        else curUser = validationPair.getSecond();
+        //getting the user from the intent
+        curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+        isUserSignedIn = curUser != null;
 
         btnSendData = findViewById(R.id.btnSendData);
         btnSendData.setOnClickListener(this);
@@ -137,16 +145,17 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
         if(isUserSignedIn){
             final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, actvTextHomeCity, etTextHomeAddress};
-            final Object[] DATA = {curUser.getFirstName(), curUser.getLastName(), Double.toString(curUser.getWeight()),curUser.birthdateToString(), curUser.getPhoneNumber(), curUser.getPassword(), curUser.getEmail(), curUser.getHomeCityName(), curUser.getHomeAddress()};
+            final Object[] DATA = {curUser.getUserFirstName(), curUser.getUserLastName(), Double.toString(curUser.getUserWeight()),curUser.birthdateToString(), curUser.getUserPhoneNumber(), curUser.getUserPassword(), curUser.getUserEmail(), curUser.getHomeCityName(), curUser.getUserHomeAddress()};
             //editValue[0] = phoneNumber, editValue[1] = email
-            InitiateFunctions.initUser(DATA, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
-            etTextPasswordConfirm.setText(curUser.getPassword());
-            if(!User.isPasswordConfirmed(curUser.getPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
+            //to check if the data is good and set the ET errors.
+            InitiateFunctions.initUser(DATA, ETS);
+            etTextPasswordConfirm.setText(curUser.getUserPassword());
+            if(!User.isPasswordConfirmed(curUser.getUserPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
             ivImage.setImageURI(curUser.getImgUri(this));
         }
 
         // ignore this
-        boolean setDevData = false;
+        boolean setDevData = true;
         if(setDevData){
             char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
             String specialFirstName = "";
@@ -162,18 +171,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 specialFirstName += nameStr[rand.nextInt(nameStr.length)];
                 specialLastName += nameStr[rand.nextInt(nameStr.length)];
             }
-//            User addUser = new User();
-//            addUser.setFirstName(specialFirstName);
-//            addUser.setLastName(specialLastName);
-//            addUser.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
-//            addUser.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
-//            addUser.setEmail(etTextEmailAddress.getText().toString());
-//            addUser.setHomeCityId(db.cityDAO().getCityByName(actvTextHomeCity.getText().toString().toUpperCase()).getCityId());
-//            addUser.setHomeAddress(etTextHomeAddress.getText().toString());
-//            addUser.setPassword(etTextPassword.getText().toString());
-//            addUser.setPhoneNumber(etPhoneNumber.getText().toString());
-//            addUser.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
-//            addUser.setImgSrc(myDirStr);
 
             etTextFirstName.setText(specialFirstName);
             etTextLastName.setText(specialLastName);
@@ -227,76 +224,159 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     private void sendData() {
         //FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL
+        //using my validation system to validate all the ETs
         final EditText[] ETS = {etTextFirstName, etTextLastName, etDecimalWeight, etBirthDate, etPhoneNumber, etTextPassword, etTextEmailAddress, actvTextHomeCity, etTextHomeAddress};
         boolean allValid;
         final Object[] data = {etTextFirstName.getText().toString(), etTextLastName.getText().toString(), etDecimalWeight.getText().toString(),
                 etBirthDate.getText().toString(), etPhoneNumber.getText().toString(), etTextPassword.getText().toString(), etTextEmailAddress.getText().toString(), actvTextHomeCity.getText().toString(), etTextHomeAddress.getText().toString()};
         //for(int i = 0; i < ETS.length; i++) data[i] = ETS[i].getText().toString();
-        if(isUserSignedIn){
-            //editValue[0] = phoneNumber, editValue[1] = email
-            allValid = InitiateFunctions.initUser(data, ETS, this, new String[]{curUser.getPhoneNumber(), curUser.getEmail()});
-        }else{
-            allValid = InitiateFunctions.initUser(data, ETS, this);
-        }
+        allValid = InitiateFunctions.initUser(data, ETS);
+
         if(!User.isPasswordConfirmed(etTextPassword.getText().toString(), etTextPasswordConfirm.getText().toString())) {
             etTextPasswordConfirm.setError("password confirm isn't equal to password");
-            Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "All must be correct!", Toast.LENGTH_LONG).show();
             allValid = false;
         }
-        else if(allValid){
-            //long id, String firstName, String lastName, Date birthDate, Double weight, String email, long homeCityId, String homeAddress, String password, String phoneNumber, boolean isAdmin, String imgSrc
-            User u = new User();
-            u.setFirstName(etTextFirstName.getText().toString());
-            u.setLastName(etTextLastName.getText().toString());
-            u.setBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
-            u.setWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
-            u.setEmail(etTextEmailAddress.getText().toString());
-//            u.setHomeCityId(db.collection("cities").whereEqualTo("cityName", actvTextHomeCity.getText().toString().toUpperCase()));
-            u.setHomeCityName(actvTextHomeCity.getText().toString().toUpperCase());
-            u.setHomeAddress(etTextHomeAddress.getText().toString());
-            u.setPassword(etTextPassword.getText().toString());
-            u.setPhoneNumber(etPhoneNumber.getText().toString());
-            u.setAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
-            saveBitmap();
-            u.setImgSrc(myDirStr);
+        if(allValid){
+            db.collection("users")
+                    .whereEqualTo("userEmail", etTextEmailAddress.getText().toString())
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            boolean isValid = true;
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                    if(documentSnapshot.exists()){
+                                        if(!(isUserSignedIn && (documentSnapshot.getId().equals(curUser.getUserId())))){
+                                            etTextEmailAddress.setError("Email is already in use!");
+                                            isValid = false;
+                                        }
+                                    }
+                                }
 
-
-
-            if(isUserSignedIn) {
-                if(myDirStr==null) u.setImgSrc(curUser.getImgSrc());
-                u.setId(curUser.getId());
-                db.collection("users").document(String.valueOf(u.getId())).set(u);
-                curUser = u;
-            }
-            else {
-                // put the user id in the sharedPreference to stay signed in.
-                final String[] id = new String[1];
-                db.collection("Users").add(u)
-                        .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                            @Override
-                            public void onSuccess(DocumentReference documentReference) {
-                                id[0] = documentReference.getId();
-                                // 'id' is the ID of the newly added user
                             }
-                        });
-                editor.clear();
-                editor.putString(USER_ID_KEY, id[0]);
-                editor.putBoolean(SHARED_PREFERENCES_INITIALIZED_KEY, true);
-                editor.commit();
-            }
-            Log.v("sharedPreferences", "sharedPreferences.getAll(): " + sharedPreferences.getAll().toString());
-            //clear all the EditTexts even tho we close the activity.
-//            for(int i = 0; i < ETS.length; i++){
-//                ETS[i].setText("");
-//            }
-            //Toast.makeText(this, "Successful!", Toast.LENGTH_LONG).show();
-            finishActivity(true);
+                            if(isValid){
+                                db.collection("users")
+                                        .whereEqualTo("userPhoneNumber", etPhoneNumber.getText().toString())
+                                        .get()
+                                        .addOnCompleteListener(task1 -> {
+                                            boolean isValid1 = true;
+                                            if (task1.isSuccessful()) {
+                                                for (QueryDocumentSnapshot documentSnapshot : task1.getResult()) {
+                                                    if(documentSnapshot.exists()){
+                                                        if(!(isUserSignedIn && (documentSnapshot.getId().equals(curUser.getUserId())))){
+                                                            etPhoneNumber.setError("Phone number is already in use!");
+                                                            isValid1 = false;
+                                                        }
+                                                    }
+                                                }
+
+                                            }
+                                            if(isValid1){
+                                                db.collection("cities")
+                                                        .whereEqualTo("cityName", actvTextHomeCity.getText().toString().toUpperCase())
+                                                        .get()
+                                                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                                            @Override
+                                                            public void onComplete(@NonNull Task<QuerySnapshot> task1) {
+                                                                if (task1.isSuccessful()) {
+                                                                    for (QueryDocumentSnapshot documentSnapshot : task1.getResult()) {
+                                                                        if(documentSnapshot.exists()){
+                                                                            User u = new User();
+                                                                            u.setUserFirstName(etTextFirstName.getText().toString());
+                                                                            u.setUserLastName(etTextLastName.getText().toString());
+                                                                            u.setUserBirthDate(User.getDateFromString(etBirthDate.getText().toString()));
+                                                                            u.setUserWeight(Double.parseDouble(etDecimalWeight.getText().toString()));
+                                                                            u.setUserEmail(etTextEmailAddress.getText().toString());
+//            u.setHomeCityId(db.collection("cities").whereEqualTo("cityName", actvTextHomeCity.getText().toString().toUpperCase()));
+                                                                            u.setHomeCityName(actvTextHomeCity.getText().toString().toUpperCase());
+                                                                            u.setUserHomeAddress(etTextHomeAddress.getText().toString());
+                                                                            u.setUserPassword(etTextPassword.getText().toString());
+                                                                            u.setUserPhoneNumber(etPhoneNumber.getText().toString());
+                                                                            u.setUserIsAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
+                                                                            saveBitmap(); // change to use Firebase Storage
+                                                                            u.setUserImgSrc(myDirStr);
+
+                                                                            if(isUserSignedIn){
+                                                                                if(myDirStr==null) u.setUserImgSrc(curUser.getUserImgSrc());
+                                                                                u.setUserId(curUser.getUserId());
+                                                                                db.collection("users").document(curUser.getUserId()).set(u).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                                                    @Override
+                                                                                    public void onComplete(@NonNull Task<Void> task1) {
+                                                                                        if (task1.isSuccessful()) {
+                                                                                            Toast.makeText(getApplicationContext(), "Successful!", Toast.LENGTH_LONG).show();
+                                                                                            try {
+                                                                                                finishActivity(true, u);
+                                                                                            } catch (NullPointerException e){
+                                                                                                Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
+                                                                                            }
+                                                                                        } else {
+                                                                                            Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
+                                                                                            Log.d("debug", "set failed with ", task1.getException());
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                            else{
+                                                                                db.collection("users").add(u).addOnCompleteListener(new OnCompleteListener<DocumentReference>() {
+                                                                                    @Override
+                                                                                    public void onComplete(@NonNull Task<DocumentReference> task1) {
+                                                                                        if (task1.isSuccessful()) {
+                                                                                            DocumentReference documentReference = task1.getResult();
+                                                                                            Toast.makeText(getApplicationContext(), "Successful!", Toast.LENGTH_LONG).show();
+                                                                                            // You can get the ID of the newly added document using documentReference.getId()
+                                                                                            String docId = documentReference.getId();
+                                                                                            InitiateFunctions.setSharedPreferencesData(editor, docId);
+                                                                                            u.setUserId(docId);
+//                                                                                                // attaching MainActivity's snapshotListener: userDocRef.addSnapshotListener(MainActivity.this, snapshotListener); they can't be null since you can't get to RegisterActivity before MainActivity's OnCreate.
+//                                                                                                Activity act = InitiateFunctions.getUpdateUserSnapshotListenerActivity();
+//                                                                                                EventListener<DocumentSnapshot> snap = InitiateFunctions.getUpdateUserSnapshotListener();
+//                                                                                                db.collection("users").document(docId).addSnapshotListener(act, snap);
+                                                                                            try {
+                                                                                                finishActivity(true, u);
+                                                                                            } catch (NullPointerException e){
+                                                                                                Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
+                                                                                            }
+                                                                                        } else {
+                                                                                            Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
+                                                                                            Log.d("debug", "add failed with ", task1.getException());
+                                                                                        }
+                                                                                    }
+                                                                                });
+                                                                            }
+                                                                        }
+                                                                        else {
+                                                                            actvTextHomeCity.setError("City does not exist!");
+                                                                            Toast.makeText(getApplicationContext(), "City does not exist!", Toast.LENGTH_LONG).show();
+                                                                        }
+                                                                    }
+                                                                } else {
+                                                                    Log.w("debug", "Task unsuccessful", task1.getException());
+                                                                    Toast.makeText(getApplicationContext(), "Task unsuccessful!", Toast.LENGTH_LONG).show();
+                                                                }
+                                                            }
+                                                        });
+                                            }
+                                        });
+                            }
+                        }
+                    });
         }
         else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
     }
 
     private void finishActivity(boolean result){
         Intent returnIntent = new Intent();
+        returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
+        if(result) setResult(Activity.RESULT_OK, returnIntent);
+        else setResult(Activity.RESULT_CANCELED, returnIntent);
+        finish();
+    }
+
+    private void finishActivity(boolean result, User user){
+        Intent returnIntent = new Intent();
+        returnIntent.putExtra(Constants.INTENT_CURRENT_USER_KEY, user);
         returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
         if(result) setResult(Activity.RESULT_OK, returnIntent);
         else setResult(Activity.RESULT_CANCELED, returnIntent);
@@ -312,7 +392,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         int year = calendar.get(Calendar.YEAR);
         if(isLastDate){
             Calendar lastCal = Calendar.getInstance();
-            lastCal.setTime((Objects.requireNonNull(User.getDateFromString(lastDate)).toDate()));
+            lastCal.setTime((Objects.requireNonNull(User.getDateFromString(lastDate))));
             day = lastCal.get(Calendar.DAY_OF_MONTH);
             month = lastCal.get(Calendar.MONTH);
             year = lastCal.get(Calendar.YEAR);
