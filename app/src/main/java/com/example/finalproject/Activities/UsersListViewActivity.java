@@ -1,7 +1,6 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
-import static com.example.finalproject.Classes.Constants.REGISTER_ACTIVITY_RETURN_DATA_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 
 import androidx.activity.result.ActivityResult;
@@ -9,7 +8,6 @@ import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -20,12 +18,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.icu.text.SimpleDateFormat;
-import android.icu.util.Calendar;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -45,17 +38,14 @@ import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class UsersListViewActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
@@ -64,6 +54,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private EditText etSearchUser;
     private LinearLayout llSearchUser, llSortUser;
     private ListView lvUsers;
+    private List<User> originalUsersList;
     private List<User> usersList;
     private UserAdapter userAdapter;
     private SharedPreferences sharedPreferences;
@@ -72,6 +63,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private User curUser;
     private FirebaseFirestore db;
     private ProgressDialog waitProgressDialog;
+    private Boolean isCurUserAdmin;
 
     private boolean isSortedByFirstName, isSortedByLastName;
     // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
@@ -85,17 +77,30 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                         if(result.getData() != null){
                             User user = (User) result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
                             if(user != null){ //can never be null, checking anyways.
-                                int position = usersList.indexOf(curUser);
+
+                                int position = getListIndexOf(usersList, curUser);
+                                //Log.v("debug", "the pos: " + position);
                                 curUser = user;
                                 isUserSignedIn = true;
                                 //if a user was sent back we can assume it was changed
                                 //but since we passed it through the intent the curUser pointer changed.
-                                if(user.isUserIsAdmin()){
-                                    usersList.set(position, curUser);
+                                //isCurUserAdmin shouldn't be null.
+                                //if one of them is true and the other is false, meaning he wasn't admin and now he is.
+                                if(user.isUserIsAdmin() && !isCurUserAdmin){
+                                    fetchUsersListDataFromFirestore();
+                                    isCurUserAdmin = true;
                                 }
-                                else {
+                                // was admin and is no longed admin.
+                                else if(!user.isUserIsAdmin() && isCurUserAdmin){
                                     usersList.clear();
                                     usersList.add(curUser);
+                                    isCurUserAdmin = false;
+                                    originalUsersList = new ArrayList<>(usersList);
+                                }
+                                // if he was changed no matter if he was an admin or not.
+                                else {
+                                    usersList.set(position, curUser);
+                                    originalUsersList.set(position, curUser);
                                 }
                                 userAdapter.notifyDataSetChanged();
                             }
@@ -104,6 +109,13 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                 }
             }
     );
+    private int getListIndexOf(List<User> list, User user){
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            if(user.getUserId().equals(list.get(i).getUserId())) return i;
+        }
+        return -1;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -134,6 +146,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         //getting the user from the intent
         curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
         isUserSignedIn = curUser != null;
+        if(isUserSignedIn) isCurUserAdmin = curUser.isUserIsAdmin();
 
 
         usersList = new ArrayList<>();
@@ -154,24 +167,12 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
 
         //getting the list data
         if(curUser.isUserIsAdmin()){
-            Toast.makeText(this, "Getting data, please wait!", Toast.LENGTH_LONG).show();
-            db.collection("users").get().addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    User user;
-                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                        user = documentSnapshot.toObject(User.class);
-                        user.setUserId(documentSnapshot.getId());
-                        usersList.add(user);
-                    }
-                    userAdapter.notifyDataSetChanged();
-                } else {
-                    Log.d("debug", "Error getting documents: ", task.getException());
-                }
-            });
+            fetchUsersListDataFromFirestore();
         }
         else{
             usersList.add(curUser);
             userAdapter.notifyDataSetChanged();
+            originalUsersList = new ArrayList<>(usersList);
         }
     }
     private void createLoadingScreen(){
@@ -189,74 +190,28 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         else setResult(Activity.RESULT_CANCELED, returnIntent);
         finish();
     }
-    private List<User> getUsersContainingAndSorted(String search, boolean isSortedByFirstName, boolean isSortedByLastName){
-        List<User> usersList = new ArrayList<>();
-
-        Query query = db.collection("users");
-
-        if (isSortedByFirstName) {
-            query = query.orderBy("userFirstName", Query.Direction.ASCENDING);
-        }
-
-        // If isSortedByLastName is true, sort by last name
-        if (isSortedByLastName) {
-            query = query.orderBy("userLastName", Query.Direction.ASCENDING);
-        }
-        boolean[] finished = new boolean[]{false};
-        query.get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                User user = document.toObject(User.class);
-                                if((search == null || search.isEmpty())) usersList.add(user);
-                                else if(user.getFullNameAdmin().contains(search)) usersList.add(user);
-                            }
-                        } else {
-                            Log.w("user", "Error getting documents.", task.getException());
-                        }
-                        finished[0] = true;
-                    }
-                });
-        while(!finished[0]) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        return usersList;
-    }
     private void userListSorter(){
-        if(curUser.isUserIsAdmin()) {
-            ValidationData validateFullName = UserValidations.validateFullName(etSearchUser.getText().toString());
-            if (!validateFullName.isValid()) etSearchUser.setError(validateFullName.getError());
-            else {
-                usersList.clear();
-                usersList.addAll(getUsersContainingAndSorted(etSearchUser.getText().toString(), isSortedByFirstName, isSortedByLastName));
+        originalUsersList = new ArrayList<>(usersList);
+        usersList = getListContainingAndSorted(originalUsersList, btnSearchUser.getText().toString(), isSortedByFirstName, isSortedByLastName);
+        userAdapter.notifyDataSetChanged();
+    }
+    private void fetchUsersListDataFromFirestore(){
+        Toast.makeText(this, "Getting data, please wait!", Toast.LENGTH_LONG).show();
+        db.collection("users").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if(!usersList.isEmpty()) usersList.clear();
+                User user;
+                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                    user = documentSnapshot.toObject(User.class);
+                    user.setUserId(documentSnapshot.getId());
+                    usersList.add(user);
+                }
                 userAdapter.notifyDataSetChanged();
+                originalUsersList = new ArrayList<>(usersList);
+            } else {
+                Log.d("debug", "Error getting documents: ", task.getException());
             }
-        }
-        else {
-            usersList.clear();
-            db.collection("users")
-                    .document(curUser.getUserId())  // replace 'curUser.getId()' with the ID of the user you want to retrieve
-                    .get()
-                    .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-                        @Override
-                        public void onSuccess(DocumentSnapshot documentSnapshot) {
-                            if (documentSnapshot.exists()) {
-                                User user = documentSnapshot.toObject(User.class);
-                                usersList.add(user);
-                                // Now the 'user' object has been added to 'usersList'
-                            } else {
-                                Log.d("user", "No such document");
-                            }
-                        }
-                    });
-            userAdapter.notifyDataSetChanged();
-        }
+        });
     }
     @Override
     public void onClick(View v) {
@@ -281,7 +236,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     }
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if((!usersList.isEmpty()) && usersList.get(position).getUserId() == curUser.getUserId()){
+        if((!usersList.isEmpty()) && usersList.get(position).getUserId().equals(curUser.getUserId())){
             Intent intent = new Intent(this, RegisterActivity.class);
             intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
             activityResultLauncher.launch(intent);
@@ -312,7 +267,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         lvUsers.invalidateViews();
     }
 
-    private List<User> getListContaining(List<User> list, String containing, boolean isSortedByFirstName, boolean isSortedByLastName){
+    private List<User> getListContainingAndSorted(List<User> list, String containing, boolean isSortedByFirstName, boolean isSortedByLastName){
         ArrayList<User> sorted;
         if(containing.isEmpty()){
             sorted = new ArrayList<>(list);
@@ -327,16 +282,22 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             }
         }
 
-        if(isSortedByLastName){
-
+        if(isSortedByLastName && isSortedByFirstName){
+            sorted.sort(Comparator.comparing(User::getUserFirstName).thenComparing(User::getUserLastName));
         }
-
+        else if(isSortedByFirstName){
+            sorted.sort(Comparator.comparing(User::getUserFirstName));
+        }
+        else if(isSortedByLastName){
+            sorted.sort(Comparator.comparing(User::getUserLastName));
+        }
 
         return sorted;
     }
 
     private void deleteUserFromUsersList(User delUser){
         usersList.remove(delUser);
+        originalUsersList.remove(delUser);
     }
     public void createDeleteAlertDialog(User delUser){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
