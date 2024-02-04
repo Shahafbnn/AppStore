@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -60,13 +61,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
-                    if(result != null && result.getData() != null){
-                        User user = (User)result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
-                        if(user != null){
-                            curUser = user;
-                            isUserSignedIn = true;
-                            InitiateFunctions.setSharedPreferencesData(editor, user.getUserId());
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                        if(result.getData() != null){
+                            User user = (User)result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+                            if(user != null){
+                                curUser = user;
+                                isUserSignedIn = true;
+                                InitiateFunctions.setSharedPreferencesData(editor, user.getUserId());
+
+                            }
+                            else{
+                                //if the returned user is null (meaning you deleted yourself MainActivity->UsersListViewActivity->RegisterActivity).
+                                isUserSignedIn = false;
+                                curUser = null;
+                            }
                             //reload activity if isMenuPrepared is true;
+                            // needs to be conditional
+                            // because what if there are delays on the onCreate get fetch?
                             conditionalReloadActivity();
                         }
                     }
@@ -92,7 +103,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
-        Log.v("debug", "sharedPreferences data at onCreate: " + sharedPreferences.getAll());
+        //Log.v("debug", "sharedPreferences data at onCreate: " + sharedPreferences.getAll());
 
         // Check if the user is already signed in
         String id = sharedPreferences.getString(Constants.USER_ID_KEY, "-1");
@@ -103,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else {
             // Fetch the user data from Firestore
             db.collection("users").document(id).get().addOnCompleteListener((@NonNull Task<DocumentSnapshot> task) -> {
-                Log.v("debug", "user get at onCreate: " + task.getResult().toString() + ", is successful: " + task.isSuccessful());
+                //Log.v("debug", "user get at onCreate: " + task.getResult().toString() + ", is successful: " + task.isSuccessful());
                     if (task.isSuccessful()) {
                         DocumentSnapshot documentSnapshot = task.getResult();
                         User user = documentSnapshot.toObject(User.class);
@@ -113,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             curUser.setUserId(id);
                             isUserSignedIn = true;
                             InitiateFunctions.setSharedPreferencesData(editor ,id);
-                            Log.v("debug", "user get at onCreate after 2nd check: " + curUser.toString());
+                            //Log.v("debug", "user get at onCreate after 2nd check: " + curUser.toString());
 
                         } else {
                             isUserSignedIn = false;
@@ -226,10 +237,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else return super.onOptionsItemSelected(item);
     }
+    /**
+     * This method is used to reload the activity.
+     * It calls the changeOptionMenuItemsVisibility method to update the visibility of menu items, and the initViewsFromUser method to update the views with the user data.
+     */
     private void reloadActivity(){
         changeOptionMenuItemsVisibility(isUserSignedIn);
         initViewsFromUser(curUser, isUserSignedIn, this, db, tvWelcome, ivProfilePic);
     }
+    /**
+     * This method is used to conditionally reload the activity based on the user's sign-in status.
+     * It checks if the menu is prepared and if a reload is required, and then calls the reloadActivity method.
+     */
     private void conditionalReloadActivity(){
         if(isMenuPrepared != null) reloadActivity();
         else reloadActivityInMenuOptionsPrepare = true;

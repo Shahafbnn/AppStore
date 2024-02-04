@@ -4,6 +4,10 @@ import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY
 import static com.example.finalproject.Classes.Constants.REGISTER_ACTIVITY_RETURN_DATA_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,6 +55,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class UsersListViewActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener, AdapterView.OnItemLongClickListener {
@@ -67,10 +72,38 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private User curUser;
     private FirebaseFirestore db;
     private ProgressDialog waitProgressDialog;
-    private CollectionReference collectionReference;
-    private Query query;
 
     private boolean isSortedByFirstName, isSortedByLastName;
+    // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
+    // It retrieves the User object from the returned Intent and updates the current user and sign-in status.
+    private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                        if(result.getData() != null){
+                            User user = (User) result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+                            if(user != null){ //can never be null, checking anyways.
+                                int position = usersList.indexOf(curUser);
+                                curUser = user;
+                                isUserSignedIn = true;
+                                //if a user was sent back we can assume it was changed
+                                //but since we passed it through the intent the curUser pointer changed.
+                                if(user.isUserIsAdmin()){
+                                    usersList.set(position, curUser);
+                                }
+                                else {
+                                    usersList.clear();
+                                    usersList.add(curUser);
+                                }
+                                userAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                }
+            }
+    );
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,7 +130,6 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         db = FirebaseFirestore.getInstance();
         sharedPreferences = getSharedPreferences(SHARED_PREFERENCES_KEY, 0);
         editor = sharedPreferences.edit();
-        collectionReference = db.collection("users");
 
         //getting the user from the intent
         curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
@@ -107,112 +139,41 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         usersList = new ArrayList<>();
         userAdapter = new UserAdapter(this, usersList);
 
-        if(curUser.isUserIsAdmin()){
-        }else{
-            usersList.add(curUser);
-            db.collection("users").document(curUser.getUserId());
-        }
-        createLoadingScreen();
-        class ProgressThread extends Thread{
-            private boolean isRunning;
-            private boolean isListReceived;
-            private ProgressDialog waitProgressDialog;
-
-            public ProgressThread(ProgressDialog waitProgressDialog) {
-                this.isRunning = true;
-                isListReceived = false;
-                this.waitProgressDialog = waitProgressDialog;
-            }
-
-            @Override
-            public void run() {
-                super.run();
-                long sleepTime = 1000;
-                while(isRunning && waitProgressDialog.getProgress() >= waitProgressDialog.getMax()){
-                    if(isListReceived){
-                        sleepTime = 10;
-                    }
-
-                    if(waitProgressDialog.getProgress() < 90 || isListReceived){
-                        waitProgressDialog.incrementProgressBy(1);
-                    }
-
-                    try {
-                        sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                waitProgressDialog.dismiss();
-                interrupt();
-
-            }
-
-            public boolean isRunning() {
-                return isRunning;
-            }
-
-            public void setRunning(boolean running) {
-                isRunning = running;
-            }
-
-            public boolean isListReceived() {
-                return isListReceived;
-            }
-
-            public void setListReceived(boolean listReceived) {
-                isListReceived = listReceived;
-            }
-        }
-
-
-        Handler progressThreadHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
-            @Override
-            public boolean handleMessage(@NonNull Message msg) {
-                return false;
-            }
-        });
-
-        ProgressThread progressThread = new ProgressThread(waitProgressDialog);
-        progressThread.start();
-
-
-        db.collection("users").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    User temp;
-                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                        temp = documentSnapshot.toObject(User.class);
-                        temp.setUserId(documentSnapshot.getId());
-                        usersList.add(temp);
-                    }
-                    progressThread.setListReceived(true);
-                } else {
-                    Log.d("debug", "Error getting documents: ", task.getException());
-                }
-            }
-        });
-
-
-
-        userListSorter();
         lvUsers.setAdapter(userAdapter);
         lvUsers.setOnItemClickListener(this);
         lvUsers.setOnItemLongClickListener(this);
 
-        if(!curUser.isUserIsAdmin()){
-            llSearchUser.setVisibility(View.GONE);
-            llSortUser.setVisibility(View.GONE);
-        }
-        else{
+        if(curUser.isUserIsAdmin()){
             llSearchUser.setVisibility(View.VISIBLE);
             llSortUser.setVisibility(View.VISIBLE);
         }
+        else{
+            llSearchUser.setVisibility(View.GONE);
+            llSortUser.setVisibility(View.GONE);
+        }
 
-        // The callback can be enabled or disabled here or in handleOnBackPressed()
+        //getting the list data
+        if(curUser.isUserIsAdmin()){
+            Toast.makeText(this, "Getting data, please wait!", Toast.LENGTH_LONG).show();
+            db.collection("users").get().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    User user;
+                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                        user = documentSnapshot.toObject(User.class);
+                        user.setUserId(documentSnapshot.getId());
+                        usersList.add(user);
+                    }
+                    userAdapter.notifyDataSetChanged();
+                } else {
+                    Log.d("debug", "Error getting documents: ", task.getException());
+                }
+            });
+        }
+        else{
+            usersList.add(curUser);
+            userAdapter.notifyDataSetChanged();
+        }
     }
-
     private void createLoadingScreen(){
         waitProgressDialog = new ProgressDialog(this);
         waitProgressDialog.setMax(100);
@@ -221,23 +182,13 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         waitProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
         waitProgressDialog.show();
     }
-
-    private void updateList(){
-
-    }
-
-    public void finishActivity(){
-        //setReturnIntents(result);
-        finish();
-    }
-    public void setReturnIntents(int result){
+    private void finishActivity(boolean result, User user){
         Intent returnIntent = new Intent();
-        returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
-        if(result == Activity.RESULT_OK) setResult(Activity.RESULT_OK, returnIntent);
+        returnIntent.putExtra(Constants.INTENT_CURRENT_USER_KEY, user);
+        if(result) setResult(Activity.RESULT_OK, returnIntent);
         else setResult(Activity.RESULT_CANCELED, returnIntent);
         finish();
     }
-
     private List<User> getUsersContainingAndSorted(String search, boolean isSortedByFirstName, boolean isSortedByLastName){
         List<User> usersList = new ArrayList<>();
 
@@ -307,11 +258,6 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             userAdapter.notifyDataSetChanged();
         }
     }
-
-
-
-
-
     @Override
     public void onClick(View v) {
         if(v==btnSortByFirstName){
@@ -333,23 +279,20 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         }
 
     }
-
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         if((!usersList.isEmpty()) && usersList.get(position).getUserId() == curUser.getUserId()){
             Intent intent = new Intent(this, RegisterActivity.class);
             intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-            startActivity(intent);
+            activityResultLauncher.launch(intent);
         }
         else Toast.makeText(this, "You can only edit yourself!", Toast.LENGTH_LONG).show();
     }
-
     @Override
     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
         createDeleteAlertDialog(usersList.get(position));
         return true;
     }
-
     public void deleteUser(User delUser){
         if(delUser.isUserIsAdmin()){
             Toast.makeText(this, "You can't delete an admin!", Toast.LENGTH_LONG).show();
@@ -362,12 +305,38 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             isUserSignedIn = false;
             InitiateFunctions.deleteUserFromFirestore(delUser);
             Toast.makeText(this, "You deleted yourself!", Toast.LENGTH_LONG).show();
-            finishActivity();
+            finishActivity(true, null);
         }
         InitiateFunctions.deleteUserFromFirestore(delUser);
+        deleteUserFromUsersList(delUser);
         lvUsers.invalidateViews();
+    }
+
+    private List<User> getListContaining(List<User> list, String containing, boolean isSortedByFirstName, boolean isSortedByLastName){
+        ArrayList<User> sorted;
+        if(containing.isEmpty()){
+            sorted = new ArrayList<>(list);
+        }
+        else{
+            sorted = new ArrayList<>();
+            User user;
+            int size = list.size();
+            for (int i = 0; i < size; i++) {
+                user = list.get(i);
+                if (user.getFullNameAdmin().contains(containing)) sorted.add(user);
+            }
+        }
+
+        if(isSortedByLastName){
+
+        }
 
 
+        return sorted;
+    }
+
+    private void deleteUserFromUsersList(User delUser){
+        usersList.remove(delUser);
     }
     public void createDeleteAlertDialog(User delUser){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

@@ -112,6 +112,7 @@ public class InitiateFunctions {
     public void initViewsFromUser(User user, Boolean isValid, FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic){
         initViewsFromUser(user, isValid, context, db, tvWelcome, ivProfilePic);
     }
+
     public static void initViewsFromUser(User user, Boolean isValid, Context context, FirebaseFirestore db, TextView tvWelcome, ImageView ivProfilePic){
         if(isValid != null && isValid){
             String fullName = user.getFullNameAdmin();

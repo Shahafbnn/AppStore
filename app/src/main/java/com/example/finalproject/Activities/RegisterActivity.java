@@ -1,6 +1,7 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
+import static com.example.finalproject.Classes.InitiateFunctions.invalidateViews;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -13,6 +14,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -50,6 +54,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Random;
 
@@ -71,6 +76,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private FirebaseFirestore db;
 
     private String myDirStr;
+    private MenuItem registerActivityMenuItemRandomData;
 
     ActivityResultLauncher<Intent> startFile;
     @Override
@@ -153,39 +159,52 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             if(!User.isPasswordConfirmed(curUser.getUserPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
             ivImage.setImageURI(curUser.getImgUri(this));
         }
-
-        // ignore this
-        boolean setDevData = true;
-        if(setDevData){
-            char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
-            String specialFirstName = "";
-            String specialLastName = "";
-
-            Random rand = new Random();
-            int num = rand.nextInt(7) + 3;
-            for(int i = 0; i < num; i++){
-                if(i == 0){
-                    specialFirstName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
-                    specialLastName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
-                }
-                specialFirstName += nameStr[rand.nextInt(nameStr.length)];
-                specialLastName += nameStr[rand.nextInt(nameStr.length)];
-            }
-
-            etTextFirstName.setText(specialFirstName);
-            etTextLastName.setText(specialLastName);
-            etDecimalWeight.setText("99");
-            etPhoneNumber.setText("05867733" + (rand.nextInt(90) + 10));
-            etTextPassword.setText("Pass1234!");
-            etTextPasswordConfirm.setText(etTextPassword.getText().toString());
-            etTextEmailAddress.setText("email"+(rand.nextInt(90) + 10)+"@email.email");
-            actvTextHomeCity.setText("Abbirim");
-            etTextHomeAddress.setText("Home 1");
-            etBirthDate.setText("13/12/2000");
-
-        }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.activity_register_menu, menu);
+
+        registerActivityMenuItemRandomData = menu.findItem(R.id.registerActivityMenuItemRandomData);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(item==registerActivityMenuItemRandomData){
+            fillWithRandomData();
+            return true;
+        }
+        else return super.onOptionsItemSelected(item);
+    }
+    private void fillWithRandomData(){
+        char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
+        String specialFirstName = "";
+        String specialLastName = "";
+
+        Random rand = new Random();
+        int num = rand.nextInt(7) + 3;
+        for(int i = 0; i < num; i++){
+            if(i == 0){
+                specialFirstName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
+                specialLastName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
+            }
+            specialFirstName += nameStr[rand.nextInt(nameStr.length)];
+            specialLastName += nameStr[rand.nextInt(nameStr.length)];
+        }
+
+        etTextFirstName.setText(specialFirstName);
+        etTextLastName.setText(specialLastName);
+        etDecimalWeight.setText("99");
+        etPhoneNumber.setText("05867733" + (rand.nextInt(90) + 10));
+        etTextPassword.setText("Pass1234!");
+        etTextPasswordConfirm.setText(etTextPassword.getText().toString());
+        etTextEmailAddress.setText("email"+(rand.nextInt(90) + 10)+"@email.email");
+        actvTextHomeCity.setText("Abbirim");
+        etTextHomeAddress.setText("Home 1");
+        etBirthDate.setText("13/12/2000");
+
+    }
     private void saveBitmap(){
         //check if the data was saved correctly
         MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
@@ -238,6 +257,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             allValid = false;
         }
         if(allValid){
+            btnSendData.setClickable(false);
             db.collection("users")
                     .whereEqualTo("userEmail", etTextEmailAddress.getText().toString())
                     .get()
@@ -251,11 +271,13 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                         if(!(isUserSignedIn && (documentSnapshot.getId().equals(curUser.getUserId())))){
                                             etTextEmailAddress.setError("Email is already in use!");
                                             isValid = false;
+                                            btnSendData.setClickable(true);
                                         }
                                     }
                                 }
 
                             }
+                            else btnSendData.setClickable(true);
                             if(isValid){
                                 db.collection("users")
                                         .whereEqualTo("userPhoneNumber", etPhoneNumber.getText().toString())
@@ -268,11 +290,12 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                         if(!(isUserSignedIn && (documentSnapshot.getId().equals(curUser.getUserId())))){
                                                             etPhoneNumber.setError("Phone number is already in use!");
                                                             isValid1 = false;
+                                                            btnSendData.setClickable(true);
                                                         }
                                                     }
                                                 }
 
-                                            }
+                                            } else btnSendData.setClickable(true);
                                             if(isValid1){
                                                 db.collection("cities")
                                                         .whereEqualTo("cityName", actvTextHomeCity.getText().toString().toUpperCase())
@@ -294,6 +317,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                                             u.setUserHomeAddress(etTextHomeAddress.getText().toString());
                                                                             u.setUserPassword(etTextPassword.getText().toString());
                                                                             u.setUserPhoneNumber(etPhoneNumber.getText().toString());
+                                                                            // update the user's admin-ability
                                                                             u.setUserIsAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
                                                                             saveBitmap(); // change to use Firebase Storage
                                                                             u.setUserImgSrc(myDirStr);
@@ -349,11 +373,13 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                                         else {
                                                                             actvTextHomeCity.setError("City does not exist!");
                                                                             Toast.makeText(getApplicationContext(), "City does not exist!", Toast.LENGTH_LONG).show();
+                                                                            btnSendData.setClickable(true);
                                                                         }
                                                                     }
                                                                 } else {
                                                                     Log.w("debug", "Task unsuccessful", task1.getException());
                                                                     Toast.makeText(getApplicationContext(), "Task unsuccessful!", Toast.LENGTH_LONG).show();
+                                                                    btnSendData.setClickable(true);
                                                                 }
                                                             }
                                                         });
@@ -366,18 +392,9 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
     }
 
-    private void finishActivity(boolean result){
-        Intent returnIntent = new Intent();
-        returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
-        if(result) setResult(Activity.RESULT_OK, returnIntent);
-        else setResult(Activity.RESULT_CANCELED, returnIntent);
-        finish();
-    }
-
     private void finishActivity(boolean result, User user){
         Intent returnIntent = new Intent();
         returnIntent.putExtra(Constants.INTENT_CURRENT_USER_KEY, user);
-        returnIntent.putExtra(REGISTER_ACTIVITY_RETURN_DATA_KEY, result);
         if(result) setResult(Activity.RESULT_OK, returnIntent);
         else setResult(Activity.RESULT_CANCELED, returnIntent);
         finish();
