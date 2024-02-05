@@ -24,6 +24,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -34,6 +35,7 @@ import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.User;
 import com.example.finalproject.Classes.UserValidations;
 import com.example.finalproject.Classes.ValidationData;
+import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -43,6 +45,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -64,7 +67,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private FirebaseFirestore db;
     private ProgressDialog waitProgressDialog;
     private Boolean isCurUserAdmin;
-
+    private FirebaseStorage storage;
     private boolean isSortedByFirstName, isSortedByLastName;
     // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
     // It retrieves the User object from the returned Intent and updates the current user and sign-in status.
@@ -121,6 +124,8 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_users_list_view);
 
+        storage = FirebaseStorage.getInstance();
+
         btnSortByFirstName = findViewById(R.id.btnSortByFirstName);
         btnSortByLastName = findViewById(R.id.btnSortByLastName);
         btnSearchUser = findViewById(R.id.btnSearchUser);
@@ -175,6 +180,11 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             originalUsersList = new ArrayList<>(usersList);
         }
     }
+    private void setUserImage(ImageView image, User user){
+        GlideApp.with(this)
+                .load(this.storage.getReference().child(user.getUserImgSrc()))
+                .into(image);
+    }
     private void createLoadingScreen(){
         waitProgressDialog = new ProgressDialog(this);
         waitProgressDialog.setMax(100);
@@ -191,8 +201,8 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         finish();
     }
     private void userListSorter(){
-        originalUsersList = new ArrayList<>(usersList);
-        usersList = getListContainingAndSorted(originalUsersList, btnSearchUser.getText().toString(), isSortedByFirstName, isSortedByLastName);
+        usersList.clear();
+        usersList.addAll(getListContainingAndSorted(originalUsersList, etSearchUser.getText().toString(), isSortedByFirstName, isSortedByLastName));
         userAdapter.notifyDataSetChanged();
     }
     private void fetchUsersListDataFromFirestore(){

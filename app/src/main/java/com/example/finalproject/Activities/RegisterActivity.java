@@ -1,7 +1,6 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
-import static com.example.finalproject.Classes.InitiateFunctions.invalidateViews;
 
 import android.app.Activity;
 import android.app.DatePickerDialog;
@@ -9,6 +8,8 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,28 +36,26 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
-import com.example.finalproject.Classes.MyPair;
 import com.example.finalproject.Classes.PermissionClass;
-import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User;
-import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.CitiesArray;
+import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Random;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -75,8 +74,9 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private SharedPreferences.Editor editor;
     private FirebaseFirestore db;
 
-    private String myDirStr;
     private MenuItem registerActivityMenuItemRandomData;
+
+    private FirebaseStorage storage;
 
     ActivityResultLauncher<Intent> startFile;
     @Override
@@ -84,6 +84,8 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         db = FirebaseFirestore.getInstance();
+        storage = FirebaseStorage.getInstance();
+
 
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -157,7 +159,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             InitiateFunctions.initUser(DATA, ETS);
             etTextPasswordConfirm.setText(curUser.getUserPassword());
             if(!User.isPasswordConfirmed(curUser.getUserPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
-            ivImage.setImageURI(curUser.getImgUri(this));
+
+            GlideApp.with(this)
+                    .load(this.storage.getReference().child(curUser.getUserImgSrc()))
+                    .into(ivImage);
         }
     }
 
@@ -205,13 +210,40 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         etBirthDate.setText("13/12/2000");
 
     }
-    private void saveBitmap(){
-        //check if the data was saved correctly
-        MyPair<Boolean, String> validationPair = StorageFunctions.saveBitmapInPath(photoBitmap);
-        if(validationPair.getFirst()) myDirStr = validationPair.getSecond();
-        else {
-            myDirStr = null;
-            Log.e("Runtime Exception", "" + "onActivityResult image saving failed.");
+    private String getFullPath(User user){
+        String specialPath = "" + user.getUserPhoneNumber() + new SimpleDateFormat("ddMMyy-HHmmss.SSSS").format(new Date()) + ".jpg";
+        String foldersPhotos = "Photos/";
+        return foldersPhotos + specialPath;
+    }
+    private void saveBitmapAndFinish(User user){
+        if(!isUserSignedIn || photoBitmap != null){
+            if (photoBitmap == null) {
+                photoBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.emptypfp);
+            }
+
+            String fullPath = user.getUserImgSrc();
+
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+
+            StorageReference storageRef = storage.getReference();
+            StorageReference imagesRef = storageRef.child(fullPath);
+
+
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+            byte[] data = byteArrayOutputStream.toByteArray();
+
+            imagesRef.putBytes(data).addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                    if (task.isSuccessful()) {
+                        finishActivity(true, user);
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+                        btnSendData.setClickable(true);
+                    }
+                }
+            });
         }
     }
     @Override
@@ -319,11 +351,11 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                                             u.setUserPhoneNumber(etPhoneNumber.getText().toString());
                                                                             // update the user's admin-ability
                                                                             u.setUserIsAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
-                                                                            saveBitmap(); // change to use Firebase Storage
-                                                                            u.setUserImgSrc(myDirStr);
-
+                                                                            if(!isUserSignedIn){
+                                                                                u.setUserImgSrc(getFullPath(u));
+                                                                            }
                                                                             if(isUserSignedIn){
-                                                                                if(myDirStr==null) u.setUserImgSrc(curUser.getUserImgSrc());
+                                                                                u.setUserImgSrc(curUser.getUserImgSrc());
                                                                                 u.setUserId(curUser.getUserId());
                                                                                 db.collection("users").document(curUser.getUserId()).set(u).addOnCompleteListener(new OnCompleteListener<Void>() {
                                                                                     @Override
@@ -331,7 +363,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                                                         if (task1.isSuccessful()) {
                                                                                             Toast.makeText(getApplicationContext(), "Successful!", Toast.LENGTH_LONG).show();
                                                                                             try {
-                                                                                                finishActivity(true, u);
+                                                                                                saveBitmapAndFinish(u);
                                                                                             } catch (NullPointerException e){
                                                                                                 Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
                                                                                             }
@@ -358,7 +390,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 //                                                                                                EventListener<DocumentSnapshot> snap = InitiateFunctions.getUpdateUserSnapshotListener();
 //                                                                                                db.collection("users").document(docId).addSnapshotListener(act, snap);
                                                                                             try {
-                                                                                                finishActivity(true, u);
+                                                                                                saveBitmapAndFinish(u);
                                                                                             } catch (NullPointerException e){
                                                                                                 Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
                                                                                             }

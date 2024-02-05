@@ -9,8 +9,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.User;
+import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.List;
 
@@ -55,7 +57,8 @@ public class UserAdapter extends BaseAdapter {
         TextView tvUserAdapterWeight = userView.findViewById(R.id.tvUserAdapterWeight);
         TextView tvUserAdapterPhoneNumber = userView.findViewById(R.id.tvUserAdapterPhoneNumber);
 
-        ivUserAdapterPfp.setImageURI(user.getImgUri(context));
+        setUserImage(ivUserAdapterPfp, user);
+
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
         tvUserAdapterAge.setText(user.getAge().toString());
         tvUserAdapterEmail.setText(user.getUserEmail());
@@ -64,5 +67,11 @@ public class UserAdapter extends BaseAdapter {
         tvUserAdapterPhoneNumber.setText(user.getUserPhoneNumber());
 
         return userView;
+    }
+
+    private void setUserImage(ImageView image, User user){
+        GlideApp.with(context)
+                .load(FirebaseStorage.getInstance().getReference().child(user.getUserImgSrc()))
+                .into(image);
     }
 }

@@ -9,33 +9,37 @@ import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
+import com.bumptech.glide.Glide;
 import com.example.finalproject.R;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
 
 public class StorageFunctions {
 
-    public static MyPair<Boolean, String> saveBitmapInPath(Bitmap bitmap){
-        String timeStamp = new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
+    public static void saveBitmapInPath(Bitmap bitmap, User user){
+        String specialPath = "" + user.getUserId() + new SimpleDateFormat("ddMyy-HHmmss").format(new Date()) + ".jpg";
         String foldersPhotos = "Photos";
-        File myDir = new File(Environment.getExternalStorageDirectory(), "/Pictures/" + foldersPhotos);
+        String fullPath = foldersPhotos + specialPath;
 
-        if (!myDir.exists()) {
-            if(!myDir.mkdir()) Log.e("Runtime Exception", "" + "myDir.mkdirs() has failed");
-        }
+        user.setUserImgSrc(fullPath);
 
-        File dest = new File(myDir, timeStamp);
-        try {
-            FileOutputStream out = new FileOutputStream(dest);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out); // Compress and write the bitmap to the output stream
-            out.flush(); // Flush the stream
-            out.close(); // Close the stream
-        } catch (Exception e) {
-            e.printStackTrace(); // Print the stack trace for debugging purposes
-        }
-        return new MyPair<>(true, dest.getPath());
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+
+        StorageReference storageRef = storage.getReference();
+        StorageReference imagesRef = storageRef.child(fullPath);
+
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte[] data = byteArrayOutputStream.toByteArray();
+
+        UploadTask uploadTask = imagesRef.putBytes(data);
     }
 
 
