@@ -8,8 +8,10 @@ import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
+import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -17,7 +19,6 @@ import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.Date;
 
 public class StorageFunctions {
@@ -27,7 +28,7 @@ public class StorageFunctions {
         String foldersPhotos = "Photos";
         String fullPath = foldersPhotos + specialPath;
 
-        user.setUserImgSrc(fullPath);
+        user.setUserImagePath(fullPath);
 
         FirebaseStorage storage = FirebaseStorage.getInstance();
 
@@ -71,5 +72,11 @@ public class StorageFunctions {
             Log.e("", "file does not exist in getUriFromPath");
             return null;
         }
+    }
+
+    public static void setImage(Context context, ImageView imageView, String path){
+        GlideApp.with(context)
+                .load(FirebaseStorage.getInstance().getReference().child(path))
+                .into(imageView);
     }
 }

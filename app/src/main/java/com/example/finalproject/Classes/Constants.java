@@ -1,6 +1,8 @@
 package com.example.finalproject.Classes;
 
-import static com.example.finalproject.Classes.UserValidations.ValidateTypes.*;
+import static com.example.finalproject.Classes.User.UserValidations.ValidateTypes.*;
+
+import com.example.finalproject.Classes.User.UserValidations;
 
 public abstract class Constants {
 
@@ -38,6 +40,8 @@ public abstract class Constants {
     public static final String REGISTER_ACTIVITY_RETURN_DATA_KEY = "registerActivitySuccess";
 
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
+    public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";
+
     public static final String[] APPLICATION_CATEGORIES = new String[]{"Games", "Fitness", "Business", "Food"};
 
 }

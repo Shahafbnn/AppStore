@@ -1,4 +1,4 @@
-package com.example.finalproject.Classes;
+package com.example.finalproject.Classes.User;
 
 
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
@@ -10,10 +10,12 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 
+import com.example.finalproject.Classes.Constants;
+import com.example.finalproject.Classes.StorageFunctions;
+
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import com.google.firebase.Timestamp;
 
 
 public class User implements Serializable {
@@ -29,7 +31,7 @@ public class User implements Serializable {
     private String userPassword;
     private String userPhoneNumber;
     private boolean userIsAdmin;
-    private String userImgSrc;
+    private String userImagePath;
 
     public User() {
     }
@@ -122,14 +124,14 @@ public class User implements Serializable {
         this.userIsAdmin = userIsAdmin;
     }
 
-    public String getUserImgSrc() {
-        return userImgSrc;
+    public String getUserImagePath() {
+        return userImagePath;
     }
     public Bitmap getImgBitmap(Context context){
-        return StorageFunctions.getBitmapFromPath(userImgSrc, context);
+        return StorageFunctions.getBitmapFromPath(userImagePath, context);
     }
     public Uri getImgUri(Context context){
-        return StorageFunctions.getUriFromPath(userImgSrc, context);
+        return StorageFunctions.getUriFromPath(userImagePath, context);
     }
     public Double getAge(){
         Date now = new Date();
@@ -149,8 +151,8 @@ public class User implements Serializable {
 
 
 
-    public void setUserImgSrc(String userImgSrc) {
-        this.userImgSrc = userImgSrc;
+    public void setUserImagePath(String userImagePath) {
+        this.userImagePath = userImagePath;
     }
 
     public String birthdateToString(){
@@ -166,7 +168,7 @@ public class User implements Serializable {
         if(dates.length != 3) return null;
         return new Date(Integer.parseInt(dates[2]) - 1900, Integer.parseInt(dates[1]) - 1, Integer.parseInt(dates[0]));    }
     public static boolean isAdmin(String phoneNumber){
-        for (String s:Constants.ADMIN_PHONE_NUMBERS) {
+        for (String s: Constants.ADMIN_PHONE_NUMBERS) {
             if (phoneNumber.equals(s)) return true;
         }
         return false;
@@ -201,7 +203,7 @@ public class User implements Serializable {
                 ", userPassword='" + userPassword + '\'' +
                 ", userPhoneNumber='" + userPhoneNumber + '\'' +
                 ", userIsAdmin=" + userIsAdmin +
-                ", userImgSrc='" + userImgSrc + '\'' +
+                ", userImgSrc='" + userImagePath + '\'' +
                 '}';
     }
 }

@@ -1,30 +1,22 @@
 package com.example.finalproject.Classes;
 
-import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_INITIALIZED_KEY;
 import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
-import static com.example.finalproject.Classes.UserValidations.validate;
+import static com.example.finalproject.Classes.User.UserValidations.validate;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-
-import com.bumptech.glide.Glide;
-import com.example.finalproject.GlideApp;
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.Classes.User.UserValidations;
 import com.example.finalproject.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 public class InitiateFunctions {
     private Context context;
@@ -128,15 +120,10 @@ public class InitiateFunctions {
 //                // I don't know yet if i should use update or set here. and if I use update does it only update the changed variables?
 //                db.collection("users").document(user.getUserId()).set(user);
 //            }
-            FirebaseStorage storage = FirebaseStorage.getInstance();
-
-            StorageReference storageRef = storage.getReference();
-            StorageReference imagesRef = storageRef.child(user.getUserImgSrc());
 
             tvWelcome.setText("Welcome " + fullName + "!");
-            GlideApp.with(context)
-                    .load(imagesRef)
-                    .into(ivProfilePic);
+
+            StorageFunctions.setImage(context, ivProfilePic, user.getUserImagePath());
 
             Toast.makeText(context, "Log In successful", Toast.LENGTH_SHORT).show();
 

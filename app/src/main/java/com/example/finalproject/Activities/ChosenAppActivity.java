@@ -1,7 +1,10 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
+
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -12,23 +15,34 @@ import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.example.finalproject.Classes.App.App;
 import com.example.finalproject.R;
 
 public class ChosenAppActivity extends AppCompatActivity implements View.OnClickListener {
 
-    TextView tvAppName, tvAppCreator, tvAppDownloads, tvAppSize, tvAppPerms;
-    ImageView ivAppImage;
-    ImageButton ibAppDownload, ibAppShare;
-    Button btnAppSendUserReview;
-    ScrollView svAppPerms, svAppReviews;
-    RatingBar rbAppAvgRating, rbAppUserRating;
-    EditText etAppReview;
-    LinearLayout llAppPerms;
+    private TextView tvAppName, tvAppCreator, tvAppDownloads, tvAppSize, tvAppPerms;
+    private ImageView ivAppImage;
+    private ImageButton ibAppDownload, ibAppShare;
+    private Button btnAppSendUserReview;
+    private ScrollView svAppPerms, svAppReviews;
+    private RatingBar rbAppAvgRating, rbAppUserRating;
+    private EditText etAppReview;
+    private LinearLayout llAppPerms;
+    private App curApp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chosen_app);
+
+        //getting the app from the intent
+        curApp = (App) getIntent().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+        if(curApp == null) {
+            Toast.makeText(this, "null app was sent, try again!", Toast.LENGTH_LONG).show();
+            finishActivity(Activity.RESULT_CANCELED);
+        }
+
 
         tvAppName = (TextView) findViewById(R.id.tvAppName);
         tvAppCreator = (TextView) findViewById(R.id.tvAppCreator);
@@ -61,23 +75,12 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     }
 
     private void initAppFromExtras(){
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            String value = extras.getString("key");
-            if(value == null || value.equals("")) return;
-            long id = Long.parseLong(value);
-            int curApp;
-//            //MyApplication curApp = MyDatabase.getInstance(this).cityDAO().getCityById(id);
-//            tvAppName.setText(curApp.getName());
-//            tvAppCreator.setText("Created by: " + curApp.getCreator());
-//            tvAppDownloads.setText(curApp.getDownloads() + " Downloads");
-//            tvAppSize.setText(curApp.getSize() + " mb");
-//
-//            //the openable and closable scrollView
-//            llAppPerms.
-
-
-        }
+        tvAppName.setText(curApp.getAppName());
+        tvAppCreator = (TextView) findViewById(R.id.tvAppCreator);
+        tvAppCreator.setOnClickListener(this);
+        tvAppDownloads = (TextView) findViewById(R.id.tvAppDownloads);
+        tvAppSize = (TextView) findViewById(R.id.tvAppSize);
+        tvAppPerms = (TextView) findViewById(R.id.tvAppPerms);
     }
 
     @Override

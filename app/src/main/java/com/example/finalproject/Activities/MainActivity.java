@@ -30,6 +30,8 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.*;
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.Classes.User.UserValidations;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;

@@ -2,6 +2,9 @@ package com.example.finalproject.Classes;
 
 import static org.junit.Assert.assertEquals;
 
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.Classes.User.UserValidations;
+
 import junit.framework.TestCase;
 
 import org.junit.Test;

@@ -2,9 +2,6 @@ package com.example.finalproject;
 
 import android.content.Context;
 import android.icu.util.Calendar;
-import android.icu.util.GregorianCalendar;
-import android.util.Log;
-import com.example.finalproject.Classes.UserValidations;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -13,8 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
-
-import com.example.finalproject.Classes.User;
 
 /**
  * Instrumented test, which will execute on an Android device.

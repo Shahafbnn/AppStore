@@ -7,7 +7,6 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -24,7 +23,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -32,19 +30,10 @@ import android.widget.Toast;
 import com.example.finalproject.Adapters.UserAdapter;
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
-import com.example.finalproject.Classes.User;
-import com.example.finalproject.Classes.UserValidations;
-import com.example.finalproject.Classes.ValidationData;
-import com.example.finalproject.GlideApp;
+import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.ArrayList;
@@ -180,11 +169,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             originalUsersList = new ArrayList<>(usersList);
         }
     }
-    private void setUserImage(ImageView image, User user){
-        GlideApp.with(this)
-                .load(this.storage.getReference().child(user.getUserImgSrc()))
-                .into(image);
-    }
+
     private void createLoadingScreen(){
         waitProgressDialog = new ProgressDialog(this);
         waitProgressDialog.setMax(100);

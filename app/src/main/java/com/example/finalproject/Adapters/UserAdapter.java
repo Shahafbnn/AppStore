@@ -8,11 +8,9 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.finalproject.Classes.User;
-import com.example.finalproject.GlideApp;
+import com.example.finalproject.Classes.StorageFunctions;
+import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.R;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
 
 import java.util.List;
 
@@ -20,11 +18,10 @@ public class UserAdapter extends BaseAdapter {
 
     private Context context;
     private List<User> users;
-    private FirebaseFirestore db;
+
 
     public UserAdapter(Context context, List<User> usersArray) {
         this.context = context;
-        this.db = FirebaseFirestore.getInstance();
         this.users = usersArray;
     }
 
@@ -57,7 +54,7 @@ public class UserAdapter extends BaseAdapter {
         TextView tvUserAdapterWeight = userView.findViewById(R.id.tvUserAdapterWeight);
         TextView tvUserAdapterPhoneNumber = userView.findViewById(R.id.tvUserAdapterPhoneNumber);
 
-        setUserImage(ivUserAdapterPfp, user);
+        StorageFunctions.setImage(context, ivUserAdapterPfp, user.getUserImagePath());
 
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
         tvUserAdapterAge.setText(user.getAge().toString());
@@ -69,9 +66,4 @@ public class UserAdapter extends BaseAdapter {
         return userView;
     }
 
-    private void setUserImage(ImageView image, User user){
-        GlideApp.with(context)
-                .load(FirebaseStorage.getInstance().getReference().child(user.getUserImgSrc()))
-                .into(image);
-    }
 }

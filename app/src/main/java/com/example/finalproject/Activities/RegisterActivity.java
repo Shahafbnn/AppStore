@@ -37,9 +37,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
 import com.example.finalproject.Classes.PermissionClass;
-import com.example.finalproject.Classes.User;
+import com.example.finalproject.Classes.StorageFunctions;
+import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.DatabaseClasses.CitiesArray;
-import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -160,9 +160,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             etTextPasswordConfirm.setText(curUser.getUserPassword());
             if(!User.isPasswordConfirmed(curUser.getUserPassword(), etTextPasswordConfirm.getText().toString())) etTextPasswordConfirm.setError("password confirm isn't equal to password");
 
-            GlideApp.with(this)
-                    .load(this.storage.getReference().child(curUser.getUserImgSrc()))
-                    .into(ivImage);
+            StorageFunctions.setImage(this, ivImage, curUser.getUserImagePath());
         }
     }
 
@@ -221,7 +219,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 photoBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.emptypfp);
             }
 
-            String fullPath = user.getUserImgSrc();
+            String fullPath = user.getUserImagePath();
 
             FirebaseStorage storage = FirebaseStorage.getInstance();
 
@@ -352,10 +350,10 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                                                                             // update the user's admin-ability
                                                                             u.setUserIsAdmin(User.isAdmin(etPhoneNumber.getText().toString()));
                                                                             if(!isUserSignedIn){
-                                                                                u.setUserImgSrc(getFullPath(u));
+                                                                                u.setUserImagePath(getFullPath(u));
                                                                             }
                                                                             if(isUserSignedIn){
-                                                                                u.setUserImgSrc(curUser.getUserImgSrc());
+                                                                                u.setUserImagePath(curUser.getUserImagePath());
                                                                                 u.setUserId(curUser.getUserId());
                                                                                 db.collection("users").document(curUser.getUserId()).set(u).addOnCompleteListener(new OnCompleteListener<Void>() {
                                                                                     @Override

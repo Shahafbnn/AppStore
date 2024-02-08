@@ -1,10 +1,10 @@
-package com.example.finalproject.Classes;
+package com.example.finalproject.Classes.User;
 
-import android.content.Context;
 import android.icu.util.Calendar;
 import android.util.Log;
 
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.Classes.ValidationData;
 
 import java.util.Date;
 import java.util.Objects;
