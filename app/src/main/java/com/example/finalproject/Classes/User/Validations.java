@@ -3,18 +3,20 @@ package com.example.finalproject.Classes.User;
 import android.icu.util.Calendar;
 import android.util.Log;
 
-import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.ValidationData;
 
 import java.util.Date;
 import java.util.Objects;
 
-public class UserValidations {
+public class Validations {
 
-    public enum ValidateTypes{
+    public enum ValidateUserTypes {
         FIRST_NAME, LAST_NAME, WEIGHT, PHONE_NUMBER, PASSWORD, EMAIL, BIRTH_DATE, CITY, ADDRESS
     }
-    public static <T> ValidationData validate(T toValidate, ValidateTypes type){
+    public enum ValidateAppTypes {
+        NAME, DESCRIPTION, MAIN_CATEGORY, PRICE, DISCOUNT_PERCENTAGE
+    }
+    public static <T> ValidationData validateUser(T toValidate, ValidateUserTypes type){
         //editValue[0] = phoneNumber, editValue[1] = email
         switch (type) {
             case FIRST_NAME:
@@ -49,6 +51,112 @@ public class UserValidations {
                 return new ValidationData(false, "UserValidations{validate{default Wrong ValidateTypes}}");
         }
 
+    }
+
+    public static <T> ValidationData validateApp(T toValidate, ValidateAppTypes type){
+        //editValue[0] = phoneNumber, editValue[1] = email
+        switch (type) {
+            case NAME:
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate NAME is the wrong type: "+toValidate+"}}");
+                return validateAppName((String)toValidate);
+            case DESCRIPTION:
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate DESCRIPTION is the wrong type: "+toValidate+"}}");
+                return validateAppDescription((String)toValidate);
+            case MAIN_CATEGORY:
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate MAIN_CATEGORY is the wrong type: "+toValidate+"}}");
+                return validateCategorySearch((String) toValidate);
+            case PRICE:
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate PRICE is the wrong type: "+toValidate+"}}");
+                return validateAppPrice((String)toValidate);
+            case DISCOUNT_PERCENTAGE:
+                if(!(toValidate instanceof String)) Log.e("Runtime Exception", "" + "UserValidations{validate{toValidate DISCOUNT_PERCENTAGE is the wrong type: "+toValidate+"}}");
+                return validateAppDiscountPercentage((String)toValidate);
+            default:
+                Log.e("Runtime Exception", "" + "AppValidations{validate{default Wrong ValidateTypes}}");
+                return new ValidationData(false, "AppValidations{validate{default Wrong ValidateTypes}}");
+        }
+
+    }
+
+    public static ValidationData validateAppName(String name){
+        if(name==null) return new ValidationData(false,  "name cannot be null");
+        if (name.equals("")) return new ValidationData(false,  "name cannot be empty");
+        long strLen = name.length();
+        if(strLen > 30) return new ValidationData(false,  "name cannot be over 30 chars long");
+        if(strLen < 2) return new ValidationData(false,  "name cannot be under 2 chars long");
+        if(name.charAt(0) == ' ') return new ValidationData(false,  "name cannot begin with a space");
+        char[] chars = name.toCharArray();
+        for (char letter:chars) {
+            if(!( (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') || (letter >= '0' && letter <= '9') || (letter == ' ') )) return new ValidationData(false,  "name must only contain English chars, numbers or a space");
+        }
+        return new ValidationData(true, null);
+    }
+
+    public static ValidationData validateAppDescription(String description){
+        if(description==null) return new ValidationData(false,  "description cannot be null");
+        if (description.equals("")) return new ValidationData(false,  "description cannot be empty");
+        long strLen = description.length();
+        if(strLen > 300) return new ValidationData(false,  "description cannot be over 300 chars long");
+        if(strLen < 20) return new ValidationData(false,  "description cannot be under 20 chars long");
+        if(description.charAt(0) == ' ') return new ValidationData(false,  "description cannot begin with a space");
+        char[] chars = description.toCharArray();
+        for (char letter:chars) {
+            if(!( (letter >= 'a' && letter <= 'z') || (letter >= 'A' && letter <= 'Z') || (letter >= '0' && letter <= '9') || (letter >= '!' && letter <= '/') || (letter == ' ') )) return new ValidationData(false,  "description must only contain English chars, numbers a space or special characters");
+        }
+        return new ValidationData(true, null);
+    }
+
+    public static ValidationData validateCategorySearch(String categoryName){
+        if(categoryName==null) return new ValidationData(false,  "category name cannot be null");
+        if (categoryName.equals("")) return new ValidationData(false,  "category name cannot be empty");
+        long strLen = categoryName.length();
+        if(strLen > 30) return new ValidationData(false,  "category name cannot be over 30 chars long");
+        if(strLen < 3) return new ValidationData(false,  "category name cannot be under 3 chars long");
+        char currentChar;
+        for(int i = 0; i< strLen; i++){
+            currentChar = categoryName.charAt(i);
+            if(!((currentChar >= 'a' && currentChar <= 'z') || (currentChar >= 'A' && currentChar <= 'Z'))) return new ValidationData(false, "category name can only contain English letters");
+        }
+        return new ValidationData(true, null);
+    }
+
+    public static ValidationData validateAppPrice(String price){
+        Double num = stringToDecimalNumber(price);
+        if(num == null) return new ValidationData(false, "price must be a number");
+        if(num < 0) return new ValidationData(false, "price must be a positive number");
+        return new ValidationData(true, null);
+    }
+    public static ValidationData validateAppDiscountPercentage(String discountPercentage){
+        return new ValidationData(validateDecimalNumber(discountPercentage), "Discount percentage must be a number");
+    }
+
+    public static Double fixNumber(String number){
+//        //weight is an array to emulate a pointer in C
+//        if (number==null) return 0.0;
+//        if (number.equals("")) return 0.0;
+//        if(number.equals(".")) return 0.0;
+//        if(number.equals("-.")) return 0.0;
+//        if(number.contains("-") && number.charAt(0) != '-') return null; //"5-1"
+//        String[] numberDotStringArray = number.split("\\.");
+//        if(numberDotStringArray.length > 2) return null; //"5.1.2"
+//        if(numberDotStringArray.length == 0) return 0.0;
+//        if(numberDotStringArray.length==1)
+//
+//        double numberDecimal;
+//        if(numberDotStringArray.length == 1 && number)
+//        return validateWeight(numberDecimal);
+        return null;
+    }
+    public static boolean validateDecimalNumber(String number){
+        return stringToDecimalNumber(number) != null;
+    }
+    private static Double stringToDecimalNumber(String number){
+        try{
+            return Double.parseDouble(number);
+        }
+        catch(NumberFormatException e){
+            return null;
+        }
     }
 
 
@@ -254,7 +362,7 @@ public class UserValidations {
         if (city.equals("")) return new ValidationData(false,  "city cannot be empty");
         long strLen = city.length();
         if(strLen > 30) return new ValidationData(false,  "city cannot be over 30 chars long");
-        if(strLen < 2) return new ValidationData(false,  "city cannot be under 6 chars long");
+        if(strLen < 2) return new ValidationData(false,  "city cannot be under 2 chars long");
         return new ValidationData(true, null);
     }
 
@@ -287,4 +395,5 @@ public class UserValidations {
 
         return new ValidationData(true, null);
     }
+
 }

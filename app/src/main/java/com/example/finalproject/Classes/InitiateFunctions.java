@@ -1,7 +1,8 @@
 package com.example.finalproject.Classes;
 
 import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
-import static com.example.finalproject.Classes.User.UserValidations.validate;
+import static com.example.finalproject.Classes.User.Validations.validateApp;
+import static com.example.finalproject.Classes.User.Validations.validateUser;
 
 import android.app.Activity;
 import android.content.Context;
@@ -12,7 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.finalproject.Classes.User.User;
-import com.example.finalproject.Classes.User.UserValidations;
+import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.R;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
@@ -36,15 +37,29 @@ public class InitiateFunctions {
         return initUser(data, true, et);
     }
     public static boolean initUser(Object[] data, boolean usesEt, EditText[] et){
-        UserValidations.ValidateTypes[] types = Constants.getTypes();
+        Validations.ValidateUserTypes[] types = Constants.getUserTypes();
         ValidationData v;
         boolean allValid = true;
         for(int i = 0; i < types.length; i++){
-            v = validate(data[i], types[i]);
+            v = validateUser(data[i], types[i]);
             if(!v.isValid()) allValid = false;
             if (usesEt) {
                 if (v.isValid()) et[i].setText(data[i].toString());
                 else et[i].setError(v.getError());
+            }
+        }
+        return allValid;
+    }
+
+    public static boolean initApp(Object[] data, EditText[] ets){
+        Validations.ValidateAppTypes[] types = Constants.getAppTypes();
+        ValidationData v;
+        boolean allValid = true;
+        for(int i = 0; i < types.length; i++){
+            v = validateApp(data[i], types[i]);
+            if(!v.isValid()) allValid = false;
+            if (ets != null) {
+                if (!v.isValid()) ets[i].setError(v.getError());
             }
         }
         return allValid;

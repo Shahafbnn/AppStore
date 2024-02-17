@@ -9,117 +9,141 @@
     android:orientation="vertical"
     android:gravity="center_horizontal">
 
-    <TextView
-        android:id="@+id/tvAppName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="app name" />
-
-    <ImageView
-        android:id="@+id/ivAppImage"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        app:srcCompat="@drawable/emptypfp" />
-
-    <TextView
-        android:id="@+id/tvAppCreator"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:text="creator" />
-
-    <TextView
-        android:id="@+id/tvAppDownloads"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="download count" />
-
-    <TextView
-        android:id="@+id/tvAppSize"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="size mb:" />
-
-
-    <TextView
-        android:id="@+id/tvAppPerms"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:text="> Perms: " />
-
 
     <ScrollView
-        android:id="@+id/svAppPerms"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:id="@+id/llAppPerms"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-    </ScrollView>
-
-    <RatingBar
-        android:id="@+id/rbAppAvgRating"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <ImageButton
-        android:id="@+id/ibAppDownload"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scaleType="fitXY"
-        app:srcCompat="@drawable/download_button" />
-
-    <ImageButton
-        android:id="@+id/ibAppShare"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:scaleType="fitXY"
-        app:srcCompat="@drawable/share_icon" />
-
-    <RatingBar
-        android:id="@+id/rbAppUserRating"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnAppSendUserReview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Send" />
-
-        <EditText
-            android:id="@+id/etAppReview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:hint="Leave Review Here"
-            android:inputType="text"
-            android:layout_weight="20"/>
-
-
-
-</LinearLayout>
-    <ScrollView
-        android:id="@+id/svAppReviews"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
 
+            <TextView
+                android:id="@+id/tvAppName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="app name"
+                android:gravity="center"/>
+
+            <ImageView
+                android:id="@+id/ivAppImage"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                app:srcCompat="@drawable/emptypfp" />
+
+            <TextView
+                android:id="@+id/tvAppCreator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:text="creator"
+                android:gravity="center"/>
+
+            <TextView
+                android:id="@+id/tvAppDownloads"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="download count" />
+
+            <TextView
+                android:id="@+id/tvAppSize"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="size mb:" />
+
+
+            <TextView
+                android:id="@+id/tvAppPerms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:text="> Perms:" />
+
+
+            <ScrollView
+                android:id="@+id/svAppPerms"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/llAppPerms"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </ScrollView>
+
+            <RatingBar
+                android:id="@+id/rbAppAvgRating"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <ImageButton
+                android:id="@+id/ibAppDownload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/download_button" />
+
+            <ImageButton
+                android:id="@+id/ibAppShare"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:scaleType="fitXY"
+                app:srcCompat="@drawable/share_icon" />
+
+            <LinearLayout
+                android:id="@+id/llReviews"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <RatingBar
+                    android:id="@+id/rbAppUserRating"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <LinearLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnAppSendUserReview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Send" />
+
+                    <EditText
+                        android:id="@+id/etAppReview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="20"
+                        android:ems="10"
+                        android:hint="Leave Review Here"
+                        android:inputType="text" />
+
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <ScrollView
+                android:id="@+id/svAppReviews"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/llAppReviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" >
+
+                </LinearLayout>
+            </ScrollView>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

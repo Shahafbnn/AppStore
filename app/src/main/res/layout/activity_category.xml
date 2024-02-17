@@ -8,6 +8,27 @@
     android:background="@drawable/white_wallpaper"
     android:orientation="vertical">
 
+    <LinearLayout
+        android:id="@+id/llSearchCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnSendDataCategoryActivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Add" />
+
+        <AutoCompleteTextView
+            android:id="@+id/actvSearchCategoryActivity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="5"
+            android:hint="Add a category" />
+
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/svCategories"

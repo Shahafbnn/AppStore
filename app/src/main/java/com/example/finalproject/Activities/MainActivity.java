@@ -10,6 +10,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -30,8 +31,9 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 
 import com.example.finalproject.Classes.*;
+import com.example.finalproject.Classes.Category.Categories;
 import com.example.finalproject.Classes.User.User;
-import com.example.finalproject.Classes.User.UserValidations;
+import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -40,7 +42,7 @@ import com.google.firebase.firestore.*;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate, itemAboutMe;
+    private MenuItem itemLogIn,itemRegister, itemLogOut, itemDataUpdate, itemAboutMe, itemAppSettings;
     private TextView tvWelcome;
     private ImageView ivProfilePic;
     private RadioButton rbMainActivity, rbCategoryActivity;
@@ -157,6 +159,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         itemLogOut = menu.findItem(R.id.itemLogOut);
         itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
         itemAboutMe = menu.findItem(R.id.itemAboutMe);
+        itemAppSettings = menu.findItem(R.id.itemAppSettings);
+
         return true;
     }
 
@@ -167,6 +171,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             itemLogIn = menu.findItem(R.id.itemLogIn);
             itemLogOut = menu.findItem(R.id.itemLogOut);
             itemDataUpdate = menu.findItem(R.id.itemDataUpdate);
+            itemAppSettings = menu.findItem(R.id.itemAppSettings);
 
             itemRegister.setVisible(false);
             itemLogIn.setVisible(false);
@@ -188,6 +193,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             itemLogIn.setVisible(false);
             itemLogOut.setVisible(false);
             itemDataUpdate.setVisible(false);
+            itemAppSettings.setVisible(false);
+
         }
         else if(isUserSignedIn)
         {
@@ -195,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             itemLogIn.setVisible(false);
             itemLogOut.setVisible(true);
             itemDataUpdate.setVisible(true);
+            itemAppSettings.setVisible(true);
         }
         else
         {
@@ -202,6 +210,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             itemLogIn.setVisible(true);
             itemLogOut.setVisible(false);
             itemDataUpdate.setVisible(false);
+            itemAppSettings.setVisible(false);
+
         }
         invalidateOptionsMenu();
     }
@@ -235,6 +245,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else if(item==itemAboutMe){
             createAlertDialog();
+            return true;
+        }
+        else if(item==itemAppSettings){
+            createAppSettingsDialog();
             return true;
         }
         else return super.onOptionsItemSelected(item);
@@ -301,6 +315,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+    private void createAppSettingsDialog(){
+        final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.app_settings_dialog);
+
+
+
+        RadioButton rbCreateNewApp = dialog.findViewById(R.id.rbCreateNewApp);
+        RadioButton rbUpdateApp = dialog.findViewById(R.id.rbUpdateApp);
+        RecyclerView rvCreatedApps = dialog.findViewById(R.id.rvCreatedApps);
+
+        dialog.show();
+    }
     private void createCustomDialogLogIn(){
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.log_in_dialog);
@@ -362,8 +388,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String textPassword = etTextPassword.getText().toString();
 
         //validates if the fields correspond to the rules.
-        ValidationData emailValidation = UserValidations.validateEmail(emailAddress);
-        ValidationData passwordValidation = UserValidations.validatePassword(textPassword);
+        ValidationData emailValidation = Validations.validateEmail(emailAddress);
+        ValidationData passwordValidation = Validations.validatePassword(textPassword);
 
         //changes the ET error based on the validation.
         if(!emailValidation.isValid()) etEmailAddress.setError(emailValidation.getError());
@@ -374,8 +400,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         if (v==rbCategoryActivity) {
-            Intent intent = new Intent(this, CategoryActivity.class);
-            startActivity(intent);
+            db.collection("apps").document("categories").get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                    if(task.isSuccessful()){
+                        DocumentSnapshot documentSnapshot = task.getResult();
+                        Categories categories = documentSnapshot.toObject(Categories.class);
+
+                        Intent intent = new Intent(getApplicationContext(), CategoryActivity.class);
+                        intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
+                        intent.putExtra(INTENT_CURRENT_USER_KEY, curUser);
+                        startActivity(intent);
+                    }
+                }
+            });
+
+
         }
     }
 

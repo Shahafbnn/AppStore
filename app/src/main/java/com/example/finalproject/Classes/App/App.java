@@ -14,6 +14,7 @@ public class App implements Serializable {
     private Double appPrice;
     private Double appDiscountPercentage; //out of 100%
     private String appMainCategory;
+    private String appDescription;
 
     public App(String appName, String appImagePath, String appCreator, long appSizeMB, String appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
         this.appName = appName;
@@ -99,5 +100,13 @@ public class App implements Serializable {
 
     public void setAppDiscountPercentage(Double appDiscountPercentage) {
         this.appDiscountPercentage = appDiscountPercentage;
+    }
+
+    public String getAppDescription() {
+        return appDescription;
+    }
+
+    public void setAppDescription(String appDescription) {
+        this.appDescription = appDescription;
     }
 }

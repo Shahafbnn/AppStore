@@ -1,12 +1,16 @@
 package com.example.finalproject.Classes;
 
-import static com.example.finalproject.Classes.User.UserValidations.ValidateTypes.*;
+import static com.example.finalproject.Classes.User.Validations.ValidateAppTypes.*;
+import static com.example.finalproject.Classes.User.Validations.ValidateUserTypes.*;
 
-import com.example.finalproject.Classes.User.UserValidations;
+import com.example.finalproject.Classes.User.Validations;
 
 public abstract class Constants {
 
-    private static final UserValidations.ValidateTypes[] TYPES = {FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL, CITY, ADDRESS};
+    private static final Validations.ValidateUserTypes[] USER_TYPES = {FIRST_NAME, LAST_NAME, WEIGHT, BIRTH_DATE, PHONE_NUMBER, PASSWORD, EMAIL, CITY, ADDRESS};
+    //etUploadAppName, etUploadAppDescription,actvUploadAppMainCategory, etUploadAppPrice, etUploadAppDiscountPercentage
+    private static final Validations.ValidateAppTypes[] APP_TYPES = Validations.ValidateAppTypes.values();
+
     public static final String USER_ID_KEY = "userId";
 
     public static final String USER_FIRST_NAME_KEY = "userFirstName";
@@ -31,7 +35,8 @@ public abstract class Constants {
 
     public static final String[] ADMIN_PHONE_NUMBERS = new String[]{"0535622719"};
 
-    public static UserValidations.ValidateTypes[] getTypes(){return TYPES.clone();}
+    public static Validations.ValidateUserTypes[] getUserTypes(){return USER_TYPES.clone();}
+    public static Validations.ValidateAppTypes[] getAppTypes(){return APP_TYPES.clone();}
 
     public static String[] getUserKeys() { return USER_KEYS.clone();}
     public static final String SHARED_PREFERENCES_KEY = "sharedPreferencesRegister";
@@ -41,6 +46,8 @@ public abstract class Constants {
 
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
     public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";
+    public static final String INTENT_CATEGORIES_KEY = "intentCategories";
+
 
     public static final String[] APPLICATION_CATEGORIES = new String[]{"Games", "Fitness", "Business", "Food"};
 

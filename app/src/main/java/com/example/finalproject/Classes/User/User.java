@@ -127,12 +127,6 @@ public class User implements Serializable {
     public String getUserImagePath() {
         return userImagePath;
     }
-    public Bitmap getImgBitmap(Context context){
-        return StorageFunctions.getBitmapFromPath(userImagePath, context);
-    }
-    public Uri getImgUri(Context context){
-        return StorageFunctions.getUriFromPath(userImagePath, context);
-    }
     public Double getAge(){
         Date now = new Date();
         Date birth = userBirthDate;

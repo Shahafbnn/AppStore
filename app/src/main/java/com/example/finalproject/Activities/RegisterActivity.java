@@ -122,26 +122,26 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
         isUserSignedIn = curUser != null;
 
-        btnSendData = findViewById(R.id.btnSendData);
+        btnSendData = findViewById(R.id.btnUploadAppSendData);
         btnSendData.setOnClickListener(this);
         etBirthDate = findViewById(R.id.etBirthDate);
         etBirthDate.setOnClickListener(this);
 
-        etTextFirstName = findViewById(R.id.etTextFirstName);
-        etTextLastName = findViewById(R.id.etTextLastName);
-        etDecimalWeight = findViewById(R.id.etDecimalWeight);
-        etPhoneNumber = findViewById(R.id.etPhoneNumber);
+        etTextFirstName = findViewById(R.id.etUploadAppName);
+        etTextLastName = findViewById(R.id.etUploadAppDescription);
+        etDecimalWeight = findViewById(R.id.etUploadAppPrice);
+        etPhoneNumber = findViewById(R.id.etUploadAppDiscountPercentage);
         etTextPassword = findViewById(R.id.etTextPassword);
         etTextPasswordConfirm = findViewById(R.id.etTextPasswordConfirm);
         etTextEmailAddress = findViewById(R.id.etTextEmailAddress);
-        actvTextHomeCity = (AutoCompleteTextView) findViewById(R.id.actvTextHomeCity);
+        actvTextHomeCity = (AutoCompleteTextView) findViewById(R.id.actvUploadAppMainCategory);
         etTextHomeAddress = findViewById(R.id.etTextHomeAddress);
 
-        ivGallery = findViewById(R.id.ivGallery);
+        ivGallery = findViewById(R.id.ivUploadAppGallery);
         ivGallery.setOnClickListener(this);
-        ivImage = findViewById(R.id.ivImage);
+        ivImage = findViewById(R.id.ivUploadAppImage);
 
-        ivCamera = findViewById(R.id.ivCamera);
+        ivCamera = findViewById(R.id.ivUploadAppCamera);
         ivCamera.setOnClickListener(this);
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);

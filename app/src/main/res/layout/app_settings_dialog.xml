@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="Please choose your option:"
+        android:textSize="20sp" />
+
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <RadioButton
+            android:id="@+id/rbCreateNewApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create a new app" />
+
+        <RadioButton
+            android:id="@+id/rbUpdateApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Update an app" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvCreatedApps"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </RadioGroup>
+</LinearLayout>

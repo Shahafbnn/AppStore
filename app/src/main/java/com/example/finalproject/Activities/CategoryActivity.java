@@ -1,6 +1,9 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.INTENT_CATEGORIES_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
+import static com.example.finalproject.Classes.User.Validations.validateCategorySearch;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -12,43 +15,50 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.finalproject.Classes.App.App;
-import com.example.finalproject.Classes.App.AppView;
 import com.example.finalproject.Classes.Category.Categories;
-import com.example.finalproject.Classes.Category.CategoryView;
+import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.Classes.User.Validations;
+import com.example.finalproject.Classes.ValidationData;
+import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
-import org.checkerframework.checker.units.qual.A;
-
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Random;
 
-public class CategoryActivity extends AppCompatActivity {
+public class CategoryActivity extends AppCompatActivity implements View.OnClickListener {
 
     private ScrollView svCategories;
+    private AutoCompleteTextView actvSearchCategoryActivity;
+    private Button btnSendDataCategoryActivity;
     private ArrayList<RecyclerView> categoriesRecyclerViews;
     private LinearLayout llCategories;
     private FirebaseFirestore db;
     private Categories categories;
     private LinearLayout linearLayout;
-    private HashMap<String, CategoryView> categoryViewDictionary;
+    private HashMap<String, ActivityResultLauncher<Intent>> activityResultLaunchers;
+    private HashMap<String, CategoryView> categoryViewHashMap;
+    private User curUser;
+    private Boolean isUserSignedIn;
+
+
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,32 +67,38 @@ public class CategoryActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
 
         llCategories = findViewById(R.id.llCategories);
+        actvSearchCategoryActivity = findViewById(R.id.actvSearchCategoryActivity);
 
-        categoryViewDictionary = new HashMap<String, CategoryView>();
 
+
+        btnSendDataCategoryActivity = findViewById(R.id.btnSendDataCategoryActivity);
+        btnSendDataCategoryActivity.setOnClickListener(this);
+
+        activityResultLaunchers = new HashMap<>();
+        categoryViewHashMap = new HashMap<>();
+
+        //getting the user categories the intent
+        categories = (Categories) getIntent().getSerializableExtra(INTENT_CATEGORIES_KEY);
+        curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+        isUserSignedIn = curUser != null;
 
         svCategories = findViewById(R.id.svCategories); //ScrollView
-//        AppView appView = new AppView(this, "joe", BitmapFactory.decodeResource(getResources(),
-//                R.drawable.emptypfp));
+
+        if(categories != null){
+            ArrayList<String> cats = categories.getCategories();
+            if(!cats.isEmpty()){
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, cats);
+                actvSearchCategoryActivity.setAdapter(adapter);
+            }
+        }
 
         linearLayout = new LinearLayout(this);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
-//        linearLayout.addView(appView);
-//        ArrayList<String> cats = new ArrayList<String>();
-//        cats.add("Gaming");
-//        cats.add("Fitness");
-//        cats.add("Work");
-//        db.collection("apps").document("categories").set(new Categories(cats));
 
-        createEverything();
 
         svCategories.addView(linearLayout);
 
-//        for(int i = 0; i < 3; i++) addRandomApp("Gaming");
-//        for(int i = 0; i < 3; i++) addRandomApp("Fitness");
-//        for(int i = 0; i < 3; i++) addRandomApp("Work");
-
-
+        createEverything();
     }
     private void addRandomApp(String category){
         App myNewApp;
@@ -105,27 +121,41 @@ public class CategoryActivity extends AppCompatActivity {
     }
 
     private void createEverything(){
+        if(categories != null){
+            ArrayList<String> arrayListCategories = categories.getCategories();
 
-        // Get a list of all subcollections under the "categories" collection
-        db.collection("apps").document("categories").get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if(task.isSuccessful()){
-                    DocumentSnapshot documentSnapshot = task.getResult();
-                    categories = documentSnapshot.toObject(Categories.class);
-                    ArrayList<String> arrayListCategories = categories.getCategories();
+            for (String category : arrayListCategories) {
+                ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+                        new ActivityResultContracts.StartActivityForResult(),
+                        new ActivityResultCallback<ActivityResult>() {
+                            @Override
+                            public void onActivityResult(ActivityResult result) {
+                                if(result.getResultCode()== Activity.RESULT_OK){
+                                    if(result.getData() != null){
+                                        App intentApp = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                                        if(intentApp != null){
+                                            ArrayList<App> apps = categoryViewHashMap.get(category).getAppsArrayList();
+                                            int index = getListIndexOf(apps, intentApp);
+                                            apps.set(index, intentApp);
 
-                    //i'll add the user's suggested apps by their most downloaded categories later,
-                    // for now i'll do the first 3 categories.
-                    int size = arrayListCategories.size();
-
-                    for(int i = 0; i < 3 && i < size; i++){
-                        addCategory(arrayListCategories.get(i));
-                    }
-                }
+                                            categoryViewHashMap.get(category).getAppAdapter().notifyDataSetChanged();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                );
+                activityResultLaunchers.put(category, activityResultLauncher);
             }
-        });
 
+            //i'll add the user's suggested apps by their most downloaded categories later,
+            // for now i'll do the first 3 categories.
+            int size = arrayListCategories.size();
+
+            for(int i = 0; i < 3 && i < size; i++){
+                addCategory(arrayListCategories.get(i));
+            }
+        }
 
     }
 
@@ -146,27 +176,6 @@ public class CategoryActivity extends AppCompatActivity {
                     ArrayList<App> apps = new ArrayList<>();
                     App app;
 
-                    ActivityResultLauncher<Intent> activityResultLauncher = null;
-//                    activityResultLauncher = registerForActivityResult(
-//                            new ActivityResultContracts.StartActivityForResult(),
-//                            new ActivityResultCallback<ActivityResult>() {
-//                                @Override
-//                                public void onActivityResult(ActivityResult result) {
-//                                    if(result.getResultCode()== Activity.RESULT_OK){
-//                                        if(result.getData() != null){
-//                                            App intentApp = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
-//                                            if(intentApp != null){
-//                                                int index = getListIndexOf(apps, intentApp);
-//                                                apps.set(index, intentApp);
-//
-//                                                categoryViewDictionary.get(category).getAppAdapter().notifyDataSetChanged();
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                    );
-
                     for (QueryDocumentSnapshot document : task.getResult()) {
                         if(document.exists()){
                             app = document.toObject(App.class);
@@ -174,13 +183,42 @@ public class CategoryActivity extends AppCompatActivity {
                             apps.add(app);
                         }
                     }
-                    CategoryView categoryView = new CategoryView(getApplicationContext(), category, apps, activityResultLauncher);
-
-                    categoryViewDictionary.put(category, categoryView);
-
+                    CategoryView categoryView = new CategoryView(getApplicationContext(), category, apps, activityResultLaunchers.get(category), curUser);
+                    categoryViewHashMap.put(category, categoryView);
                     linearLayout.addView(categoryView);
                 }
             }
         });
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(v==btnSendDataCategoryActivity){
+            String text = actvSearchCategoryActivity.getText().toString();
+            ValidationData validation = validateCategorySearch(text);
+
+            if(validation.isValid()){
+                ArrayList<String> cats = categories.getCategories();
+                boolean exists = false;
+                int size = cats.size();
+                String curCat;
+                for(int i = 0; i < size && !exists; i++){
+                    curCat = cats.get(i);
+                    if(curCat.equals(text)) exists = true;
+                }
+                if(exists){
+                    if(!categoryViewHashMap.containsKey(text)){
+                        addCategory(text);
+                        Toast.makeText(this, "Adding category...", Toast.LENGTH_SHORT).show();
+                    }
+                    else Toast.makeText(this, "Category already exists!", Toast.LENGTH_SHORT).show();
+                }
+                else Toast.makeText(this, "Category doesn't exist!", Toast.LENGTH_SHORT).show();
+
+            }
+            else{
+                actvSearchCategoryActivity.setError(validation.getError());
+            }
+        }
     }
 }
