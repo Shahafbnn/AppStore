@@ -1,5 +1,7 @@
 package com.example.finalproject.Classes.App;
 
+import static android.view.Gravity.CENTER;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.view.Gravity;
@@ -47,18 +49,20 @@ public class AppView extends LinearLayout {
     private void setParams(Context context){
         setOrientation(LinearLayout.VERTICAL);
 
+        setPadding(25,25,25,25);
 
         final float scale = getContext().getResources().getDisplayMetrics().density;
         int pixels = (int) (100 * scale + 0.5f);
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(pixels, pixels);
+        LinearLayout.LayoutParams imageViewLayoutParams = new LinearLayout.LayoutParams(pixels, pixels);
 
         imageView = new ImageView(context);
-        imageView.setLayoutParams(layoutParams);
+        imageView.setLayoutParams(imageViewLayoutParams);
         addView(imageView);
 
         textView = new TextView(context);
-        textView.setGravity(Gravity.CENTER);
+        textView.setGravity(CENTER);
         addView(textView);
+        setGravity(CENTER);
 
     }
 

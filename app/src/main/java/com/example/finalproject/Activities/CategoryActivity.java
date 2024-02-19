@@ -125,7 +125,7 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
             specialFirstName += nameStr[rand.nextInt(nameStr.length)];
             specialLastName += nameStr[rand.nextInt(nameStr.length)];
         }
-        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", curUser, StorageFunctions.humanReadableByte(rand.nextInt(200000)), "None", (double) rand.nextInt(20), (double) rand.nextInt(100), category);
+        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", curUser, StorageFunctions.humanReadableByte(rand.nextInt(200000)), new ArrayList<String>(), (double) rand.nextInt(20), (double) rand.nextInt(100), category);
         db.collection("apps").add(myNewApp);
     }
     private void createRandomApps(){

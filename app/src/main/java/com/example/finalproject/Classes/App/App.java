@@ -3,6 +3,7 @@ package com.example.finalproject.Classes.App;
 import com.example.finalproject.Classes.User.User;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class App implements Serializable {
     private String appId;
@@ -11,7 +12,7 @@ public class App implements Serializable {
     private User appCreator;
     //private long appDownloadCount;
     private String appSize;
-    private String appPerms;
+    private ArrayList<String> appPerms;
     //private double appAvgRating;
     private Double appPrice;
     private Double appDiscountPercentage; //out of 100%
@@ -19,7 +20,7 @@ public class App implements Serializable {
     private String appDescription;
     private String appApkPath;
 
-    public App(String appName, String appImagePath, User appCreator, String appSize, String appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
+    public App(String appName, String appImagePath, User appCreator, String appSize, ArrayList<String> appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
         this.appName = appName;
         this.appImagePath = appImagePath;
         this.appCreator = appCreator;
@@ -89,11 +90,11 @@ public class App implements Serializable {
         this.appSize = appSize;
     }
 
-    public String getAppPerms() {
+    public ArrayList<String> getAppPerms() {
         return appPerms;
     }
 
-    public void setAppPerms(String appPerms) {
+    public void setAppPerms(ArrayList<String> appPerms) {
         this.appPerms = appPerms;
     }
 

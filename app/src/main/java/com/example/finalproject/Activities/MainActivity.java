@@ -1,5 +1,6 @@
 package com.example.finalproject.Activities;
 
+import static android.view.Gravity.CENTER;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
@@ -11,6 +12,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.Activity;
@@ -28,6 +30,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
@@ -394,8 +397,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             }
         });
-        RecyclerView rvCreatedApps = dialog.findViewById(R.id.rvCreatedApps);
-        AppAdapter adapter = new AppAdapter(this, createdAppsArrayList, new View.OnClickListener() {
+        View.OnClickListener listener = new View.OnClickListener() {
             // what happens when you click an app in the dialog:
             @Override
             public void onClick(View v) {
@@ -406,8 +408,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 dialog.dismiss();
                 conditionalLaunchUploadActivity(intent);
             }
-        }, curUser);
-        rvCreatedApps.setAdapter(adapter);
+        };
+
+        RecyclerView rv = dialog.findViewById(R.id.rvCreatedApps);
+        AppAdapter adapter = new AppAdapter(getApplicationContext(), createdAppsArrayList, listener, curUser);
+
+        LinearLayoutManager layoutManager
+                = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false);
+//        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(
+//                LinearLayout.LayoutParams.MATCH_PARENT,
+//                LinearLayout.LayoutParams.WRAP_CONTENT);
+//
+//        linearLayoutParams.gravity = CENTER;
+//        rv.setLayoutParams(linearLayoutParams);
+
+        rv.setLayoutManager(layoutManager);
+        rv.setAdapter(adapter);
 
         dialog.show();
     }

@@ -66,11 +66,12 @@ public class PermissionClass {
     public static String[] getAllPermsStrings(){
         java.lang.reflect.Field[] fields = getAllPermsFields();
         String[] arr = null;
-
+        String str;
         if(fields!=null){
             arr = new String[fields.length];
             for(int i = 0; i < fields.length; i++){
-                arr[i] = fields[i].getName();
+                str = fields[i].getName().toLowerCase().replace("_", " ");
+                arr[i] = str.substring(0, 1).toUpperCase() + str.substring(1);
             }
         }
         return arr;

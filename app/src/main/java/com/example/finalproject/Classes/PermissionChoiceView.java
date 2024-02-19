@@ -9,6 +9,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.finalproject.R;
 
@@ -22,7 +23,8 @@ public class PermissionChoiceView extends LinearLayout {
     private ArrayList<String> result;
     private Dialog dialog;
     private TextView tvOutData;
-    public PermissionChoiceView(Context context, String[] choices,  ArrayList<String> result, Dialog dialog, TextView outData) {
+    private int maxCheckedResults;
+    public PermissionChoiceView(Context context, String[] choices,  ArrayList<String> result, Dialog dialog, TextView outData, int maxCheckedResults) {
         super(context);
         inflate(getContext(), R.layout.permission_choice_view, this);
         this.choices = choices;
@@ -30,8 +32,9 @@ public class PermissionChoiceView extends LinearLayout {
         this.result = result;
         this.dialog = dialog;
         this.tvOutData = outData;
-        setParams();
+        this.maxCheckedResults = maxCheckedResults;
 
+        setParams();
     }
 
     private void setParams(){
@@ -60,6 +63,8 @@ public class PermissionChoiceView extends LinearLayout {
 //        LinearLayout.LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 //        listView.setLayoutParams(layoutParams);
 //        addView(listView);
+        TextView tv = findViewById(R.id.tvPermissionChoice);
+        tv.setText("Please choose your permissions (max " + maxCheckedResults + "):");
 
         Button btn = findViewById(R.id.btnPermissionChoiceSubmit);
         btn.setOnClickListener(new OnClickListener() {
@@ -75,9 +80,11 @@ public class PermissionChoiceView extends LinearLayout {
     public ArrayList<String> getCheckedItems(){
         android.util.SparseBooleanArray checkedItemsArray = listView.getCheckedItemPositions();
         ArrayList<String> chosen = new ArrayList<String>();
+        int len = checkedItemsArray.size();
+        if(len > maxCheckedResults) Toast.makeText(context, "You cannot have over 50 permissions!", Toast.LENGTH_LONG).show();
         tvOutData.setText("");
         String str = "Perms: ";
-        for(int i = 0; i < checkedItemsArray.size(); i++){
+        for(int i = 0; i < len && i < maxCheckedResults; i++){
             if(checkedItemsArray.valueAt(i)){
                 chosen.add(choices[i]);
                 str += choices[i] + ", ";

@@ -166,7 +166,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         tvPerms = findViewById(R.id.tvPerms);
         permsDialog = new Dialog(this);
-        permsDialog.setContentView(new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms));
+        permsDialog.setContentView(new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms, 50));
         tvPerms.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -318,6 +318,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             app.setAppPrice(Double.parseDouble(etUploadAppPrice.getText().toString()));
             app.setAppDiscountPercentage(Double.parseDouble(etUploadAppDiscountPercentage.getText().toString()));
             app.setAppCreator(curUser);
+            app.setAppPerms(permsDialogResult);
             if(apkUri==null){
                 if(isEditingApp) {
                     app.setAppApkPath(curApp.getAppApkPath());
