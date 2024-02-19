@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -11,6 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -60,12 +62,24 @@ public class StorageFunctions {
         UploadTask uploadTask = imagesRef.putBytes(data);
     }
 
-    public static String humanReadableByte(Uri uri){
-        if (uri.getScheme().equals("content")){
-            File file = new File(uri.getPath());
-            return humanReadableByte(file.length());
+    public static String humanReadableByte(Context context, Uri uri) {
+        try {
+            InputStream inputStream = context.getContentResolver().openInputStream(uri);
+            if (inputStream == null) {
+                return "Unknown";
+            }
+            byte[] buffer = new byte[1024];
+            int count;
+            long total = 0;
+            while ((count = inputStream.read(buffer)) != -1) {
+                total += count;
+            }
+            inputStream.close();
+            return humanReadableByte(total);
+        } catch (IOException e) {
+            // Handle the exception
+            return "Unknown";
         }
-        else return null;
     }
     public static String humanReadableByte(long bytes) {
         // If the byte count is between -1000 and 1000, return it directly.
@@ -83,8 +97,8 @@ public class StorageFunctions {
         }
         // Return the byte count, divided by 1000 one last time to get the count in the correct unit,
         // formatted to one decimal place, followed by the unit and "B".
-        double num = (bytes / 1000.0);
-        return ((int)num) + "." + ((num*10)%10) + " " + ci.current();
+        double num = bytes / 1000.0;
+        return String.format("%.1f %sB", num, ci.current());
     }
 
 

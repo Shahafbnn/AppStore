@@ -90,9 +90,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         createdAppsArrayList.set(i, app);
                                         found = true;
                                     }
-                                    if(!found){
-                                        createdAppsArrayList.add(app);
-                                    }
+                                }
+                                if(!found){
+                                    createdAppsArrayList.add(app);
                                 }
                                 //if we updated the app then we won't need to update the user (since we don't change the user there)
                             }else{
@@ -130,6 +130,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //wipeDataOffFireStore();
 
         // Initialize views and Firestore instance
         rbMainActivity = findViewById(R.id.rbMainActivity);
@@ -185,13 +187,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         else reloadActivityInMenuOptionsPrepare = true;
 // to fix the data
-//        ArrayList<String> arr = new ArrayList<>();
-//        arr.add("Fitness");
-//        arr.add("Gaming");
-//        arr.add("Work");
-//        arr.add("Food");
-//        db.collection("apps").document("categories").set(new Categories(arr));
+
     } //onCreate's end
+
+    private void wipeDataOffFireStore(){
+        deleteAllExceptCategories("apps");
+        deleteAllUserCreatedApps();
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -515,13 +517,79 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if(task.isSuccessful()){
                     DocumentSnapshot documentSnapshot = task.getResult();
-                    categories = documentSnapshot.toObject(Categories.class);
+                    //In Firestore, when you try to get a document that doesn't exist, no specific exception is thrown.
+                    // Instead, the DocumentSnapshot object returned by the get() method will have its exists property set to false
+                    if(!documentSnapshot.exists()){
+                        ArrayList<String> arr = new ArrayList<>();
+                        arr.add("Fitness");
+                        arr.add("Gaming");
+                        arr.add("Work");
+                        arr.add("Food");
+                        Categories cat = new Categories(arr);
+                        db.collection("apps").document("categories").set(cat);
+                        categories = cat;
+                    }
+                    else categories = documentSnapshot.toObject(Categories.class);
 
                     launchActivity(activity, intent);
                 }
             }
         });
     }
+
+    private void deleteAllUserCreatedApps(){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                for (QueryDocumentSnapshot document : task.getResult()) {
+                    String userId = document.getId();
+                    db.collection("users").document(userId).collection("createdApps")
+                            .get()
+                            .addOnCompleteListener(subTask -> {
+                                if (subTask.isSuccessful()) {
+                                    WriteBatch batch = db.batch();
+                                    for (QueryDocumentSnapshot subDocument : subTask.getResult()) {
+                                        batch.delete(subDocument.getReference());
+                                    }
+                                    batch.commit();
+                                }
+                            });
+                }
+            }
+        });
+    }
+
+    private void deleteAllDocuments(String collectionPath) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection(collectionPath)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        WriteBatch batch = db.batch();
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            batch.delete(documentSnapshot.getReference());
+                        }
+                        batch.commit();
+                    }
+                });
+    }
+    private void deleteAllExceptCategories(String collectionPath) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection(collectionPath)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        WriteBatch batch = db.batch();
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            if (!documentSnapshot.getId().equals("categories")) {
+                                batch.delete(documentSnapshot.getReference());
+                            }
+                        }
+                        batch.commit();
+                    }
+                });
+    }
+
     @Override
     public void onClick(View v) {
         if (v==rbCategoryActivity) {

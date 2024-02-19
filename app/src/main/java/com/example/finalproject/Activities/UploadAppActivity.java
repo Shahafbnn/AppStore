@@ -82,6 +82,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
     private Uri apkUri;
     private Dialog permsDialog;
     private ArrayList<String> permsDialogResult;
+    private PermissionChoiceView permsDialogChoiceView;
 
 
     ActivityResultLauncher<Intent> startFile;
@@ -166,7 +167,9 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         tvPerms = findViewById(R.id.tvPerms);
         permsDialog = new Dialog(this);
-        permsDialog.setContentView(new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms, 50));
+        permsDialogResult = new ArrayList<>();
+        permsDialogChoiceView = new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms, 50);
+        permsDialog.setContentView(permsDialogChoiceView);
         tvPerms.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -186,11 +189,13 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         }
     }
     private void setDataFromCurApp(){
+        permsDialogChoiceView.setCheckedItems(curApp.getAppPerms());
         StorageFunctions.setImage(this, ivUploadAppImage, curApp.getAppImagePath());
         etUploadAppName.setText(curApp.getAppName());
         etUploadAppDescription.setText(curApp.getAppDescription());
         etUploadAppPrice.setText(Double.toString(curApp.getAppPrice()));
         etUploadAppDiscountPercentage.setText(Double.toString(curApp.getAppDiscountPercentage()));
+        actvUploadAppMainCategory.setText(curApp.getAppMainCategory());
     }
 
     @Override
@@ -308,9 +313,17 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         return allValid;
     }
+    private boolean isInCategoriesArrayList(String text){
+        for(int i = 0; i < categoriesArrayList.size(); i++){
+            if(categoriesArrayList.get(i).equals(text)) return true;
+        }
+        return false;
+    }
 
     private void sendData() {
-        if(validateETData()){
+        boolean categoryExists = categoriesArrayList.contains(actvUploadAppMainCategory.getText().toString());
+        if(!categoryExists) actvUploadAppMainCategory.setError("category must exist!");
+        if(validateETData() && categoryExists){
             App app = new App();
             app.setAppName(etUploadAppName.getText().toString());
             app.setAppDescription(etUploadAppDescription.getText().toString());
@@ -319,6 +332,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             app.setAppDiscountPercentage(Double.parseDouble(etUploadAppDiscountPercentage.getText().toString()));
             app.setAppCreator(curUser);
             app.setAppPerms(permsDialogResult);
+
             if(apkUri==null){
                 if(isEditingApp) {
                     app.setAppApkPath(curApp.getAppApkPath());
@@ -333,7 +347,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                 String path = getFullPath(curUser, app, FIRESTORE_STORAGE_APK_FOLDER, "app");
 
                 app.setAppApkPath(path);
-                String size = humanReadableByte(apkUri);
+                String size = humanReadableByte(this, apkUri);
                 app.setAppSize(size);
 
                 StorageFunctions.saveFileInFireStore(apkUri, path);

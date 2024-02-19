@@ -2,6 +2,7 @@ package com.example.finalproject.Classes;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.util.SparseBooleanArray;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -14,10 +15,10 @@ import android.widget.Toast;
 import com.example.finalproject.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class PermissionChoiceView extends LinearLayout {
     private ListView listView;
-    private TextView textView;
     private String[] choices;
     private Context context;
     private ArrayList<String> result;
@@ -70,7 +71,9 @@ public class PermissionChoiceView extends LinearLayout {
         btn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                result = getCheckedItems();
+                //because it's a pointer
+                result.clear();
+                result.addAll(getCheckedItems());
                 dialog.dismiss();
             }
         });
@@ -78,21 +81,39 @@ public class PermissionChoiceView extends LinearLayout {
     }
 
     public ArrayList<String> getCheckedItems(){
-        android.util.SparseBooleanArray checkedItemsArray = listView.getCheckedItemPositions();
+        SparseBooleanArray checkedItemsArray = listView.getCheckedItemPositions();
         ArrayList<String> chosen = new ArrayList<String>();
         int len = checkedItemsArray.size();
-        if(len > maxCheckedResults) Toast.makeText(context, "You cannot have over 50 permissions!", Toast.LENGTH_LONG).show();
         tvOutData.setText("");
         String str = "Perms: ";
-        for(int i = 0; i < len && i < maxCheckedResults; i++){
+        int checkedCount = 0;
+        for(int i = 0; i < len && i < maxCheckedResults && checkedCount < maxCheckedResults; i++){
             if(checkedItemsArray.valueAt(i)){
-                chosen.add(choices[i]);
-                str += choices[i] + ", ";
+                int position = checkedItemsArray.keyAt(i); // Get the actual position of the item in the list
+                if(checkedItemsArray.valueAt(i)) checkedCount++;
+                chosen.add(choices[position]);
+                str += choices[position] + ", ";
             }
         }
+        if(checkedCount==maxCheckedResults) Toast.makeText(context, "You cannot have over "+maxCheckedResults+" permissions!", Toast.LENGTH_LONG).show();
         str = str.substring(0, str.length()-2);
+        //Toast.makeText(context, "The string: " + str, Toast.LENGTH_LONG).show();
         tvOutData.setText(str);
         return chosen;
+    }
+    public void setCheckedItems(ArrayList<String> checkedItems){
+        if(!(checkedItems==null || checkedItems.isEmpty())){for(int i = 0; i < choices.length; i++){
+            if(checkedItems.contains(choices[i])){
+                listView.setItemChecked(i, true);
+            } else {
+                listView.setItemChecked(i, false);
+            }
+        }}
+        getCheckedItems();
+    }
+
+    private void clear(){
+        result.clear();
     }
 
 }

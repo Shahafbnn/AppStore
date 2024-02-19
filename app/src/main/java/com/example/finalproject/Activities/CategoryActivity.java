@@ -203,7 +203,7 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
                             apps.add(app);
                         }
                     }
-                    CategoryView categoryView = new CategoryView(getApplicationContext(), category, apps, activityResultLaunchers.get(category), curUser);
+                    CategoryView categoryView = new CategoryView(getApplicationContext(), category, LinearLayout.VERTICAL, apps, activityResultLaunchers.get(category), curUser);
                     categoryViewHashMap.put(category, categoryView);
                     linearLayout.addView(categoryView);
                 }

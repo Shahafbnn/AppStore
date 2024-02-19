@@ -34,7 +34,7 @@ public class CategoryView extends LinearLayout {
     private User curUser;
     private Boolean isUserSignedIn;
 
-    public CategoryView(Context context, String categoryName, ArrayList<App> appsArrayList, ActivityResultLauncher<Intent> activityResultLauncher, User curUser) {
+    public CategoryView(Context context, String categoryName, int orientation, ArrayList<App> appsArrayList, ActivityResultLauncher<Intent> activityResultLauncher, User curUser) {
         super(context);
         this.categoryName = categoryName;
         this.appsArrayList = appsArrayList;
@@ -61,7 +61,7 @@ public class CategoryView extends LinearLayout {
 
         TextView tvCategory = new TextView(context);
         tvCategory.setText(categoryName);
-        setOrientation(LinearLayout.VERTICAL);
+        setOrientation(orientation);
         addView(tvCategory);
 
         addView(appsRecyclerView);
