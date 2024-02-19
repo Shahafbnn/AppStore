@@ -76,7 +76,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
 
     private MenuItem registerActivityMenuItemRandomData;
 
-    private FirebaseStorage storage;
 
     ActivityResultLauncher<Intent> startFile;
     @Override
@@ -84,7 +83,6 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
 
 
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),

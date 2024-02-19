@@ -1,26 +1,29 @@
 package com.example.finalproject.Classes.App;
 
+import com.example.finalproject.Classes.User.User;
+
 import java.io.Serializable;
 
 public class App implements Serializable {
     private String appId;
     private String appName;
     private String appImagePath;
-    private String appCreator;
+    private User appCreator;
     //private long appDownloadCount;
-    private long appSizeMB;
+    private String appSize;
     private String appPerms;
     //private double appAvgRating;
     private Double appPrice;
     private Double appDiscountPercentage; //out of 100%
     private String appMainCategory;
     private String appDescription;
+    private String appApkPath;
 
-    public App(String appName, String appImagePath, String appCreator, long appSizeMB, String appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
+    public App(String appName, String appImagePath, User appCreator, String appSize, String appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
         this.appName = appName;
         this.appImagePath = appImagePath;
         this.appCreator = appCreator;
-        this.appSizeMB = appSizeMB;
+        this.appSize = appSize;
         this.appPerms = appPerms;
         this.appPrice = appPrice;
         this.appDiscountPercentage = appDiscountPercentage;
@@ -28,6 +31,14 @@ public class App implements Serializable {
     }
 
     public App() {
+    }
+
+    public String getAppApkPath() {
+        return appApkPath;
+    }
+
+    public void setAppApkPath(String appApkPath) {
+        this.appApkPath = appApkPath;
     }
 
     public String getAppMainCategory() {
@@ -62,20 +73,20 @@ public class App implements Serializable {
         this.appImagePath = appImagePath;
     }
 
-    public String getAppCreator() {
+    public User getAppCreator() {
         return appCreator;
     }
 
-    public void setAppCreator(String appCreator) {
+    public void setAppCreator(User appCreator) {
         this.appCreator = appCreator;
     }
 
-    public long getAppSizeMB() {
-        return appSizeMB;
+    public String getAppSize() {
+        return appSize;
     }
 
-    public void setAppSizeMB(long appSizeMB) {
-        this.appSizeMB = appSizeMB;
+    public void setAppSize(String appSize) {
+        this.appSize = appSize;
     }
 
     public String getAppPerms() {

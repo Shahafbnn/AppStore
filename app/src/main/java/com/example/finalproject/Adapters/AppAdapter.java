@@ -20,14 +20,13 @@ import java.util.ArrayList;
 public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
     private Context context;
     private ArrayList<App> appArrayList;
-    private ActivityResultLauncher<Intent> activityResultLauncher;
     private View.OnClickListener onClickListener;
     private User curUser;
 
-    public AppAdapter(Context context, ArrayList<App> appArrayList, ActivityResultLauncher<Intent> activityResultLauncher, User curUser) {
+    public AppAdapter(Context context, ArrayList<App> appArrayList, View.OnClickListener onClickListener, User curUser) {
         this.context = context;
         this.appArrayList = appArrayList;
-        this.activityResultLauncher = activityResultLauncher;
+        this.onClickListener = onClickListener;
         this.curUser = curUser;
     }
 
@@ -42,18 +41,7 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.ViewHolder> {
         AppView appView = (AppView) holder.itemView;
         appView.setData(context, appArrayList.get(position));
 
-        appView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                App app = appView.getApp();
-
-                Intent intent = new Intent(context, ChosenAppActivity.class);
-                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, app);
-                intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-
-                activityResultLauncher.launch(intent);
-            }
-        });
+        appView.setOnClickListener(onClickListener);
     }
 
     @Override

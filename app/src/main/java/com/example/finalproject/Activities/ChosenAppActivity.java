@@ -135,8 +135,8 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     @SuppressLint("SetTextI18n")
     private void initAppDataFromCurApp(){
         tvAppName.setText(curApp.getAppName());
-        tvAppCreator.setText("Created by: " + curApp.getAppCreator());
-        tvAppSize.setText(curApp.getAppSizeMB() + " MB in size");
+        tvAppCreator.setText("Created by: " + curApp.getAppCreator().getFullNameAdmin());
+        tvAppSize.setText(curApp.getAppSize() + " MB in size");
         StorageFunctions.setImage(this, ivAppImage, curApp.getAppImagePath());
 
         // add perms, getAppDownloads  later!

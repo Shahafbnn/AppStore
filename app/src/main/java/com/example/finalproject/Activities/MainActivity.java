@@ -1,5 +1,6 @@
 package com.example.finalproject.Activities;
 
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.*;
@@ -30,15 +31,24 @@ import android.widget.ImageView;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
+import com.example.finalproject.Adapters.AppAdapter;
 import com.example.finalproject.Classes.*;
+import com.example.finalproject.Classes.App.App;
+import com.example.finalproject.Classes.App.AppView;
 import com.example.finalproject.Classes.Category.Categories;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.*;
+
+import org.checkerframework.checker.units.qual.A;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -56,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean reloadActivityInMenuOptionsPrepare;
     private Boolean isMenuPrepared;
     private boolean reloadActivity;
+    private ArrayList<App> createdAppsArrayList;
     private OnCompleteListener<DocumentSnapshot> userGetOnCompleteListener;
 
     // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
@@ -67,18 +78,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onActivityResult(ActivityResult result) {
                     if(result.getResultCode()== Activity.RESULT_OK){
                         if(result.getData() != null){
-                            User user = (User)result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
-                            if(user != null){
-                                curUser = user;
-                                isUserSignedIn = true;
-                                InitiateFunctions.setSharedPreferencesData(editor, user.getUserId());
+                            //get the returned app from UploadAppActivity
+                            App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                            if(app!=null){
+                                boolean found = false;
+                                for(int i = 0; i < createdAppsArrayList.size() && !found; i++){
+                                    if(createdAppsArrayList.get(i).getAppId().equals(app.getAppId())) {
+                                        createdAppsArrayList.set(i, app);
+                                        found = true;
+                                    }
+                                    if(!found){
+                                        createdAppsArrayList.add(app);
+                                    }
+                                }
+                                //if we updated the app then we won't need to update the user (since we don't change the user there)
+                            }else{
+                                User user = (User)result.getData().getSerializableExtra(INTENT_CURRENT_USER_KEY);
+                                if(user != null){
+                                    curUser = user;
+                                    isUserSignedIn = true;
+                                    InitiateFunctions.setSharedPreferencesData(editor, user.getUserId());
+                                }
+                                else{
+                                    //if the returned user is null (meaning you deleted yourself MainActivity->UsersListViewActivity->RegisterActivity).
+                                    isUserSignedIn = false;
+                                    curUser = null;
+                                }
+                                //this is if we update an app in UploadAppActivity
+                            }
 
-                            }
-                            else{
-                                //if the returned user is null (meaning you deleted yourself MainActivity->UsersListViewActivity->RegisterActivity).
-                                isUserSignedIn = false;
-                                curUser = null;
-                            }
+
+
+
+
                             //reload activity if isMenuPrepared is true;
                             // needs to be conditional
                             // because what if there are delays on the onCreate get fetch?
@@ -88,6 +120,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
     );
+
+    private Categories categories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +181,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if(reloadActivity) reloadActivity();
         }
         else reloadActivityInMenuOptionsPrepare = true;
+// to fix the data
+//        ArrayList<String> arr = new ArrayList<>();
+//        arr.add("Fitness");
+//        arr.add("Gaming");
+//        arr.add("Work");
+//        arr.add("Food");
+//        db.collection("apps").document("categories").set(new Categories(arr));
     } //onCreate's end
 
     @Override
@@ -316,16 +357,67 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dialog.show();
     }
     private void createAppSettingsDialog(){
+        if(createdAppsArrayList == null){
+            db.collection("users").document(curUser.getUserId()).collection(Constants.FIRESTORE_USER_CREATED_APPS_KEY).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                    if(task.isSuccessful()){
+                        createdAppsArrayList = new ArrayList<>();
+
+                        App app;
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            app = documentSnapshot.toObject(App.class);
+                            app.setAppId(documentSnapshot.getId());
+                            createdAppsArrayList.add(app);
+                        }
+
+                        setAdapterAndShowDialog();
+                    }
+                }
+            });
+        }
+        else setAdapterAndShowDialog();
+    }
+    private void setAdapterAndShowDialog(){
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.app_settings_dialog);
 
 
+        Button btnCreateNewApp = dialog.findViewById(R.id.btnCreateNewApp);
+        // what happens when you click the create new app button:
+        btnCreateNewApp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
+                dialog.dismiss();
+                conditionalLaunchUploadActivity(intent);
 
-        RadioButton rbCreateNewApp = dialog.findViewById(R.id.rbCreateNewApp);
-        RadioButton rbUpdateApp = dialog.findViewById(R.id.rbUpdateApp);
+            }
+        });
         RecyclerView rvCreatedApps = dialog.findViewById(R.id.rvCreatedApps);
+        AppAdapter adapter = new AppAdapter(this, createdAppsArrayList, new View.OnClickListener() {
+            // what happens when you click an app in the dialog:
+            @Override
+            public void onClick(View v) {
+                App app = ((AppView)v).getApp();
+
+                Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
+                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, app);
+                dialog.dismiss();
+                conditionalLaunchUploadActivity(intent);
+            }
+        }, curUser);
+        rvCreatedApps.setAdapter(adapter);
 
         dialog.show();
+    }
+    private void conditionalLaunchUploadActivity(Intent intent){
+        if(categories==null){
+            fetchCategoriesAndLaunchActivity("UploadAppActivity", intent);
+        }
+        else {
+            launchUploadAppActivity(intent);
+        }
     }
     private void createCustomDialogLogIn(){
         final Dialog dialog = new Dialog(this);
@@ -338,6 +430,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnLogInSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                btnLogInSubmit.setClickable(false);
                 if(validateCustomDialogLogInData(dialog)) {
 
                     db.collection("users")
@@ -363,15 +456,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                 }
                                                 else {
                                                     etTextPassword.setError("Incorrect password!");
+                                                    btnLogInSubmit.setClickable(true);
                                                 }
 
                                             }
                                             else{
                                                 etEmailAddress.setError("User does not exist!");
+                                                btnLogInSubmit.setClickable(true);
                                             }
                                         }
                                     } else {
                                         Log.w("user", "Task unsuccessful", task.getException());
+                                        btnLogInSubmit.setClickable(true);
                                     }
                                 }
                             });
@@ -397,26 +493,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         return emailValidation.isValid() && passwordValidation.isValid();
     }
+    private void fetchCategoriesAndLaunchActivity(String activity, Intent intent){
+        db.collection("apps").document("categories").get().addOnCompleteListener(MainActivity.this, new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    DocumentSnapshot documentSnapshot = task.getResult();
+                    categories = documentSnapshot.toObject(Categories.class);
+
+                    launchActivity(activity, intent);
+                }
+            }
+        });
+    }
     @Override
     public void onClick(View v) {
         if (v==rbCategoryActivity) {
-            db.collection("apps").document("categories").get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                    if(task.isSuccessful()){
-                        DocumentSnapshot documentSnapshot = task.getResult();
-                        Categories categories = documentSnapshot.toObject(Categories.class);
-
-                        Intent intent = new Intent(getApplicationContext(), CategoryActivity.class);
-                        intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
-                        intent.putExtra(INTENT_CURRENT_USER_KEY, curUser);
-                        startActivity(intent);
-                    }
-                }
-            });
-
+            Intent intent = new Intent(getApplicationContext(), CategoryActivity.class);
+            if(categories==null){
+                fetchCategoriesAndLaunchActivity("CategoryActivity", intent);
+            }
+            else launchCategoryActivity(intent);
 
         }
+    }
+    private void launchCategoryActivity(Intent intent){
+        intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
+        intent.putExtra(INTENT_CURRENT_USER_KEY, curUser);
+        startActivity(intent);
+    }
+    private void launchUploadAppActivity(Intent intent){
+        intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
+        intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+        activityResultLauncher.launch(intent);
+    }
+    private void launchActivity(String activity, Intent intent){
+        if(activity.equals("CategoryActivity")) launchCategoryActivity(intent);
+        else if(activity.equals("UploadAppActivity")) launchUploadAppActivity(intent);
     }
 
 

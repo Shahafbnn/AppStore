@@ -41,7 +41,18 @@ public class CategoryView extends LinearLayout {
         this.appsRecyclerView = new RecyclerView(context);
         this.context = context;
         this.curUser = curUser;
-        this.appAdapter = new AppAdapter(context, appsArrayList, activityResultLauncher, curUser);
+        this.appAdapter = new AppAdapter(context, appsArrayList, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                App app = ((AppView)v).getApp();
+
+                Intent intent = new Intent(context, ChosenAppActivity.class);
+                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, app);
+                intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+
+                activityResultLauncher.launch(intent);
+            }
+        }, curUser);
 
 
         setAdapter();

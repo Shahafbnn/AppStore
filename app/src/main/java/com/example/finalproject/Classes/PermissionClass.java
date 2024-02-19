@@ -5,6 +5,7 @@ import static android.Manifest.permission.MANAGE_EXTERNAL_STORAGE;
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -17,6 +18,9 @@ import androidx.core.content.ContextCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class PermissionClass {
@@ -31,8 +35,6 @@ public class PermissionClass {
         int resultWriteStorage = ContextCompat.checkSelfPermission(act, WRITE_EXTERNAL_STORAGE);
         int resultReadStorage = ContextCompat.checkSelfPermission(act, READ_EXTERNAL_STORAGE);
 
-
-
         return resultCamera== PackageManager.PERMISSION_GRANTED && resultWriteStorage==PackageManager.PERMISSION_GRANTED && resultReadStorage==PackageManager.PERMISSION_GRANTED;
     }
 
@@ -42,6 +44,36 @@ public class PermissionClass {
      */
     public static void RequestPerms(Activity act){
         ActivityCompat.requestPermissions(act, new String[]{CAMERA, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE}, 1);
+    }
+    public static ArrayList<String> getAllPerms(){
+        java.lang.reflect.Field[] fields = getAllPermsFields();
+        ArrayList<String> arr = new ArrayList<>();
+
+        if(fields!=null){
+            for (Field f : fields) {
+                arr.add(f.toString());
+            }
+        }
+        return arr;
+    }
+    public static Field[] getAllPermsFields(){
+        try{
+            return Manifest.permission.class.getFields();
+        }catch(SecurityException e){
+            return null;
+        }
+    }
+    public static String[] getAllPermsStrings(){
+        java.lang.reflect.Field[] fields = getAllPermsFields();
+        String[] arr = null;
+
+        if(fields!=null){
+            arr = new String[fields.length];
+            for(int i = 0; i < fields.length; i++){
+                arr[i] = fields[i].getName();
+            }
+        }
+        return arr;
     }
 
 

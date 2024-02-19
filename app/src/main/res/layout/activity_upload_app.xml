@@ -78,10 +78,7 @@
             android:layout_weight="1"
             android:ems="10"
             android:hint="App Description:"
-            android:inputType="text"
-            android:singleLine="true"
-
-            />
+            android:inputType="text|textLongMessage" />
 
         <EditText
             android:id="@+id/etUploadAppPrice"
@@ -100,7 +97,7 @@
             android:layout_weight="1"
             android:ems="10"
             android:hint="Discount Percentage:"
-            android:inputType="numberDecimal"
+            android:inputType="number|numberDecimal|numberSigned"
             android:singleLine="true" />
 
         <AutoCompleteTextView
@@ -112,6 +109,23 @@
             android:hint="Main Category:"
             android:inputType="text"
             android:singleLine="true" />
+
+        <EditText
+            android:id="@+id/etAPKPath"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ems="10"
+            android:focusable="false"
+            android:hint="File Path:"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/tvPerms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Perms:" />
 
       </LinearLayout>
       <Button

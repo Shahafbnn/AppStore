@@ -1,16 +1,16 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
+import static com.example.finalproject.Classes.StorageFunctions.humanReadableByte;
 
 import android.app.Activity;
-import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
-import android.icu.util.Calendar;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -22,9 +22,10 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
@@ -36,25 +37,21 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalproject.Classes.App.App;
 import com.example.finalproject.Classes.Category.Categories;
-import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.InitiateFunctions;
+import com.example.finalproject.Classes.PermissionChoiceView;
 import com.example.finalproject.Classes.PermissionClass;
 import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User.User;
-import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Objects;
 import java.util.Random;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -63,9 +60,10 @@ import com.google.firebase.storage.UploadTask;
 public class UploadAppActivity extends AppCompatActivity implements View.OnClickListener{
 
     private Button btnUploadAppSendData;
-    private EditText etUploadAppName, etUploadAppDescription, etUploadAppPrice, etUploadAppDiscountPercentage;
+    private EditText etUploadAppName, etUploadAppDescription, etUploadAppPrice, etUploadAppDiscountPercentage, etAPKPath;
     private AutoCompleteTextView actvUploadAppMainCategory;
     private ImageView ivUploadAppGallery,ivUploadAppImage,ivUploadAppCamera;
+    private TextView tvPerms;
     boolean isFromCamera, isFromGallery;
     private Uri uriPhoto;
     private Bitmap photoBitmap;
@@ -80,12 +78,17 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
     private FirebaseFirestore db;
 
     private MenuItem registerActivityMenuItemRandomData;
+    ActivityResultLauncher<Intent> activityResultLauncherFileExplorer;
+    private Uri apkUri;
+    private Dialog permsDialog;
+    private ArrayList<String> permsDialogResult;
+
 
     ActivityResultLauncher<Intent> startFile;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_register);
+        setContentView(R.layout.activity_upload_app);
         db = FirebaseFirestore.getInstance();
 
 
@@ -115,7 +118,22 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                     }
                 });
 
-
+        activityResultLauncherFileExplorer = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            Intent data = result.getData();
+                            if (data != null) {
+                                apkUri = data.getData();
+                                String filePath = apkUri.getPath();
+                                etAPKPath.setText(filePath);
+                            }
+                        }
+                    }
+                }
+        );
 
 
         //getting the user from the intent
@@ -135,6 +153,8 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         etUploadAppDescription = findViewById(R.id.etUploadAppDescription);
         etUploadAppPrice = findViewById(R.id.etUploadAppPrice);
         etUploadAppDiscountPercentage = findViewById(R.id.etUploadAppDiscountPercentage);
+        etAPKPath = findViewById(R.id.etAPKPath);
+        etAPKPath.setOnClickListener(this);
         actvUploadAppMainCategory = findViewById(R.id.actvUploadAppMainCategory);
 
         ivUploadAppGallery = findViewById(R.id.ivUploadAppGallery);
@@ -143,6 +163,16 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         ivUploadAppCamera = findViewById(R.id.ivUploadAppCamera);
         ivUploadAppCamera.setOnClickListener(this);
+
+        tvPerms = findViewById(R.id.tvPerms);
+        permsDialog = new Dialog(this);
+        permsDialog.setContentView(new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms));
+        tvPerms.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                permsDialog.show();
+            }
+        });
 
         if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
 
@@ -196,51 +226,58 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         }
 
         etUploadAppName.setText(specialFirstName);
-        etUploadAppDescription.setText(specialLastName);
+        etUploadAppDescription.setText("This is a nice description laddie, i would appreciate if you gave me some of it!");
         etUploadAppPrice.setText("99");
         etUploadAppDiscountPercentage.setText("2");
+        actvUploadAppMainCategory.setText(categoriesArrayList.get(rand.nextInt(3)));
 
     }
-    private String getFullPath(User user){
-        String specialPath = "" + user.getUserPhoneNumber() + new SimpleDateFormat("ddMMyy-HHmmss.SSSS").format(new Date()) + ".jpg";
-        String foldersPhotos = "Apps/";
+    private String getFullPath(User user, App app, String fileTypeFolder, String fileEnding){
+        String specialPath = "" + user.getUserPhoneNumber() + "" + app.getAppName() + new SimpleDateFormat("ddMMyy-HHmmss.SSSS").format(new Date()) + "." + fileEnding;
+        String foldersPhotos = fileTypeFolder + "/";
         return foldersPhotos + specialPath;
     }
     private void saveBitmapAndFinish(App app){
-        if(!isUserSignedIn || photoBitmap != null){
-            if (photoBitmap == null) {
-                photoBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.emptypfp);
-            }
-
-            String fullPath = app.getAppImagePath();
-
-            FirebaseStorage storage = FirebaseStorage.getInstance();
-
-            StorageReference storageRef = storage.getReference();
-            StorageReference imagesRef = storageRef.child(fullPath);
-
-
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-            byte[] data = byteArrayOutputStream.toByteArray();
-
-            imagesRef.putBytes(data).addOnCompleteListener(UploadAppActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                    if (task.isSuccessful()) {
-                        finishActivity(true, app);
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
-                        btnUploadAppSendData.setClickable(true);
-                    }
-                }
-            });
+        if (photoBitmap == null) {
+            photoBitmap = BitmapFactory.decodeResource(this.getResources(), R.drawable.emptypfp);
         }
+
+        String fullPath = app.getAppImagePath();
+
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+
+        StorageReference storageRef = storage.getReference();
+        StorageReference imagesRef = storageRef.child(fullPath);
+
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte[] data = byteArrayOutputStream.toByteArray();
+
+        imagesRef.putBytes(data).addOnCompleteListener(UploadAppActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                if (task.isSuccessful()) {
+                    finishActivity(true, app);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+                    btnUploadAppSendData.setClickable(true);
+                }
+            }
+        });
     }
     @Override
     public void onClick(View v) {
         if(v==btnUploadAppSendData){
             sendData();
+        }
+        else if(v==etAPKPath){
+            if(PermissionClass.CheckPermission(this)){
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("application/vnd.android.package-archive"); //it's an apk
+                activityResultLauncherFileExplorer.launch(intent);
+            }
+            else PermissionClass.RequestPerms(this);
         }
         else if(v==ivUploadAppGallery){
             if(!PermissionClass.CheckPermission(this)){
@@ -280,8 +317,35 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             app.setAppMainCategory(actvUploadAppMainCategory.getText().toString());
             app.setAppPrice(Double.parseDouble(etUploadAppPrice.getText().toString()));
             app.setAppDiscountPercentage(Double.parseDouble(etUploadAppDiscountPercentage.getText().toString()));
+            app.setAppCreator(curUser);
+            if(apkUri==null){
+                if(isEditingApp) {
+                    app.setAppApkPath(curApp.getAppApkPath());
+                    app.setAppSize(curApp.getAppSize());
+                }
+                else {
+                    Toast.makeText(this, "You must choose an APK path!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+            else{
+                String path = getFullPath(curUser, app, FIRESTORE_STORAGE_APK_FOLDER, "app");
+
+                app.setAppApkPath(path);
+                String size = humanReadableByte(apkUri);
+                app.setAppSize(size);
+
+                StorageFunctions.saveFileInFireStore(apkUri, path);
+            }
+
+            // if the image is null, it's set to the default, if it's null and isEditingApp that means the image hasn't been changed when editing.
+            if(isEditingApp && uriPhoto==null){
+                app.setAppImagePath(curApp.getAppImagePath());
+            }
+            else app.setAppImagePath(getFullPath(curUser, app, FIRESTORE_STORAGE_IMAGE_FOLDER, "jpg"));
 
 
+            btnUploadAppSendData.setClickable(false);
             if(isEditingApp){
                 app.setAppImagePath(curApp.getAppImagePath());
                 app.setAppId(curApp.getAppId());
@@ -290,6 +354,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                     public void onComplete(@NonNull Task<Void> task1) {
                         if (task1.isSuccessful()) {
                             Toast.makeText(getApplicationContext(), "Successful!", Toast.LENGTH_LONG).show();
+                            db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(app.getAppId()).set(app);
                             try {
                                 saveBitmapAndFinish(app);
                             } catch (NullPointerException e){
@@ -298,6 +363,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                         } else {
                             Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
                             Log.d("debug", "set failed with ", task1.getException());
+                            btnUploadAppSendData.setClickable(true);
                         }
                     }
                 });
@@ -309,17 +375,24 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                         if (task1.isSuccessful()) {
                             DocumentReference documentReference = task1.getResult();
                             Toast.makeText(getApplicationContext(), "Successful!", Toast.LENGTH_LONG).show();
+
                             // You can get the ID of the newly added document using documentReference.getId()
                             String docId = documentReference.getId();
                             app.setAppId(docId);
+
+                            db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).add(app);
+
                             try {
                                 saveBitmapAndFinish(app);
                             } catch (NullPointerException e){
                                 Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
                             }
+                            // we now add the app to the user's created apps subcollection
+
                         } else {
                             Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
                             Log.d("debug", "add failed with ", task1.getException());
+                            btnUploadAppSendData.setClickable(true);
                         }
                     }
                 });

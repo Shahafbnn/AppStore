@@ -11,6 +11,7 @@ public abstract class Constants {
     //etUploadAppName, etUploadAppDescription,actvUploadAppMainCategory, etUploadAppPrice, etUploadAppDiscountPercentage
     private static final Validations.ValidateAppTypes[] APP_TYPES = Validations.ValidateAppTypes.values();
 
+    // user consts
     public static final String USER_ID_KEY = "userId";
 
     public static final String USER_FIRST_NAME_KEY = "userFirstName";
@@ -29,6 +30,7 @@ public abstract class Constants {
 
     public static final String USER_IMAGE_URI_ADDRESS_KEY = "userImageUriAddress";
 
+    //city consts
     public static final String CITY_NAME_KEY = "cityName";
     public static final String CITY_ID_KEY = "cityId";
 
@@ -39,14 +41,23 @@ public abstract class Constants {
     public static Validations.ValidateAppTypes[] getAppTypes(){return APP_TYPES.clone();}
 
     public static String[] getUserKeys() { return USER_KEYS.clone();}
+    //sp consts
     public static final String SHARED_PREFERENCES_KEY = "sharedPreferencesRegister";
     public static final String SHARED_PREFERENCES_INITIALIZED_KEY = "initialized";
 
-    public static final String REGISTER_ACTIVITY_RETURN_DATA_KEY = "registerActivitySuccess";
 
+    //firebase
+    public static final String FIRESTORE_USER_CREATED_APPS_KEY = "createdApps";
+    public static final String FIRESTORE_STORAGE_IMAGE_FOLDER = "Images";
+    public static final String FIRESTORE_STORAGE_APK_FOLDER = "Apks";
+
+
+    //intents
+    public static final String REGISTER_ACTIVITY_RETURN_DATA_KEY = "registerActivitySuccess";
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
     public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";
     public static final String INTENT_CATEGORIES_KEY = "intentCategories";
+
 
 
     public static final String[] APPLICATION_CATEGORIES = new String[]{"Games", "Fitness", "Business", "Food"};

@@ -12,25 +12,21 @@
         android:text="Please choose your option:"
         android:textSize="20sp" />
 
-    <RadioGroup
+    <Button
+        android:id="@+id/btnCreateNewApp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" >
+        android:layout_height="wrap_content"
+        android:text="Create New App" />
 
-        <RadioButton
-            android:id="@+id/rbCreateNewApp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Create a new app" />
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Edit An App You Created:" />
 
-        <RadioButton
-            android:id="@+id/rbUpdateApp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Update an app" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCreatedApps"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvCreatedApps"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </RadioGroup>
 </LinearLayout>

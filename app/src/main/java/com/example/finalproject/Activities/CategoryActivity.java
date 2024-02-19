@@ -26,19 +26,24 @@ import android.widget.Toast;
 
 import com.example.finalproject.Classes.App.App;
 import com.example.finalproject.Classes.Category.Categories;
+import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firestore.v1.Document;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class CategoryActivity extends AppCompatActivity implements View.OnClickListener {
@@ -99,6 +104,10 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
         svCategories.addView(linearLayout);
 
         createEverything();
+
+
+        //createRandomApps();
+
     }
     private void addRandomApp(String category){
         App myNewApp;
@@ -116,8 +125,19 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
             specialFirstName += nameStr[rand.nextInt(nameStr.length)];
             specialLastName += nameStr[rand.nextInt(nameStr.length)];
         }
-        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", specialLastName, rand.nextInt(20), "None", (double) rand.nextInt(20), (double) rand.nextInt(100), category);
+        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", curUser, StorageFunctions.humanReadableByte(rand.nextInt(200000)), "None", (double) rand.nextInt(20), (double) rand.nextInt(100), category);
         db.collection("apps").add(myNewApp);
+    }
+    private void createRandomApps(){
+        for(int i = 0; i < 10; i++){
+            addRandomApp("Gaming");
+        }
+        for(int i = 0; i < 10; i++){
+            addRandomApp("Fitness");
+        }
+        for(int i = 0; i < 10; i++){
+            addRandomApp("Work");
+        }
     }
 
     private void createEverything(){

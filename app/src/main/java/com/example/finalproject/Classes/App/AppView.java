@@ -31,6 +31,10 @@ public class AppView extends LinearLayout {
 
         setData(context, app);
     }
+    public AppView(Context context) {
+        super(context);
+        setParams(context);
+    }
     public void setData(Context context, App app){
         StorageFunctions.setImage(context, imageView, app.getAppImagePath());
 
@@ -38,10 +42,7 @@ public class AppView extends LinearLayout {
         this.app = app;
     }
 
-    public AppView(Context context) {
-        super(context);
-        setParams(context);
-    }
+
 
     private void setParams(Context context){
         setOrientation(LinearLayout.VERTICAL);
