@@ -10,10 +10,10 @@ public class App implements Serializable {
     private String appName;
     private String appImagePath;
     private User appCreator;
-    //private long appDownloadCount;
+    private long appDownloadCount;
     private String appSize;
     private ArrayList<String> appPerms;
-    //private double appAvgRating;
+    private double appAvgRating;
     private Double appPrice;
     private Double appDiscountPercentage; //out of 100%
     private String appMainCategory;
@@ -32,6 +32,22 @@ public class App implements Serializable {
     }
 
     public App() {
+    }
+
+    public double getAppAvgRating() {
+        return appAvgRating;
+    }
+
+    public void setAppAvgRating(double appAvgRating) {
+        this.appAvgRating = appAvgRating;
+    }
+
+    public long getAppDownloadCount() {
+        return appDownloadCount;
+    }
+
+    public void setAppDownloadCount(long appDownloadCount) {
+        this.appDownloadCount = appDownloadCount;
     }
 
     public String getAppApkPath() {

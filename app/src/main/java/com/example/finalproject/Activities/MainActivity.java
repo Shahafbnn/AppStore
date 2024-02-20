@@ -1,8 +1,12 @@
 package com.example.finalproject.Activities;
 
-import static android.view.Gravity.CENTER;
+import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_CREATED_APPS_KEY;
+import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_DOWNLOADED_APPS_KEY;
+import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_SEARCH_HISTORY_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_ACTIVITY_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_UPLOAD_APP_ACTIVITY_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 import static com.example.finalproject.Classes.InitiateFunctions.*;
 
@@ -27,6 +31,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -43,15 +49,12 @@ import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.*;
 
-import org.checkerframework.checker.units.qual.A;
-
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -70,15 +73,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Boolean isMenuPrepared;
     private boolean reloadActivity;
     private ArrayList<App> createdAppsArrayList;
-    private OnCompleteListener<DocumentSnapshot> userGetOnCompleteListener;
+    private ArrayList<App> downloadedAppsArrayList;
+    private AutoCompleteTextView actvMainActivitySearchApp;
+    private Button btnMainActivitySearchApp;
+    private ArrayList<String> searchHistoryString;
+    private ArrayList<Search> searchHistory;
+    private LinearLayout llMainActivitySearchApp;
+    private ArrayAdapter<String> searchHistoryAdapter;
+
+
+
 
     // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
     // It retrieves the User object from the returned Intent and updates the current user and sign-in status.
-    private final ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(
+    private final ActivityResultLauncher<Intent> activityResultLauncherUser = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
+                    //fix the radioButton
+                    if(rbMainActivity != null) rbMainActivity.setActivated(true);
+                    //handle returned data
                     if(result.getResultCode()== Activity.RESULT_OK){
                         if(result.getData() != null){
                             //get the returned app from UploadAppActivity
@@ -124,7 +139,138 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
     );
 
+    private final ActivityResultLauncher<Intent> activityResultLauncherApp = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    //for changes done to apps in ChosenAppActivity and UploadAppActivity
+                    //handle returned data
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                        if(result.getData() != null){
+                            //get the returned app from UploadAppActivity
+                            App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                            if(app!=null){
+                                String activityType = (String)result.getData().getSerializableExtra(INTENT_ACTIVITY_KEY);
+                                ArrayList<App> arrReference;
+                                String key;
+                                if(activityType != null){
+                                    if(activityType.equals(INTENT_UPLOAD_APP_ACTIVITY_KEY)){
+                                        arrReference = createdAppsArrayList;
+                                        key = FIRESTORE_USER_CREATED_APPS_KEY;
+                                    }
+                                    else{
+                                        arrReference = downloadedAppsArrayList;
+                                        key = FIRESTORE_USER_DOWNLOADED_APPS_KEY;
+                                    }
+
+
+                                    boolean found = false;
+                                    //if the array is null we fetch it.
+                                    if(arrReference == null) {
+                                        db.collection("users").document(curUser.getUserId()).collection(key).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                                if(task.isSuccessful()){
+                                                    boolean foundInFireStore = false;
+
+                                                    // we add all the apps to createdAppsArrayList
+                                                    //if none of the apps in createdAppsArrayList are the app we got back from INTENT_CURRENT_APP_KEY, we add it ourselves
+                                                    //because firestore may not have finished uploading the new app so we didn't get it.
+                                                    App tempApp;
+                                                    boolean isUpload = activityType.equals(INTENT_UPLOAD_APP_ACTIVITY_KEY);
+                                                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                                        tempApp = documentSnapshot.toObject(App.class);
+                                                        tempApp.setAppId(documentSnapshot.getId());
+                                                        if(tempApp.getAppId().equals(app.getAppId())) foundInFireStore = true;
+                                                        if(isUpload){
+                                                            createdAppsArrayList.add(tempApp);
+                                                        }
+                                                        else{
+                                                            downloadedAppsArrayList.add(tempApp);
+                                                        }
+
+                                                    }
+                                                    if(!foundInFireStore) {
+                                                        if(isUpload){
+                                                            createdAppsArrayList.add(app);
+                                                        }
+                                                        else{
+                                                            downloadedAppsArrayList.add(app);
+                                                        }
+                                                    }
+
+
+                                                }
+                                            }
+                                        });
+                                    }
+                                    else{
+                                        //we find the app in createdAppsArrayList, if it's there we update it, else we add it
+                                        for (int i = 0; i < arrReference.size() && !found; i++) {
+                                            if (arrReference.get(i).getAppId().equals(app.getAppId())) {
+                                                arrReference.set(i, app);
+                                                found = true;
+                                            }
+                                        }
+                                        if(!found){
+                                            arrReference.add(app);
+                                        }
+                                    }
+
+                                    //if we updated the app then we won't need to update the user (since we don't change the user there)
+                                }
+                            }
+
+                            //reload activity if isMenuPrepared is true;
+                            // needs to be conditional
+                            // because what if there are delays on the onCreate get fetch?
+                            conditionalReloadActivity();
+                        }
+                    }
+                }
+            }
+    );
+
+    private final ActivityResultLauncher<Intent> activityResultLauncherSearchedApp = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    //for changes done to apps in ChosenAppActivity and UploadAppActivity
+                    //handle returned data
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                        if(result.getData() != null){
+                            //get the returned app from UploadAppActivity
+                            App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                            if(app!=null){
+                                boolean found = false;
+                                //if the array is null we fetch it.
+
+                                //we find the app in createdAppsArrayList, if it's there we update it, else we add it
+                                for (int i = 0; i < llMainActivitySearchApp.getChildCount() && !found; i++) {
+                                    if (((AppView)llMainActivitySearchApp.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
+                                        llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app), i);
+                                        found = true;
+                                    }
+                                }
+                                if(!found){
+                                    llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app));
+                                }
+                            }
+
+                            //reload activity if isMenuPrepared is true;
+                            // needs to be conditional
+                            // because what if there are delays on the onCreate get fetch?
+                            //conditionalReloadActivity();
+                        }
+                    }
+                }
+            }
+    );
+
     private Categories categories;
+    private CategoryView categoryView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,7 +284,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rbMainActivity.setOnClickListener(this);
         rbCategoryActivity = findViewById(R.id.rbCategoryActivity);
         rbCategoryActivity.setOnClickListener(this);
-        
+
+        //search apps
+        searchHistoryString = new ArrayList<>();
+        actvMainActivitySearchApp = findViewById(R.id.actvMainActivitySearchApp);
+        searchHistoryAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, searchHistoryString);
+        actvMainActivitySearchApp.setAdapter(searchHistoryAdapter);
+        btnMainActivitySearchApp = findViewById(R.id.btnMainActivitySearchApp);
+        btnMainActivitySearchApp.setOnClickListener(this);
+        llMainActivitySearchApp = findViewById(R.id.llMainActivitySearchApp);
+
+
         tvWelcome = findViewById(R.id.tvWelcome);
         ivProfilePic = findViewById(R.id.ivProfilePic);
         db = FirebaseFirestore.getInstance();
@@ -177,6 +333,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         Log.d("debug", "initUserSharedPreferences get failed with ", task.getException());
                     }
                     // Reload the activity based on the new data
+                    fetchSearchHistoryCurUser();
                     conditionalReloadActivity();
                 });
         }
@@ -189,7 +346,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 // to fix the data
 
     } //onCreate's end
+    private void fetchSearchHistoryCurUser(){
+        if(isUserSignedIn){
+            db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_SEARCH_HISTORY_KEY).get().addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Search search;
+                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                        search = documentSnapshot.toObject(Search.class);
+                        search.setSearchId(documentSnapshot.getId());
+                        searchHistory.add(search);
+                        searchHistoryString.add(search.getSearchText());
+                    }
+                    searchHistoryAdapter.notifyDataSetChanged();
+                } else {
+                    Log.d("debug", "Error getting documents: ", task.getException());
+                }
+            });
+        }
+    }
 
+    @Override
+    public void onClick(View v) {
+        if (v==rbCategoryActivity) {
+            Intent intent = new Intent(getApplicationContext(), CategoryActivity.class);
+            if(categories==null){
+                fetchCategoriesAndLaunchActivity("CategoryActivity", intent);
+            }
+            else launchCategoryActivity(intent);
+        }
+        else if(v==btnMainActivitySearchApp){
+            String searchData = actvMainActivitySearchApp.getText().toString();
+            ValidationData validated = Validations.validateAppName(searchData);
+            if(validated.isValid()){
+                db.collection("apps").whereEqualTo("appName", searchData).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            App app;
+                            AppView appView;
+                            for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                app = documentSnapshot.toObject(App.class);
+                                app.setAppId(documentSnapshot.getId());
+                                appView = new AppView(getApplicationContext(), app);
+                                appView.setOnLongClickListener(new View.OnLongClickListener() {
+                                    @Override
+                                    public boolean onLongClick(View v) {
+                                        AppView view = (AppView)v;
+                                        llMainActivitySearchApp.removeView(view);
+                                        return true;
+                                    }
+                                });
+                                appView.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                                        intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                                        intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                                        activityResultLauncherSearchedApp.launch(intent);
+                                    }
+                                });
+                                llMainActivitySearchApp.addView(appView);
+                            }
+                            searchHistoryAdapter.notifyDataSetChanged();
+                        } else {
+                            Log.d("debug", "Error getting documents: ", task.getException());
+                        }
+                    }
+                });
+            } else actvMainActivitySearchApp.setError(validated.getError());
+        }
+    }
     private void wipeDataOffFireStore(){
         deleteAllExceptCategories("apps");
         deleteAllUserCreatedApps();
@@ -270,7 +496,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else if(item==itemRegister){
             Intent intent = new Intent(this, RegisterActivity.class);
             intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-            activityResultLauncher.launch(intent);
+            activityResultLauncherUser.launch(intent);
             return true;
         }
         else if(item==itemLogOut){
@@ -286,7 +512,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else if(item==itemDataUpdate){
             Intent intent = new Intent(this, UsersListViewActivity.class);
             intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-            activityResultLauncher.launch(intent);
+            activityResultLauncherUser.launch(intent);
             return true;
         }
         else if(item==itemAboutMe){
@@ -543,7 +769,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (task.isSuccessful()) {
                 for (QueryDocumentSnapshot document : task.getResult()) {
                     String userId = document.getId();
-                    db.collection("users").document(userId).collection("createdApps")
+                    db.collection("users").document(userId).collection(FIRESTORE_USER_CREATED_APPS_KEY)
                             .get()
                             .addOnCompleteListener(subTask -> {
                                 if (subTask.isSuccessful()) {
@@ -590,26 +816,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
     }
 
-    @Override
-    public void onClick(View v) {
-        if (v==rbCategoryActivity) {
-            Intent intent = new Intent(getApplicationContext(), CategoryActivity.class);
-            if(categories==null){
-                fetchCategoriesAndLaunchActivity("CategoryActivity", intent);
-            }
-            else launchCategoryActivity(intent);
 
-        }
-    }
     private void launchCategoryActivity(Intent intent){
         intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
         intent.putExtra(INTENT_CURRENT_USER_KEY, curUser);
-        startActivity(intent);
+        activityResultLauncherApp.launch(intent);
     }
     private void launchUploadAppActivity(Intent intent){
         intent.putExtra(Constants.INTENT_CATEGORIES_KEY, categories);
         intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-        activityResultLauncher.launch(intent);
+        activityResultLauncherApp.launch(intent);
     }
     private void launchActivity(String activity, Intent intent){
         if(activity.equals("CategoryActivity")) launchCategoryActivity(intent);

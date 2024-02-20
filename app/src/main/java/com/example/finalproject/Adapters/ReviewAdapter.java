@@ -22,9 +22,9 @@ public class ReviewAdapter extends BaseAdapter {
     private List<Review> reviews;
 
 
-    public ReviewAdapter(Context context, List<Review> usersArray) {
+    public ReviewAdapter(Context context, List<Review> reviews) {
         this.context = context;
-        this.reviews = usersArray;
+        this.reviews = reviews;
     }
 
     @Override

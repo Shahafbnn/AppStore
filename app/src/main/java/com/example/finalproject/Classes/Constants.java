@@ -47,9 +47,14 @@ public abstract class Constants {
 
 
     //firebase
+    public static final String FIRESTORE_USER_DOWNLOADED_APPS_KEY = "downloadedApps";
     public static final String FIRESTORE_USER_CREATED_APPS_KEY = "createdApps";
     public static final String FIRESTORE_STORAGE_IMAGE_FOLDER = "Images";
     public static final String FIRESTORE_STORAGE_APK_FOLDER = "Apks";
+    public static final String FIRESTORE_APP_REVIEWS_KEY = "appReviews";
+    public static final String FIRESTORE_USER_SEARCH_HISTORY_KEY = "searchHistory";
+
+
 
 
     //intents
@@ -57,6 +62,13 @@ public abstract class Constants {
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
     public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";
     public static final String INTENT_CATEGORIES_KEY = "intentCategories";
+
+    public static final String INTENT_ACTIVITY_KEY = "intentActivity";
+
+
+    public static final String INTENT_CHOSEN_APP_ACTIVITY_KEY = "intentChosenAppActivity";
+    public static final String INTENT_UPLOAD_APP_ACTIVITY_KEY = "intentUploadAppActivity";
+
 
 
 

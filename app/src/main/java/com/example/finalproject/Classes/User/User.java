@@ -124,6 +124,7 @@ public class User implements Serializable {
         this.userIsAdmin = userIsAdmin;
     }
 
+
     public String getUserImagePath() {
         return userImagePath;
     }

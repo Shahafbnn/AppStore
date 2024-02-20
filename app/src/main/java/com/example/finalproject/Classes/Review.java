@@ -11,6 +11,12 @@ public class Review {
     public Review() {
     }
 
+    public Review(float reviewAppScore, String reviewText, User reviewReviewer) {
+        this.reviewAppScore = reviewAppScore;
+        this.reviewText = reviewText;
+        this.reviewReviewer = reviewReviewer;
+    }
+
     public String getReviewId() {
         return reviewId;
     }

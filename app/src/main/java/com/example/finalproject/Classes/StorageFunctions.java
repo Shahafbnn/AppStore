@@ -11,18 +11,23 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -31,6 +36,7 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +45,8 @@ import java.text.StringCharacterIterator;
 import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import firebase.com.protolitewrapper.BuildConfig;
 
 public class StorageFunctions {
 
@@ -227,7 +235,7 @@ public class StorageFunctions {
         byte[] data = getZippedFile(context, uri, name);
         return uploadBytesToFireStore(data, fullFireStorePath);
     }
-    public static File downloadApkFileFromFireStore(Activity act, String fireStorePath, OnCompleteListener<FileDownloadTask.TaskSnapshot> listener){
+    public static void downloadApkFileFromFireStore(Activity act, String fireStorePath, OnCompleteListener<FileDownloadTask.TaskSnapshot> listener){
         StorageReference ref = FirebaseStorage.getInstance().getReference(fireStorePath);
 
         File localFile = null;
@@ -236,40 +244,96 @@ public class StorageFunctions {
         } catch (IOException e) {
             PermissionClass.RequestPerms(act);
             Toast.makeText(act, "Please accept permissions to download the app", Toast.LENGTH_LONG).show();
-            return null;
+            return;
         }
 
         FileDownloadTask a = ref.getFile(localFile);
         if(listener!=null) a.addOnCompleteListener(listener);
-        return localFile;
+        return;
     }
-
-    public static void openApkFile(Context context, File file){
-        Uri apkUri = FileProvider.getUriForFile(context, context.getApplicationContext().getPackageName() + ".provider", file);
-
-        // Assume 'context' is your Context object and 'apkUri' is the Uri of your APK file
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        try {
-            context.startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            Log.e("debug", e.getMessage());
-            Toast.makeText(context, "Unable to download app, please try again", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    public static void downloadAndOpenApkFileFromFireStore(Activity act, String fireStorePath, OnCompleteListener<FileDownloadTask.TaskSnapshot> listener){
+    public static boolean downloadApkFileFromFireExternal(Activity act, String fireStorePath, String fileName){
         if(PermissionClass.CheckPermission(act)){
-            File file = downloadApkFileFromFireStore(act, fireStorePath, listener);
-            if (file != null) {
-                openApkFile(act, file);
+            Toast.makeText(act, "Downloading, please wait...", Toast.LENGTH_LONG).show();
+
+            // Get the directory for the user's public download directory.
+            File downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+// Define your file name
+            fileName += ".apk";
+
+// Create a new file within the downloads directory
+            File myFile = new File(downloadsDir, fileName);
+
+            try {
+                if (!myFile.exists()) {
+                    myFile.createNewFile();
+                }
+            } catch (IOException e) {
+                Log.e("debug", "error at downloadApkFileFromFireExternal: " + e.getMessage());
+                return false;
             }
-        }else{
+
+
+            StorageReference ref = FirebaseStorage.getInstance().getReference(fireStorePath);
+
+
+            ref.getFile(myFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
+                    if(task.isSuccessful()){
+                        Toast.makeText(act, "Downloaded successfully at " + myFile.getPath(), Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        } else{
             PermissionClass.RequestPerms(act);
             Toast.makeText(act, "Please accept permissions to download the app", Toast.LENGTH_LONG).show();
         }
+        return true;
+    }
+
+
+
+
+
+
+
+    public static void openApkFile(Activity context, File apkFile) {
+        PermissionClass.RequestPerms(context);
+        Toast.makeText(context, "opened", Toast.LENGTH_LONG).show();
+
+        Uri apkUri = FileProvider.getUriForFile(
+                context,
+                context.getApplicationContext().getPackageName() + ".provider",
+                apkFile
+        );
+
+        Intent install = new Intent(Intent.ACTION_VIEW);
+        install.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        install.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        context.startActivity(install);
+
+//        // Create a new Uri from the File
+//        Intent intent;
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+//                && !context.getPackageManager().canRequestPackageInstalls()) {
+//            Intent unknownAppSourceIntent = new Intent()
+//                    .setAction(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES)
+//                    .setData(Uri.parse(String.format("package:%s", context.getPackageName())));
+//
+//            context.unknownAppSourceDialog.launch(unknownAppSourceIntent);
+//
+//        }else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//            Uri apkUri = FileProvider.getUriForFile(context, BuildConfig.APPLICATION_ID + ".fileprovider", apkFile);
+//            intent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
+//            intent.setData(apkUri);
+//            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//        } else {
+//            Uri apkUri = Uri.fromFile(apkFile);
+//            intent = new Intent(Intent.ACTION_VIEW);
+//            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+//            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        }
+//        context.startActivity(intent);
     }
 }

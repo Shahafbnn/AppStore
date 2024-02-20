@@ -3,6 +3,7 @@ package com.example.finalproject.Classes;
 import static android.Manifest.permission.CAMERA;
 import static android.Manifest.permission.MANAGE_EXTERNAL_STORAGE;
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.REQUEST_INSTALL_PACKAGES;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 import android.Manifest;
@@ -43,7 +44,7 @@ public class PermissionClass {
      * @param act The activity where permissions are requested.
      */
     public static void RequestPerms(Activity act){
-        ActivityCompat.requestPermissions(act, new String[]{CAMERA, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE}, 1);
+        ActivityCompat.requestPermissions(act, new String[]{CAMERA, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, REQUEST_INSTALL_PACKAGES }, 1);
     }
     public static ArrayList<String> getAllPerms(){
         java.lang.reflect.Field[] fields = getAllPermsFields();

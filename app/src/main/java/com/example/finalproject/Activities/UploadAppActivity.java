@@ -2,6 +2,7 @@ package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
 import static com.example.finalproject.Classes.StorageFunctions.humanReadableByte;
+import static com.example.finalproject.Classes.StorageFunctions.openApkFile;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -25,6 +26,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -49,6 +51,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -130,6 +133,8 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                                 apkUri = data.getData();
                                 String filePath = apkUri.getPath();
                                 etAPKPath.setText(filePath);
+                                //openApkFile(getApplicationContext(), new File(filePath));
+
                             }
                         }
                     }
@@ -168,7 +173,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         tvPerms = findViewById(R.id.tvPerms);
         permsDialog = new Dialog(this);
         permsDialogResult = new ArrayList<>();
-        permsDialogChoiceView = new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms, 50);
+        permsDialogChoiceView = new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), permsDialogResult, permsDialog, tvPerms, 50, ListView.CHOICE_MODE_MULTIPLE, false);
         permsDialog.setContentView(permsDialogChoiceView);
         tvPerms.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -422,6 +427,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
     private void finishActivity(boolean result, App app){
         Intent returnIntent = new Intent();
         returnIntent.putExtra(INTENT_CURRENT_APP_KEY, app);
+        returnIntent.putExtra(INTENT_ACTIVITY_KEY, INTENT_UPLOAD_APP_ACTIVITY_KEY);
         if(result) setResult(Activity.RESULT_OK, returnIntent);
         else setResult(Activity.RESULT_CANCELED, returnIntent);
         finish();

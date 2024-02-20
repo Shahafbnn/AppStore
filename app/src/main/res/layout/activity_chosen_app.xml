@@ -11,21 +11,31 @@
 
 
     <ScrollView
+        android:id="@+id/svAppData"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_weight="1">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvAppName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:text="app name"
-                android:gravity="center"/>
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/tvAppMainCategory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Category" />
 
             <ImageView
                 android:id="@+id/ivAppImage"
@@ -38,8 +48,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:text="creator"
-                android:gravity="center"/>
+                android:gravity="center"
+                android:text="creator" />
 
             <TextView
                 android:id="@+id/tvAppDownloads"
@@ -59,31 +69,26 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clickable="true"
-                android:text="> Perms:" />
+                android:text="Permissions" />
 
-
-            <ScrollView
-                android:id="@+id/svAppPerms"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:id="@+id/llAppPerms"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-            </ScrollView>
 
             <RatingBar
                 android:id="@+id/rbAppAvgRating"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
-            <ImageButton
-                android:id="@+id/ibAppDownload"
+            <TextView
+                android:id="@+id/tvAppFullPrice"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="price"
+                android:textSize="20sp" />
+
+            <ImageButton
+                android:id="@+id/ibAppDownload"
+                android:layout_width="wrap_content"
+                android:layout_height="120dp"
                 android:scaleType="fitXY"
                 app:srcCompat="@drawable/download_button" />
 
@@ -94,56 +99,16 @@
                 android:scaleType="fitXY"
                 app:srcCompat="@drawable/share_icon" />
 
-            <LinearLayout
-                android:id="@+id/llReviews"
+            <Button
+                android:id="@+id/btnViewReviews"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <RatingBar
-                    android:id="@+id/rbAppUserRating"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-
-                <LinearLayout
-
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal">
-
-                    <Button
-                        android:id="@+id/btnAppSendUserReview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Send" />
-
-                    <EditText
-                        android:id="@+id/etAppReview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="20"
-                        android:ems="10"
-                        android:hint="Leave Review Here"
-                        android:inputType="text" />
+                android:layout_height="wrap_content"
+                android:text="Button" />
 
 
-                </LinearLayout>
-            </LinearLayout>
 
-            <ScrollView
-                android:id="@+id/svAppReviews"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <LinearLayout
-                    android:id="@+id/llAppReviews"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" >
-
-                </LinearLayout>
-            </ScrollView>
         </LinearLayout>
     </ScrollView>
+
+
 </LinearLayout>

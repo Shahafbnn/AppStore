@@ -2,9 +2,10 @@ package com.example.finalproject.Classes;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.text.Html;
 import android.util.SparseBooleanArray;
-import android.view.Gravity;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -15,7 +16,6 @@ import android.widget.Toast;
 import com.example.finalproject.R;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class PermissionChoiceView extends LinearLayout {
     private ListView listView;
@@ -25,7 +25,9 @@ public class PermissionChoiceView extends LinearLayout {
     private Dialog dialog;
     private TextView tvOutData;
     private int maxCheckedResults;
-    public PermissionChoiceView(Context context, String[] choices,  ArrayList<String> result, Dialog dialog, TextView outData, int maxCheckedResults) {
+    private int choiceMode;
+    private boolean isViewOnly;
+    public PermissionChoiceView(Context context, String[] choices,  ArrayList<String> result, Dialog dialog, TextView outData, int maxCheckedResults, int choiceMode, boolean isViewOnly) {
         super(context);
         inflate(getContext(), R.layout.permission_choice_view, this);
         this.choices = choices;
@@ -34,6 +36,8 @@ public class PermissionChoiceView extends LinearLayout {
         this.dialog = dialog;
         this.tvOutData = outData;
         this.maxCheckedResults = maxCheckedResults;
+        this.choiceMode = choiceMode;
+        this.isViewOnly = isViewOnly;
 
         setParams();
     }
@@ -58,25 +62,39 @@ public class PermissionChoiceView extends LinearLayout {
 
         listView = findViewById(R.id.lvPermissionChoice);
 //        listView.setVisibility(VISIBLE);
-        listView.setAdapter(new ArrayAdapter<String>(context, android.R.layout.simple_list_item_multiple_choice, choices));
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        listView.setAdapter(new ArrayAdapter<String>(context, android.R.layout.simple_list_item_multiple_choice, choices){
+            @Override
+            public boolean isEnabled(int position) {
+                return !isViewOnly; // This will make the items unclickable
+            }
+        });
+        listView.setChoiceMode(choiceMode);
 //        listView.setItemChecked(2, true);
 //        LinearLayout.LayoutParams layoutParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
 //        listView.setLayoutParams(layoutParams);
 //        addView(listView);
         TextView tv = findViewById(R.id.tvPermissionChoice);
-        tv.setText("Please choose your permissions (max " + maxCheckedResults + "):");
-
         Button btn = findViewById(R.id.btnPermissionChoiceSubmit);
+
+        String text;
+        if(isViewOnly) {
+            text = "The permissions for the app: ";
+            btn.setText("Close");
+        } else {
+            text = "Please choose your permissions (max " + maxCheckedResults + "):";
+        }
+        tv.setText(Html.fromHtml("<u>" + text + "</u>"));
         btn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                //because it's a pointer
-                result.clear();
-                result.addAll(getCheckedItems());
-                dialog.dismiss();
+                if(!isViewOnly){//because it's a pointer
+                    result.clear();
+                    result.addAll(getCheckedItems());
+                }
+                if(dialog != null) dialog.dismiss();
             }
         });
+
 //        addView(btn);
     }
 
@@ -84,7 +102,6 @@ public class PermissionChoiceView extends LinearLayout {
         SparseBooleanArray checkedItemsArray = listView.getCheckedItemPositions();
         ArrayList<String> chosen = new ArrayList<String>();
         int len = checkedItemsArray.size();
-        tvOutData.setText("");
         String str = "Perms: ";
         int checkedCount = 0;
         for(int i = 0; i < len && i < maxCheckedResults && checkedCount < maxCheckedResults; i++){
@@ -96,9 +113,11 @@ public class PermissionChoiceView extends LinearLayout {
             }
         }
         if(checkedCount==maxCheckedResults) Toast.makeText(context, "You cannot have over "+maxCheckedResults+" permissions!", Toast.LENGTH_LONG).show();
-        str = str.substring(0, str.length()-2);
-        //Toast.makeText(context, "The string: " + str, Toast.LENGTH_LONG).show();
-        tvOutData.setText(str);
+        if(tvOutData != null){
+            if (!chosen.isEmpty()) str = str.substring(0, str.length() - 2);
+            //Toast.makeText(context, "The string: " + str, Toast.LENGTH_LONG).show();
+            tvOutData.setText(str);
+        }
         return chosen;
     }
     public void setCheckedItems(ArrayList<String> checkedItems){

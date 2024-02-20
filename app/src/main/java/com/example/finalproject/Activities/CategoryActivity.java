@@ -5,6 +5,7 @@ import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.User.Validations.validateCategorySearch;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -56,11 +58,12 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
     private FirebaseFirestore db;
     private Categories categories;
     private LinearLayout linearLayout;
+    // because we need to set the  ActivityResultLauncher<Intent>> before the onCreate or in it
+    //since LifecycleOwner is attempting to register while current state is RESUMED. LifecycleOwners must call register before they are STARTED.
     private HashMap<String, ActivityResultLauncher<Intent>> activityResultLaunchers;
     private HashMap<String, CategoryView> categoryViewHashMap;
     private User curUser;
     private Boolean isUserSignedIn;
-
 
 
 
@@ -195,13 +198,16 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
                 if (task.isSuccessful()) {
                     ArrayList<App> apps = new ArrayList<>();
                     App app;
-
-                    for (QueryDocumentSnapshot document : task.getResult()) {
+                    QuerySnapshot snapshots = task.getResult();
+                    //int count = 0;
+                    for (QueryDocumentSnapshot document : snapshots) {
+                        //Log.v("debug", "document " + count + ": " + document.toString());
                         if(document.exists()){
                             app = document.toObject(App.class);
                             app.setAppId(document.getId());
                             apps.add(app);
                         }
+                        //count++;
                     }
                     CategoryView categoryView = new CategoryView(getApplicationContext(), category, LinearLayout.VERTICAL, apps, activityResultLaunchers.get(category), curUser);
                     categoryViewHashMap.put(category, categoryView);
@@ -241,4 +247,6 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
             }
         }
     }
+
+
 }
