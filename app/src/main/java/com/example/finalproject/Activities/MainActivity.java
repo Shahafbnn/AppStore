@@ -235,14 +235,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                             arrReference.add(app);
                                         }
                                     }
-
-                                    //if we updated the app then we won't need to update the user (since we don't change the user there)
                                 }
                             }
 
                             //reload activity if isMenuPrepared is true;
-                            // needs to be conditional
-                            // because what if there are delays on the onCreate get fetch?
                             conditionalReloadActivity();
                         }
                     }
@@ -264,21 +260,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             //get the returned app from UploadAppActivity
                             App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
                             if(app!=null){
-                                boolean found = false;
-                                //if the array is null we fetch it.
-
-                                //we find the app in createdAppsArrayList, if it's there we update it, else we add it
-                                for (int i = 0; i < llMainActivitySearchApp.getChildCount() && !found; i++) {
-                                    if (((AppView) llMainActivitySearchApp.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
-                                        llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app), i);
-                                        found = true;
-                                    }
-                                }
-                                if (!found) {
-                                    llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app));
-                                }
-
-
+                                updateAppInLayout(llMainActivitySearchApp, app);
                             }
 
                             //reload activity if isMenuPrepared is true;
@@ -446,33 +428,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
-                            App app;
-                            AppView appView;
                             if(task.getResult().size() > 0){
-                                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                                    app = documentSnapshot.toObject(App.class);
-                                    app.setAppId(documentSnapshot.getId());
-                                    appView = new AppView(getApplicationContext(), app);
-                                    appView.setOnLongClickListener(new View.OnLongClickListener() {
-                                        @Override
-                                        public boolean onLongClick(View v) {
-                                            AppView view = (AppView)v;
-                                            llMainActivitySearchApp.removeView(view);
-                                            Toast.makeText(getApplicationContext(), "Removed " + view.getApp().getAppName(), Toast.LENGTH_LONG).show();
-                                            return true;
-                                        }
-                                    });
-                                    appView.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
-                                            intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
-                                            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-                                            activityResultLauncherSearchedApp.launch(intent);
-                                        }
-                                    });
-                                    llMainActivitySearchApp.addView(appView);
-                                }
+                                addAppViewsToLinearLayout(task, llMainActivitySearchApp, activityResultLauncherSearchedApp, null);
                             }else actvMainActivitySearchApp.setError("No app found with that name!");
                         } else {
                             actvMainActivitySearchApp.setError("Error getting app!");
@@ -509,19 +466,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 LinearLayout returnedLayout = stringLinearLayoutHashMap.get(key);
                                 App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
                                 if(app!=null && returnedLayout != null){
-                                    boolean found = false;
-                                    //if the array is null we fetch it.
-
-                                    //we find the app in createdAppsArrayList, if it's there we update it, else we add it
-                                    for (int i = 0; i < returnedLayout.getChildCount() && !found; i++) {
-                                        if (((AppView) returnedLayout.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
-                                            returnedLayout.addView(new AppView(getApplicationContext(), app), i);
-                                            found = true;
-                                        }
-                                    }
-                                    if (!found) {
-                                        returnedLayout.addView(new AppView(getApplicationContext(), app));
-                                    }
+                                    updateAppInLayout(returnedLayout, app);
                                 }
                             }
                         }
@@ -533,8 +478,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (task.isSuccessful()) {
-                    App app;
-                    AppView appView;
                     if(task.getResult().size() > 0){
                         HorizontalScrollView scrollView = new HorizontalScrollView(getApplicationContext());
                         scrollView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -549,37 +492,86 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         llMainActivity.addView(tvName);
                         llMainActivity.addView(scrollView);
 
-                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                            app = documentSnapshot.toObject(App.class);
-                            app.setAppId(documentSnapshot.getId());
-                            appView = new AppView(getApplicationContext(), app);
-                            appView.setOnLongClickListener(new View.OnLongClickListener() {
-                                @Override
-                                public boolean onLongClick(View v) {
-                                    AppView view = (AppView)v;
-                                    linearLayout.removeView(view);
-                                    Toast.makeText(getApplicationContext(), "Removed " + view.getApp().getAppName(), Toast.LENGTH_LONG).show();
-                                    return true;
-                                }
-                            });
-                            appView.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
-                                    intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
-                                    intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-                                    intent.putExtra(Constants.INTENT_SCROLL_VIEW_KEY, name);
-
-                                    arlScrollViews.launch(intent);
-                                }
-                            });
-                            linearLayout.addView(appView);
-                        }
+                        addAppViewsToLinearLayout(task, linearLayout, arlScrollViews, name);
                     }
                 }
             }
         });
 
+    }
+
+    private void addAppViewsToLinearLayout(@NonNull Task<QuerySnapshot> task, LinearLayout linearLayout, ActivityResultLauncher<Intent> arlScrollViews, String name) {
+        App app;
+        AppView appView;
+        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+            app = documentSnapshot.toObject(App.class);
+            app.setAppId(documentSnapshot.getId());
+            appView = createAppViewAndListeners(app, linearLayout, arlScrollViews, name);
+            linearLayout.addView(appView);
+        }
+    }
+
+    @NonNull
+    private AppView createAppViewAndListeners(App app, LinearLayout linearLayout, ActivityResultLauncher<Intent> launcher, String name) {
+        AppView appView;
+        appView = new AppView(getApplicationContext(), app);
+        appView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                AppView view = (AppView)v;
+                linearLayout.removeView(view);
+                Toast.makeText(getApplicationContext(), "Removed " + view.getApp().getAppName(), Toast.LENGTH_LONG).show();
+                return true;
+            }
+        });
+        View.OnClickListener clickListener;
+        if(name == null){
+            clickListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                    intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                    intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                    activityResultLauncherSearchedApp.launch(intent);
+                }
+            };
+        }
+        else{
+            clickListener = v -> {
+                Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                intent.putExtra(Constants.INTENT_SCROLL_VIEW_KEY, name);
+
+                launcher.launch(intent);
+            };
+        }
+        appView.setOnClickListener(clickListener);
+        return appView;
+    }
+
+    private void updateAppInLayout(LinearLayout returnedLayout, App app) {
+        if(returnedLayout.getChildCount() > 0){
+            boolean found = false;
+            AppView appView;
+            appView = new AppView(getApplicationContext(), app);
+            appView.setOnClickListener(((AppView) returnedLayout.getChildAt(0)).getOnClickListener());
+            appView.setOnLongClickListener(((AppView) returnedLayout.getChildAt(0)).getOnLongClickListener());
+
+            //if the array is null we fetch it.
+
+            //we find the app in createdAppsArrayList, if it's there we update it, else we add it
+            for (int i = 0; i < returnedLayout.getChildCount() && !found; i++) {
+                if (((AppView) returnedLayout.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
+                    returnedLayout.removeViewAt(i);
+                    returnedLayout.addView(appView, i);
+                    found = true;
+                }
+            }
+            if (!found) {
+                returnedLayout.addView(appView);
+            }
+        }
     }
 
     @Override

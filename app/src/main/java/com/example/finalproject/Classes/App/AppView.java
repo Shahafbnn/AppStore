@@ -16,6 +16,8 @@ public class AppView extends LinearLayout {
     private TextView textView;
     private ImageView imageView;
     private App app;
+    private OnClickListener clickListener;
+    private OnLongClickListener longClickListener;
     public AppView(Context context, String text, Bitmap bitmap) {
         super(context);
         setOrientation(LinearLayout.VERTICAL);
@@ -64,6 +66,26 @@ public class AppView extends LinearLayout {
         addView(textView);
         setGravity(CENTER);
 
+    }
+
+    @Override
+    public void setOnClickListener(OnClickListener l) {
+        super.setOnClickListener(l);
+        this.clickListener = l; // Add this line
+    }
+
+    public OnClickListener getOnClickListener() { // Add this method
+        return clickListener;
+    }
+
+    @Override
+    public void setOnLongClickListener(OnLongClickListener l) {
+        super.setOnLongClickListener(l);
+        this.longClickListener = l; // Add this line
+    }
+
+    public OnLongClickListener getOnLongClickListener() { // Add this method
+        return longClickListener;
     }
 
     public TextView getTextView() {
