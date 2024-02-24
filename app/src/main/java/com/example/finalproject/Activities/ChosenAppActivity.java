@@ -202,6 +202,15 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             }
         });
     }
+    private void setAppScoreFromReviewArrayList(){
+        float score = 0;
+        int i = 0;
+        for(Review review: appReviews){
+            i++;
+            score += review.getReviewAppScore();
+        }
+        rbAppAvgRating.setRating(score/i);
+    }
 
     private void initViews(){
         tvAppName = (TextView) findViewById(R.id.tvAppName);
@@ -380,6 +389,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
                         appCurUserReviews.add(review);
                         addReviewToFireBase(review);
                         appReviewsAdapter.notifyDataSetChanged();
+                        setAppScoreFromReviewArrayList();
                         Toast.makeText(this, "Review added successfully!", Toast.LENGTH_LONG).show();
                     }else etAppReview.setError(validated.getError());
                 }
