@@ -147,12 +147,8 @@ public class StorageFunctions {
     }
 
 
-    public static Bitmap getBitmapFromPhysicalPath(String filename, Context context){
-        if(!PermissionClass.CheckPermission((Activity) context)){
-            PermissionClass.RequestPerms((Activity) context);
-            Log.v("Image", "RequestPerms has failed in saveBitmapInFolder");
-        }
-        if(PermissionClass.CheckPermission((Activity) context)) {
+    public static Bitmap getBitmapFromPhysicalPath(String filename, Context context, boolean hasPerms){
+        if(hasPerms) {
             if (filename == null)
                 return BitmapFactory.decodeResource(context.getResources(), R.drawable.emptypfp);
             String foldersPhotos = Constants.FIRESTORE_STORAGE_IMAGE_FOLDER;
@@ -235,14 +231,14 @@ public class StorageFunctions {
         byte[] data = getZippedFile(context, uri, name);
         return uploadBytesToFireStore(data, fullFireStorePath);
     }
-    public static void downloadApkFileFromFireStore(Activity act, String fireStorePath, OnCompleteListener<FileDownloadTask.TaskSnapshot> listener){
+    public static void downloadApkFileFromFireStore(Activity act, String fireStorePath, OnCompleteListener<FileDownloadTask.TaskSnapshot> listener, PermissionClass perms){
         StorageReference ref = FirebaseStorage.getInstance().getReference(fireStorePath);
 
         File localFile = null;
         try {
             localFile = File.createTempFile("images", "apk");
         } catch (IOException e) {
-            PermissionClass.RequestPerms(act);
+            perms.RequestPerms(act);
             Toast.makeText(act, "Please accept permissions to download the app", Toast.LENGTH_LONG).show();
             return;
         }
@@ -251,8 +247,8 @@ public class StorageFunctions {
         if(listener!=null) a.addOnCompleteListener(listener);
         return;
     }
-    public static boolean downloadApkFileFromFireExternal(Activity act, String fireStorePath, String fileName){
-        if(PermissionClass.CheckPermission(act)){
+    public static boolean downloadApkFileFromFireExternal(Activity act, String fireStorePath, String fileName, PermissionClass perms){
+        if(perms.CheckPermission(act)){
             Toast.makeText(act, "Downloading, please wait...", Toast.LENGTH_LONG).show();
 
             // Get the directory for the user's public download directory.
@@ -286,7 +282,7 @@ public class StorageFunctions {
                 }
             });
         } else{
-            PermissionClass.RequestPerms(act);
+            perms.RequestPerms(act);
             Toast.makeText(act, "Please accept permissions to download the app", Toast.LENGTH_LONG).show();
         }
         return true;
@@ -298,20 +294,21 @@ public class StorageFunctions {
 
 
 
-    public static void openApkFile(Activity context, File apkFile) {
-        PermissionClass.RequestPerms(context);
-        Toast.makeText(context, "opened", Toast.LENGTH_LONG).show();
+    public static void openApkFile(Activity context, File apkFile, boolean hasPerms) {
+        if(hasPerms) {
+            Toast.makeText(context, "opened", Toast.LENGTH_LONG).show();
 
-        Uri apkUri = FileProvider.getUriForFile(
-                context,
-                context.getApplicationContext().getPackageName() + ".provider",
-                apkFile
-        );
+            Uri apkUri = FileProvider.getUriForFile(
+                    context,
+                    context.getApplicationContext().getPackageName() + ".provider",
+                    apkFile
+            );
 
-        Intent install = new Intent(Intent.ACTION_VIEW);
-        install.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        install.setDataAndType(apkUri, "application/vnd.android.package-archive");
-        context.startActivity(install);
+            Intent install = new Intent(Intent.ACTION_VIEW);
+            install.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            install.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            context.startActivity(install);
+        }
 
 //        // Create a new Uri from the File
 //        Intent intent;

@@ -75,6 +75,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
     private FirebaseFirestore db;
 
     private MenuItem registerActivityMenuItemRandomData;
+    private PermissionClass perms;
 
 
     ActivityResultLauncher<Intent> startFile;
@@ -83,6 +84,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
         db = FirebaseFirestore.getInstance();
+        perms = new PermissionClass(this);
 
 
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
@@ -142,7 +144,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
         ivCamera = findViewById(R.id.ivUploadAppCamera);
         ivCamera.setOnClickListener(this);
 
-        if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
+        if(!perms.CheckPermission(this)) perms.RequestPerms(this);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, CitiesArray.getArrCities());
 
@@ -241,6 +243,7 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
                 }
             });
         }
+        else finishActivity(true, user);
     }
     @Override
     public void onClick(View v) {
@@ -252,16 +255,16 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             etBirthDateOnClick();
         }
         else if(v==ivGallery){
-            if(!PermissionClass.CheckPermission(this)){
-                PermissionClass.RequestPerms(this);
+            if(!perms.CheckPermission(this)){
+                perms.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivGallery");
                 Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }
             else startGallery();
         }
         else if(v==ivCamera){
-            if(!PermissionClass.CheckPermission(this)){
-                PermissionClass.RequestPerms(this);
+            if(!perms.CheckPermission(this)){
+                perms.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivCamera");
                 Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }

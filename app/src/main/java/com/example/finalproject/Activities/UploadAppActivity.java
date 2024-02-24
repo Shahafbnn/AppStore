@@ -2,7 +2,6 @@ package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
 import static com.example.finalproject.Classes.StorageFunctions.humanReadableByte;
-import static com.example.finalproject.Classes.StorageFunctions.openApkFile;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -54,6 +53,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 import com.google.firebase.storage.FirebaseStorage;
@@ -86,6 +86,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
     private Dialog permsDialog;
     private ArrayList<String> permsDialogResult;
     private PermissionChoiceView permsDialogChoiceView;
+    private PermissionClass perms;
 
 
     ActivityResultLauncher<Intent> startFile;
@@ -94,6 +95,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_upload_app);
         db = FirebaseFirestore.getInstance();
+        perms  = new PermissionClass(this);
 
 
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
@@ -182,7 +184,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             }
         });
 
-        if(!PermissionClass.CheckPermission(this)) PermissionClass.RequestPerms(this);
+        if(!perms.CheckPermission(this)) perms.RequestPerms(this);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, categoriesArrayList);
 
@@ -282,24 +284,24 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             sendData();
         }
         else if(v==etAPKPath){
-            if(PermissionClass.CheckPermission(this)){
+            if(perms.CheckPermission(this)){
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("application/vnd.android.package-archive"); //it's an apk
                 activityResultLauncherFileExplorer.launch(intent);
             }
-            else PermissionClass.RequestPerms(this);
+            else perms.RequestPerms(this);
         }
         else if(v==ivUploadAppGallery){
-            if(!PermissionClass.CheckPermission(this)){
-                PermissionClass.RequestPerms(this);
+            if(!perms.CheckPermission(this)){
+                perms.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivGallery");
                 Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }
             else startGallery();
         }
         else if(v==ivUploadAppCamera){
-            if(!PermissionClass.CheckPermission(this)){
-                PermissionClass.RequestPerms(this);
+            if(!perms.CheckPermission(this)){
+                perms.RequestPerms(this);
                 Log.v("Image", "RequestPerms has failed in ivCamera");
                 Toast.makeText(this, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
             }
@@ -336,6 +338,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             app.setAppPrice(Double.parseDouble(etUploadAppPrice.getText().toString()));
             app.setAppDiscountPercentage(Double.parseDouble(etUploadAppDiscountPercentage.getText().toString()));
             app.setAppCreator(curUser);
+            app.setAppUploadDate(Calendar.getInstance().getTime());
             app.setAppPerms(permsDialogResult);
 
             if(apkUri==null){

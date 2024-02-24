@@ -1,5 +1,6 @@
 package com.example.finalproject.Classes;
 
+import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_CREATED_APPS_KEY;
 import static com.example.finalproject.Classes.Constants.USER_ID_KEY;
 import static com.example.finalproject.Classes.User.Validations.validateApp;
 import static com.example.finalproject.Classes.User.Validations.validateUser;
@@ -7,17 +8,27 @@ import static com.example.finalproject.Classes.User.Validations.validateUser;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
+import com.example.finalproject.Classes.App.App;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.R;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
 
 public class InitiateFunctions {
     private Context context;
@@ -50,6 +61,7 @@ public class InitiateFunctions {
         }
         return allValid;
     }
+
 
     public static boolean initApp(Object[] data, EditText[] ets){
         Validations.ValidateAppTypes[] types = Constants.getAppTypes();
@@ -166,10 +178,29 @@ public class InitiateFunctions {
         editor.commit();
     }
 
-    public static void deleteUserFromFirestore(User user){
-        FirebaseFirestore.getInstance().collection("users")
-                .document(user.getUserId())
-                .delete();
+    public static void disableUserFromFirestore(User user){
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("users").document(user.getUserId()).update("userIsDisabled", true);
+        db.collection("users").document(user.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    App app;
+                    User appCreator;
+                    for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                        app = documentSnapshot.toObject(App.class);
+                        app.setAppId(documentSnapshot.getId());
+                        appCreator = app.getAppCreator();
+                        appCreator.setUserIsDisabled(true);
+                        documentSnapshot.getReference().set(app);
+                    }
+
+                } else {
+                    Log.d("debug", "Error getting documents: ", task.getException());
+                }
+            }
+        });
+
     }
 
     public static EventListener<DocumentSnapshot> getUpdateUserSnapshotListener() {

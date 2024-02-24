@@ -5,18 +5,21 @@
 
     <item android:id="@+id/itemLogIn"
         android:title="Log In"
-        app:showAsAction="never">
+        app:showAsAction="always"
+        android:icon="@drawable/baseline_login_24">
     </item>
 
 
     <item android:id="@+id/itemRegister"
         android:title="Register"
-        app:showAsAction="never">
+        app:showAsAction="always"
+        android:icon="@drawable/baseline_app_registration_24">
     </item>
 
     <item android:id="@+id/itemLogOut"
         android:title="Log Out"
-        app:showAsAction="never">
+        app:showAsAction="always"
+        android:icon="@drawable/baseline_logout_24">
     </item>
 
     <item android:id="@+id/itemDataUpdate"

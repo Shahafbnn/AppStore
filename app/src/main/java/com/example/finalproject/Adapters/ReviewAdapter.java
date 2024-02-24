@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
@@ -14,6 +15,7 @@ import com.example.finalproject.Classes.Review;
 import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.R;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
@@ -49,11 +51,15 @@ public class ReviewAdapter extends BaseAdapter {
         Review review = reviews.get(position);
         User reviewer = review.getReviewReviewer();
 
+
         ImageView ivUserImage = reviewView.findViewById(R.id.ivUserImage);
         StorageFunctions.setImage(context, ivUserImage, reviewer.getUserImagePath());
 
         TextView tvUserName = reviewView.findViewById(R.id.tvUserName);
         tvUserName.setText(reviewer.getFullNameAdmin());
+
+        RadioButton rbReviewLike = reviewView.findViewById(R.id.rbReviewLike);
+        RadioButton rbReviewDislike = reviewView.findViewById(R.id.rbReviewDislike);
 
 
         RatingBar rbRating = reviewView.findViewById(R.id.rbRating);

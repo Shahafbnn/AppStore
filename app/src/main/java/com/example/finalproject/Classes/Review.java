@@ -7,6 +7,7 @@ public class Review {
     private float reviewAppScore;
     private String reviewText;
     private User reviewReviewer;
+    private int likes;
 
     public Review() {
     }
@@ -15,6 +16,14 @@ public class Review {
         this.reviewAppScore = reviewAppScore;
         this.reviewText = reviewText;
         this.reviewReviewer = reviewReviewer;
+    }
+
+    public int getLikes() {
+        return likes;
+    }
+
+    public void setLikes(int likes) {
+        this.likes = likes;
     }
 
     public String getReviewId() {

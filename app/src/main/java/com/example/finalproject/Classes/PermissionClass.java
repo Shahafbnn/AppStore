@@ -12,8 +12,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.icu.text.SimpleDateFormat;
+import android.os.Build;
 import android.os.Environment;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -31,21 +37,49 @@ public class PermissionClass {
      * @param act The activity where permissions are checked.
      * @return true if all permissions are granted, false otherwise.
      */
-    public static boolean CheckPermission(Activity act){
-        int resultCamera = ContextCompat.checkSelfPermission(act, CAMERA);
-        int resultWriteStorage = ContextCompat.checkSelfPermission(act, WRITE_EXTERNAL_STORAGE);
-        int resultReadStorage = ContextCompat.checkSelfPermission(act, READ_EXTERNAL_STORAGE);
+    private ActivityResultLauncher<String> requestPermissionLauncher;
 
-        return resultCamera== PackageManager.PERMISSION_GRANTED && resultWriteStorage==PackageManager.PERMISSION_GRANTED && resultReadStorage==PackageManager.PERMISSION_GRANTED;
+    public PermissionClass(AppCompatActivity act) {
+        requestPermissionLauncher = act.registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (!isGranted) {
+                        // Explain to the user that the feature is unavailable because the features requires a permission that the user has denied.
+                        Toast.makeText(act, "You've denied the permissions, you must manually accept them now ):", Toast.LENGTH_LONG).show();
+                    }
+                });
     }
+
+    public boolean CheckPermission(Activity act){
+        int resultCamera = ContextCompat.checkSelfPermission(act, Manifest.permission.CAMERA);
+
+        if (Build.VERSION.SDK_INT < 34) {
+            int resultWriteStorage = ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            int resultReadStorage = ContextCompat.checkSelfPermission(act, Manifest.permission.READ_EXTERNAL_STORAGE);
+
+            return resultCamera == PackageManager.PERMISSION_GRANTED &&
+                    resultWriteStorage == PackageManager.PERMISSION_GRANTED &&
+                    resultReadStorage == PackageManager.PERMISSION_GRANTED;
+        } else {
+            return resultCamera == PackageManager.PERMISSION_GRANTED;
+        }
+    }
+
+
 
     /**
      * Requests the necessary permissions.
      * @param act The activity where permissions are requested.
      */
-    public static void RequestPerms(Activity act){
-        ActivityCompat.requestPermissions(act, new String[]{CAMERA, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE, REQUEST_INSTALL_PACKAGES }, 1);
+    public void RequestPerms(Activity act){
+        if (Build.VERSION.SDK_INT < 34) {
+            ActivityCompat.requestPermissions(act, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
+        }
     }
+
+
     public static ArrayList<String> getAllPerms(){
         java.lang.reflect.Field[] fields = getAllPermsFields();
         ArrayList<String> arr = new ArrayList<>();

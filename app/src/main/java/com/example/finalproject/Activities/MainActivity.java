@@ -25,6 +25,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -35,10 +36,14 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.finalproject.Adapters.AppAdapter;
 import com.example.finalproject.Classes.*;
@@ -47,13 +52,18 @@ import com.example.finalproject.Classes.App.AppView;
 import com.example.finalproject.Classes.Category.Categories;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
+import com.example.finalproject.DatabaseClasses.CitiesArray;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.*;
 
+import org.checkerframework.checker.units.qual.A;
+
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -78,9 +88,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btnMainActivitySearchApp;
     private ArrayList<String> searchHistoryString;
     private ArrayList<Search> searchHistory;
-    private LinearLayout llMainActivitySearchApp;
+    private LinearLayout llMainActivitySearchApp, llMainActivity;
     private ArrayAdapter<String> searchHistoryAdapter;
-
+    private ArrayList<LinearLayout> scrollViewLinearLayouts;
+    private HashMap<String, LinearLayout> stringLinearLayoutHashMap;
+    private RadioGroup rgMoveActivities;
 
 
 
@@ -91,8 +103,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
+                    rgMoveActivities.clearCheck();
+                    rbMainActivity.setChecked(true);
+
                     //fix the radioButton
-                    if(rbMainActivity != null) rbMainActivity.setActivated(true);
                     //handle returned data
                     if(result.getResultCode()== Activity.RESULT_OK){
                         if(result.getData() != null){
@@ -121,6 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     //if the returned user is null (meaning you deleted yourself MainActivity->UsersListViewActivity->RegisterActivity).
                                     isUserSignedIn = false;
                                     curUser = null;
+                                    clearSharedPreferencesData(editor);
                                 }
                                 //this is if we update an app in UploadAppActivity
                             }
@@ -146,6 +161,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onActivityResult(ActivityResult result) {
                     //for changes done to apps in ChosenAppActivity and UploadAppActivity
                     //handle returned data
+                    rgMoveActivities.clearCheck();
+                    rbMainActivity.setChecked(true);
+
                     if(result.getResultCode()== Activity.RESULT_OK){
                         if(result.getData() != null){
                             //get the returned app from UploadAppActivity
@@ -237,6 +255,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             new ActivityResultCallback<ActivityResult>() {
                 @Override
                 public void onActivityResult(ActivityResult result) {
+                    rgMoveActivities.clearCheck();
+                    rbMainActivity.setChecked(true);
                     //for changes done to apps in ChosenAppActivity and UploadAppActivity
                     //handle returned data
                     if(result.getResultCode()== Activity.RESULT_OK){
@@ -249,14 +269,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                                 //we find the app in createdAppsArrayList, if it's there we update it, else we add it
                                 for (int i = 0; i < llMainActivitySearchApp.getChildCount() && !found; i++) {
-                                    if (((AppView)llMainActivitySearchApp.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
+                                    if (((AppView) llMainActivitySearchApp.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
                                         llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app), i);
                                         found = true;
                                     }
                                 }
-                                if(!found){
+                                if (!found) {
                                     llMainActivitySearchApp.addView(new AppView(getApplicationContext(), app));
                                 }
+
+
                             }
 
                             //reload activity if isMenuPrepared is true;
@@ -285,14 +307,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         rbCategoryActivity = findViewById(R.id.rbCategoryActivity);
         rbCategoryActivity.setOnClickListener(this);
 
+        rgMoveActivities = findViewById(R.id.rgMoveActivities);
+
+        stringLinearLayoutHashMap = new HashMap<>();
+
         //search apps
         searchHistoryString = new ArrayList<>();
+        searchHistory = new ArrayList<>();
+
         actvMainActivitySearchApp = findViewById(R.id.actvMainActivitySearchApp);
         searchHistoryAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, searchHistoryString);
         actvMainActivitySearchApp.setAdapter(searchHistoryAdapter);
         btnMainActivitySearchApp = findViewById(R.id.btnMainActivitySearchApp);
         btnMainActivitySearchApp.setOnClickListener(this);
         llMainActivitySearchApp = findViewById(R.id.llMainActivitySearchApp);
+        llMainActivity = findViewById(R.id.llMainActivity);
+        scrollViewLinearLayouts = new ArrayList<>();
+        scrollViewLinearLayouts.add(llMainActivitySearchApp);
 
 
         tvWelcome = findViewById(R.id.tvWelcome);
@@ -318,13 +349,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         DocumentSnapshot documentSnapshot = task.getResult();
                         User user = documentSnapshot.toObject(User.class);
                         if (user != null) {
-                            //set the user data
-                            curUser = user;
-                            curUser.setUserId(id);
-                            isUserSignedIn = true;
-                            InitiateFunctions.setSharedPreferencesData(editor ,id);
-                            //Log.v("debug", "user get at onCreate after 2nd check: " + curUser.toString());
-
+                            if(user.isUserIsDisabled() == null || !user.isUserIsDisabled()) {
+                                //set the user data
+                                curUser = user;
+                                curUser.setUserId(id);
+                                isUserSignedIn = true;
+                                InitiateFunctions.setSharedPreferencesData(editor, id);
+                                //Log.v("debug", "user get at onCreate after 2nd check: " + curUser.toString());
+                            }
+                            else Toast.makeText(getApplicationContext(), "This user has been disabled!", Toast.LENGTH_LONG).show();
                         } else {
                             isUserSignedIn = false;
                         }
@@ -343,7 +376,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if(reloadActivity) reloadActivity();
         }
         else reloadActivityInMenuOptionsPrepare = true;
-// to fix the data
+        Calendar time = Calendar.getInstance();
+        time.add(Calendar.DAY_OF_YEAR, -1);
+        Timestamp oneDayAgo = new Timestamp(time.getTime());
+        createScrollView("Recently uploaded:", db.collection("apps").whereGreaterThan("appUploadDate", oneDayAgo));
+        createScrollView("Most Liked Apps:", db.collection("apps")
+                .orderBy("appAvgRating", Query.Direction.DESCENDING)
+                .limit(20));
+        createScrollView("Most Downloaded Apps:", db.collection("apps")
+                .orderBy("appDownloadCount", Query.Direction.DESCENDING)
+                .limit(20));
+
 
     } //onCreate's end
     private void fetchSearchHistoryCurUser(){
@@ -356,8 +399,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         search.setSearchId(documentSnapshot.getId());
                         searchHistory.add(search);
                         searchHistoryString.add(search.getSearchText());
+                        searchHistoryAdapter.add(search.getSearchText());
                     }
                     searchHistoryAdapter.notifyDataSetChanged();
+                    //actvMainActivitySearchApp.showDropDown();
                 } else {
                     Log.d("debug", "Error getting documents: ", task.getException());
                 }
@@ -365,6 +410,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private int posInLinearLayout(View v, LinearLayout linearLayout){
+        for(int i = 0; i < linearLayout.getChildCount(); i++){
+            if(linearLayout.getChildAt(i).equals(v)) return i;
+        }
+        return -1;
+    }
+    private boolean isInAppViewLinearLayout(String name, LinearLayout linearLayout){
+        for(int i = 0; i < linearLayout.getChildCount(); i++){
+            if(((AppView)linearLayout.getChildAt(i)).getApp().getAppName().equals(name)) return true;
+        }
+        return false;
+    }
     @Override
     public void onClick(View v) {
         if (v==rbCategoryActivity) {
@@ -377,48 +434,152 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         else if(v==btnMainActivitySearchApp){
             String searchData = actvMainActivitySearchApp.getText().toString();
             ValidationData validated = Validations.validateAppName(searchData);
+            boolean nameExists = isInAppViewLinearLayout(searchData, llMainActivitySearchApp);
             if(validated.isValid()){
+                if(!nameExists) {
+                    Search search = new Search(searchData, Calendar.getInstance().getTime());
+                    searchHistoryString.add(searchData);
+                    searchHistory.add(search);
+                    searchHistoryReloadAdapter(searchData);
+                    if(isUserSignedIn != null && isUserSignedIn) db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_SEARCH_HISTORY_KEY).add(search);
                 db.collection("apps").whereEqualTo("appName", searchData).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
                             App app;
                             AppView appView;
-                            for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                                app = documentSnapshot.toObject(App.class);
-                                app.setAppId(documentSnapshot.getId());
-                                appView = new AppView(getApplicationContext(), app);
-                                appView.setOnLongClickListener(new View.OnLongClickListener() {
-                                    @Override
-                                    public boolean onLongClick(View v) {
-                                        AppView view = (AppView)v;
-                                        llMainActivitySearchApp.removeView(view);
-                                        return true;
-                                    }
-                                });
-                                appView.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
-                                        intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
-                                        intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-                                        activityResultLauncherSearchedApp.launch(intent);
-                                    }
-                                });
-                                llMainActivitySearchApp.addView(appView);
-                            }
-                            searchHistoryAdapter.notifyDataSetChanged();
+                            if(task.getResult().size() > 0){
+                                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                    app = documentSnapshot.toObject(App.class);
+                                    app.setAppId(documentSnapshot.getId());
+                                    appView = new AppView(getApplicationContext(), app);
+                                    appView.setOnLongClickListener(new View.OnLongClickListener() {
+                                        @Override
+                                        public boolean onLongClick(View v) {
+                                            AppView view = (AppView)v;
+                                            llMainActivitySearchApp.removeView(view);
+                                            Toast.makeText(getApplicationContext(), "Removed " + view.getApp().getAppName(), Toast.LENGTH_LONG).show();
+                                            return true;
+                                        }
+                                    });
+                                    appView.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+                                            Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                                            intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                                            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                                            activityResultLauncherSearchedApp.launch(intent);
+                                        }
+                                    });
+                                    llMainActivitySearchApp.addView(appView);
+                                }
+                            }else actvMainActivitySearchApp.setError("No app found with that name!");
                         } else {
-                            Log.d("debug", "Error getting documents: ", task.getException());
+                            actvMainActivitySearchApp.setError("Error getting app!");
                         }
                     }
                 });
+                } else actvMainActivitySearchApp.setError("App with that name already exists!");
             } else actvMainActivitySearchApp.setError(validated.getError());
         }
     }
     private void wipeDataOffFireStore(){
         deleteAllExceptCategories("apps");
         deleteAllUserCreatedApps();
+    }
+
+    private void searchHistoryReloadAdapter(String searchData){
+        searchHistoryAdapter.add(searchData);
+        searchHistoryAdapter.notifyDataSetChanged();
+        //actvMainActivitySearchApp.showDropDown();
+    }
+
+    private void createScrollView(String name, Query query){
+        final ActivityResultLauncher<Intent> arlScrollViews = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        //for changes done to apps in ChosenAppActivity and UploadAppActivity
+                        //handle returned data
+                        if(result.getResultCode()== Activity.RESULT_OK){
+                            if(result.getData() != null){
+                                //get the returned app from UploadAppActivity
+                                String key = result.getData().getStringExtra(Constants.INTENT_SCROLL_VIEW_KEY);
+                                LinearLayout returnedLayout = stringLinearLayoutHashMap.get(key);
+                                App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                                if(app!=null && returnedLayout != null){
+                                    boolean found = false;
+                                    //if the array is null we fetch it.
+
+                                    //we find the app in createdAppsArrayList, if it's there we update it, else we add it
+                                    for (int i = 0; i < returnedLayout.getChildCount() && !found; i++) {
+                                        if (((AppView) returnedLayout.getChildAt(i)).getApp().getAppId().equals(app.getAppId())) {
+                                            returnedLayout.addView(new AppView(getApplicationContext(), app), i);
+                                            found = true;
+                                        }
+                                    }
+                                    if (!found) {
+                                        returnedLayout.addView(new AppView(getApplicationContext(), app));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        );
+
+        query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    App app;
+                    AppView appView;
+                    if(task.getResult().size() > 0){
+                        HorizontalScrollView scrollView = new HorizontalScrollView(getApplicationContext());
+                        scrollView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                        LinearLayout linearLayout = new LinearLayout(getApplicationContext());
+                        scrollView.addView(linearLayout);
+                        stringLinearLayoutHashMap.put(name, linearLayout);
+                        scrollViewLinearLayouts.add(linearLayout);
+
+                        TextView tvName = new TextView(getApplicationContext());
+                        tvName.setText(name);
+
+                        llMainActivity.addView(tvName);
+                        llMainActivity.addView(scrollView);
+
+                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                            app = documentSnapshot.toObject(App.class);
+                            app.setAppId(documentSnapshot.getId());
+                            appView = new AppView(getApplicationContext(), app);
+                            appView.setOnLongClickListener(new View.OnLongClickListener() {
+                                @Override
+                                public boolean onLongClick(View v) {
+                                    AppView view = (AppView)v;
+                                    linearLayout.removeView(view);
+                                    Toast.makeText(getApplicationContext(), "Removed " + view.getApp().getAppName(), Toast.LENGTH_LONG).show();
+                                    return true;
+                                }
+                            });
+                            appView.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                                    intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                                    intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                                    intent.putExtra(Constants.INTENT_SCROLL_VIEW_KEY, name);
+
+                                    arlScrollViews.launch(intent);
+                                }
+                            });
+                            linearLayout.addView(appView);
+                        }
+                    }
+                }
+            }
+        });
+
     }
 
     @Override
@@ -687,19 +848,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
                                             if(documentSnapshot.exists()){
                                                 User user = documentSnapshot.toObject(User.class);
-                                                if(user.getUserPassword().equals(etTextPassword.getText().toString())){
-                                                    isUserSignedIn = true;
-                                                    curUser = user;
-                                                    curUser.setUserId(documentSnapshot.getId());
+                                                if(user.isUserIsDisabled() == null || !user.isUserIsDisabled()){
+                                                    if(user.getUserPassword().equals(etTextPassword.getText().toString())){
+                                                        isUserSignedIn = true;
+                                                        curUser = user;
+                                                        curUser.setUserId(documentSnapshot.getId());
 
-                                                    InitiateFunctions.setSharedPreferencesData(editor ,documentSnapshot.getId());
+                                                        InitiateFunctions.setSharedPreferencesData(editor ,documentSnapshot.getId());
 
-                                                    reloadActivity();
-                                                    //Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
-                                                    dialog.cancel();
+                                                        reloadActivity();
+                                                        //Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
+                                                        dialog.cancel();
+                                                    }
+                                                    else {
+                                                        etTextPassword.setError("Incorrect password!");
+                                                        btnLogInSubmit.setClickable(true);
+                                                    }
                                                 }
                                                 else {
-                                                    etTextPassword.setError("Incorrect password!");
+                                                    etEmailAddress.setError("User is disabled!");
                                                     btnLogInSubmit.setClickable(true);
                                                 }
 
@@ -762,7 +929,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
     }
-
     private void deleteAllUserCreatedApps(){
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").get().addOnCompleteListener(task -> {
@@ -784,7 +950,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
     }
-
     private void deleteAllDocuments(String collectionPath) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection(collectionPath)

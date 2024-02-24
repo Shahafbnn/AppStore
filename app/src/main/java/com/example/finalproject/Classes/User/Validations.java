@@ -124,29 +124,33 @@ public class Validations {
         Double num = stringToDecimalNumber(price);
         if(num == null) return new ValidationData(false, "price must be a number");
         if(num < 0) return new ValidationData(false, "price must be a positive number");
+        if(Math.round(num * 100.0) / 100.0 != num) return new ValidationData(false, "price must have at most two digits after the decimal point");
         return new ValidationData(true, null);
     }
     public static ValidationData validateAppDiscountPercentage(String discountPercentage){
-        return new ValidationData(validateDecimalNumber(discountPercentage), "Discount percentage must be a number");
+        Double num = stringToDecimalNumber(discountPercentage);
+        if(num == null) return new ValidationData(false, "discount percentage must be a number");
+        if(Math.round(num * 100.0) / 100.0 != num) return new ValidationData(false, "discount percentage must have at most two digits after the decimal point");
+        return new ValidationData(true, null);
     }
 
-    public static Double fixNumber(String number){
-//        //weight is an array to emulate a pointer in C
-//        if (number==null) return 0.0;
-//        if (number.equals("")) return 0.0;
-//        if(number.equals(".")) return 0.0;
-//        if(number.equals("-.")) return 0.0;
-//        if(number.contains("-") && number.charAt(0) != '-') return null; //"5-1"
-//        String[] numberDotStringArray = number.split("\\.");
-//        if(numberDotStringArray.length > 2) return null; //"5.1.2"
-//        if(numberDotStringArray.length == 0) return 0.0;
-//        if(numberDotStringArray.length==1)
-//
-//        double numberDecimal;
-//        if(numberDotStringArray.length == 1 && number)
-//        return validateWeight(numberDecimal);
-        return null;
-    }
+//    public static Double fixNumber(String number){
+////        //weight is an array to emulate a pointer in C
+////        if (number==null) return 0.0;
+////        if (number.equals("")) return 0.0;
+////        if(number.equals(".")) return 0.0;
+////        if(number.equals("-.")) return 0.0;
+////        if(number.contains("-") && number.charAt(0) != '-') return null; //"5-1"
+////        String[] numberDotStringArray = number.split("\\.");
+////        if(numberDotStringArray.length > 2) return null; //"5.1.2"
+////        if(numberDotStringArray.length == 0) return 0.0;
+////        if(numberDotStringArray.length==1)
+////
+////        double numberDecimal;
+////        if(numberDotStringArray.length == 1 && number)
+////        return validateWeight(numberDecimal);
+//        return null;
+//    }
     public static boolean validateDecimalNumber(String number){
         return stringToDecimalNumber(number) != null;
     }

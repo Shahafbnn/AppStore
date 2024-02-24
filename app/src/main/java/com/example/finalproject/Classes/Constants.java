@@ -35,7 +35,7 @@ public abstract class Constants {
     public static final String CITY_ID_KEY = "cityId";
 
 
-    public static final String[] ADMIN_PHONE_NUMBERS = new String[]{"0535622719"};
+    public static final String[] ADMIN_PHONE_NUMBERS = new String[]{"0535652719"};
 
     public static Validations.ValidateUserTypes[] getUserTypes(){return USER_TYPES.clone();}
     public static Validations.ValidateAppTypes[] getAppTypes(){return APP_TYPES.clone();}
@@ -53,11 +53,14 @@ public abstract class Constants {
     public static final String FIRESTORE_STORAGE_APK_FOLDER = "Apks";
     public static final String FIRESTORE_APP_REVIEWS_KEY = "appReviews";
     public static final String FIRESTORE_USER_SEARCH_HISTORY_KEY = "searchHistory";
+    public static final String FIRESTORE_RECEIPT_KEY = "receipt";
+
 
 
 
 
     //intents
+    public static final String INTENT_SCROLL_VIEW_KEY = "intentScrollView";
     public static final String REGISTER_ACTIVITY_RETURN_DATA_KEY = "registerActivitySuccess";
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
     public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";

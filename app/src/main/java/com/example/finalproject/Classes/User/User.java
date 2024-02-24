@@ -32,8 +32,17 @@ public class User implements Serializable {
     private String userPhoneNumber;
     private boolean userIsAdmin;
     private String userImagePath;
+    private Boolean userIsDisabled;
 
     public User() {
+    }
+
+    public Boolean isUserIsDisabled() {
+        return userIsDisabled;
+    }
+
+    public void setUserIsDisabled(Boolean userIsDisabled) {
+        this.userIsDisabled = userIsDisabled;
     }
 
     public String getUserId() {

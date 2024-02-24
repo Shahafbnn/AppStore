@@ -2,11 +2,15 @@ package com.example.finalproject.Activities;
 
 import static android.view.View.GONE;
 import static com.example.finalproject.Classes.Constants.FIRESTORE_APP_REVIEWS_KEY;
+import static com.example.finalproject.Classes.Constants.FIRESTORE_RECEIPT_KEY;
 import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_CREATED_APPS_KEY;
+import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_DOWNLOADED_APPS_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_ACTIVITY_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CHOSEN_APP_ACTIVITY_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_SCROLL_VIEW_KEY;
+import static com.example.finalproject.Classes.Constants.getAppTypes;
 import static com.example.finalproject.Classes.StorageFunctions.getUriFromImageView;
 
 import static java.security.AccessController.getContext;
@@ -43,8 +47,10 @@ import android.widget.Toast;
 
 import com.example.finalproject.Adapters.ReviewAdapter;
 import com.example.finalproject.Classes.App.App;
+import com.example.finalproject.Classes.Constants;
 import com.example.finalproject.Classes.PermissionChoiceView;
 import com.example.finalproject.Classes.PermissionClass;
+import com.example.finalproject.Classes.Receipt;
 import com.example.finalproject.Classes.Review;
 import com.example.finalproject.Classes.SimpleListView;
 import com.example.finalproject.Classes.StorageFunctions;
@@ -54,17 +60,22 @@ import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.AggregateField;
+import com.google.firebase.firestore.AggregateQuery;
+import com.google.firebase.firestore.AggregateQuerySnapshot;
+import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 
 public class ChosenAppActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private TextView tvAppName, tvAppCreator, tvAppDownloads, tvAppSize, tvAppPerms, tvAppMainCategory, tvAppFullPrice;
+    private TextView tvAppName, tvAppCreator, tvAppDownloads, tvAppSize, tvAppPerms, tvAppMainCategory, tvAppFullPrice, tvAppUploadDate;
     private ImageView ivAppImage;
     private ImageButton ibAppDownload, ibAppShare;
     private Button btnAppSendUserReview, btnViewReviews;
@@ -87,6 +98,9 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     private boolean isAppFree;
     private Boolean dataChanged;
     private Dialog reviewsDialog;
+    private Integer downloadCount;
+    private Boolean alreadyDownloadedTheApp;
+    private PermissionClass perms;
 
 
     @Override
@@ -95,6 +109,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         setContentView(R.layout.activity_chosen_app);
 
         db = FirebaseFirestore.getInstance();
+        perms = new PermissionClass(this);
 
         //getting the app from the intent
         curApp = (App) getIntent().getSerializableExtra(INTENT_CURRENT_APP_KEY);
@@ -112,6 +127,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         //addRandomReviews(10);
 
         fetchReviewsFromFireStore();
+        fetchDownloadCountFromFireStore();
 
         dataChanged = false;
 
@@ -124,6 +140,48 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
                 boolean changed = dataChanged != null && dataChanged;
                 //if the data changed then I send the changed data, else I don't
                 finishActivity(changed, changed?curApp:null);
+            }
+        });
+    }
+    private void fetchDownloadCountFromFireStore(){
+        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    if (!task.getResult().isEmpty()) {
+                        int counter = 0;
+                        Receipt receipt;
+                        alreadyDownloadedTheApp = false;
+                        for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
+                            receipt = documentSnapshot.toObject(Receipt.class);
+                            counter++;
+                            if(isUserSignedIn && receipt.getReceiptBuyer().getUserId().equals(curUser.getUserId())) alreadyDownloadedTheApp = true;
+                        }
+                        downloadCount = counter;
+                        if(downloadCount == 1) tvAppDownloads.setText(downloadCount + " Download!");
+                        else tvAppDownloads.setText(downloadCount + " Downloads!");
+
+                        db.collection("apps").document(curApp.getAppId()).update("appDownloadCount", downloadCount);
+                        db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appDownloadCount", downloadCount);
+                    }
+                }
+            }
+        });
+    }
+    private void fetchAverageRatingFromFireStore(){
+        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_APP_REVIEWS_KEY).aggregate(AggregateField.average("reviewAppScore")).get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener<AggregateQuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<AggregateQuerySnapshot> task) {
+                if (task.isSuccessful()) {
+                    // Aggregate fetched successfully
+                    AggregateQuerySnapshot snapshot = task.getResult();
+                    Double data  = snapshot.get(AggregateField.average("reviewAppScore"));
+                    if(data != null){
+                        rbAppAvgRating.setRating(data.floatValue());
+                        db.collection("apps").document(curApp.getAppId()).update("appAvgRating", data.floatValue());
+                        db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appAvgRating", data.floatValue());
+                    }
+                }
             }
         });
     }
@@ -155,6 +213,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         tvAppPerms.setOnClickListener(this);
         tvAppMainCategory = findViewById(R.id.tvAppMainCategory);
         tvAppFullPrice = findViewById(R.id.tvAppFullPrice);
+        tvAppUploadDate = findViewById(R.id.tvAppUploadDate);
 
         ivAppImage = (ImageView) findViewById(R.id.ivAppImage);
 
@@ -171,9 +230,6 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         rbAppAvgRating.setOnTouchListener((v, event) -> true);
 
 
-        if(!isUserSignedIn){
-            llReviews.setVisibility(GONE);
-        }
 
 
         btnViewReviews = findViewById(R.id.btnViewReviews);
@@ -192,45 +248,26 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         rbAppUserRating = reviewsDialog.findViewById(R.id.rbAppUserRating);
         lvAppReviews = reviewsDialog.findViewById(R.id.lvAppReviews);
         llReviews = reviewsDialog.findViewById(R.id.llReviews);
+        if(!isUserSignedIn){
+            llReviews.setVisibility(GONE);
+        }
         btnAppSendUserReview = reviewsDialog.findViewById(R.id.btnAppSendUserReview);
         btnAppSendUserReview.setOnClickListener(this);
-
-
-        // Get the screen height
-//        DisplayMetrics displayMetrics = new DisplayMetrics();
-//        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-//        final int screenHeight = displayMetrics.heightPixels;
-//        Toast.makeText(getApplicationContext(), "screenHeight: " + screenHeight, Toast.LENGTH_LONG).show();
-//
-//        // Set an OnScrollChangedListener
-//        final int maxScrollY = svAppData.getChildAt(0).getBottom() - svAppData.getHeight();
-//
-//        svAppData.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
-//            @Override
-//            public void onScrollChanged() {
-//                int scrollY = svAppData.getScrollY(); // For ScrollView
-//                // Check if we have reached the bottom of the ScrollView
-//                if (scrollY >= maxScrollY) {
-//                    // Calculate the extra scroll amount
-//                    int extraScrollY = scrollY - maxScrollY;
-//                    // Ensure extraScrollY is non-negative
-//                    extraScrollY = Math.max(0, extraScrollY);
-//                    // Reduce the height of the ListView
-//                    ViewGroup.LayoutParams params = lvAppReviews.getLayoutParams();
-//                    params.height = screenHeight - extraScrollY;
-//                    lvAppReviews.setLayoutParams(params);
-//                    Log.v("ScrollChangedApp", "svY = " + scrollY + ", lv height = " + params.height);
-//                }
-//            }
-//        });
 
 
 
     }
 
-
     @SuppressLint("SetTextI18n")
     private void initAppDataFromCurApp(){
+        fetchAverageRatingFromFireStore();
+        if(curApp.getAppUploadDate() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
+            String str = sdf.format(curApp.getAppUploadDate()); // formats to 09/23/2009 13:53:28.238
+            tvAppUploadDate.setText("Upload Date: " + str);
+        }
+
+
         tvAppName.setText(Html.fromHtml("<u>" + curApp.getAppName() + "</u>"));
         tvAppMainCategory.setText(curApp.getAppMainCategory());
         tvAppCreator.setText("Created by: " + curApp.getAppCreator().getFullNameAdmin());
@@ -268,7 +305,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             }
             else{
                 double priceAndDiscount = price * (1 - discount/100);
-                fullPrice = "<strike><font color='red'>" + String.format("%.2f", price) + "</font></strike> " + "<font color='green'><b>" + String.format("%.2f", priceAndDiscount) + "</b></font>" + " (" + discount + "% OFF!)";
+                fullPrice = "<strike><font color='red'>" + String.format("%.2f", price) + "</font></strike> " + "<font color='green'><b>" + String.format("%.2f", priceAndDiscount) + "</b></font>" + " (" + String.format("%.2f", discount) + "% OFF!)";
             }
             tvAppFullPrice.setText(Html.fromHtml(fullPrice));
 
@@ -278,10 +315,13 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
 
         //reviews dialog
         if(!isUserSignedIn) llReviews.setVisibility(GONE);
+
+
     }
 
     private void finishActivity(boolean result, App app){
         Intent returnIntent = new Intent();
+        returnIntent.putExtra(INTENT_SCROLL_VIEW_KEY, getIntent().getStringExtra(Constants.INTENT_SCROLL_VIEW_KEY));
         returnIntent.putExtra(INTENT_CURRENT_APP_KEY, app);
         returnIntent.putExtra(INTENT_ACTIVITY_KEY, INTENT_CHOSEN_APP_ACTIVITY_KEY);
         if(result) setResult(Activity.RESULT_OK, returnIntent);
@@ -290,20 +330,35 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     }
 
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onClick(View v) {
-        if(v==tvAppCreator){}
+        if(v==tvAppCreator){
+            Intent intent = new Intent(getApplicationContext(), UserDataActivity.class);
+            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curApp.getAppCreator());
+            startActivity(intent);
+        }
         else if(v==ibAppDownload){
             if(isUserSignedIn){
-                if(PermissionClass.CheckPermission(this)){
-                    boolean downloaded = StorageFunctions.downloadApkFileFromFireExternal(this, curApp.getAppApkPath(), curApp.getAppName());
-                    if(downloaded){
-                        db.collection("apps").document(curApp.getAppId()).update("appDownloadCount", curApp.getAppDownloadCount() + 1);
-                        curApp.setAppDownloadCount(curApp.getAppDownloadCount() + 1);
-                        dataChanged = true;
+                if(perms.CheckPermission(this)){
+                    if(alreadyDownloadedTheApp == null || !alreadyDownloadedTheApp){
+                        boolean downloadedSuccessfully = StorageFunctions.downloadApkFileFromFireExternal(ChosenAppActivity.this, curApp.getAppApkPath(), curApp.getAppName(), perms);
+                        if(downloadedSuccessfully) {
+                            Receipt receipt = new Receipt(curUser, curUser.getUserId(), curApp, Calendar.getInstance().getTime());
+                            db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).add(receipt);
+                            db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_DOWNLOADED_APPS_KEY).add(receipt);
+                            if(downloadCount != null) {
+                                if(downloadCount==1)tvAppDownloads.setText(downloadCount + " Download!");
+                                else tvAppDownloads.setText(downloadCount + " Downloads!");
+                            }
+                            dataChanged = true;
+                        }
                     }
+                    else Toast.makeText(getApplicationContext(), "You have already downloaded it!", Toast.LENGTH_LONG).show();
+
+
                 }
-                else PermissionClass.RequestPerms(this);
+                else perms.RequestPerms(this);
             }
             else Toast.makeText(this, "You must be signed in to download!", Toast.LENGTH_LONG).show();
 
@@ -316,7 +371,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         }
         else if(v==btnAppSendUserReview){
             if(isUserSignedIn){
-                if(appCurUserReviews.size() <= 5){
+                if(appCurUserReviews.size() < 5){
                     String text = etAppReview.getText().toString();
                     ValidationData validated = Validations.validateAppDescription(text);
                     if(validated.isValid()){
@@ -338,35 +393,24 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     }
 
     private boolean shareApp(){ //doesn't display the image nor the title
-        Uri uri = getUriFromImageView(this, ivAppImage, curApp.getAppId() + "" + new SimpleDateFormat("ddMyy-HHmmss").format(new Date()));
 
-        if (uri != null) {
-            Intent shareIntent = new Intent();
-            shareIntent.setAction(Intent.ACTION_SEND);
-            shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // temp permission for receiving app to read this file
+        // Create the text you want to share
+        String shareText = "Look at this app in App: " + curApp.getAppName();
 
-            // Add the text to the intent
-            String shareText = "Your Text Here";
-            shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+// Create a new intent and set its action to ACTION_SEND
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
 
-            // Create a new ClipData.Item from the URI
-            ClipData.Item item = new ClipData.Item(uri);
+// Put the text into the intent
+        shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
 
-            // Create a new ClipData using the item
-            String[] mimeTypes = {getContentResolver().getType(uri), "text/plain"};
-            ClipData clipData = new ClipData(new ClipDescription("Search for the " + curApp.getAppName() + " App on App Store!", mimeTypes), item);
+// Set the type of the content to be shared
+        shareIntent.setType("text/plain");
 
-            // Set the ClipData
-            shareIntent.setClipData(clipData);
+// Start the activity with the intent
+        startActivity(Intent.createChooser(shareIntent, null));
 
-            // Set the type
-            shareIntent.setType("*/*");
-
-            // Start the activity
-            startActivity(Intent.createChooser(shareIntent, null));
-            return true;
-        }
-        return false;
+        return true;
 
     }
 
@@ -396,5 +440,6 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     private void addReviewToFireBase(Review review){
         db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_APP_REVIEWS_KEY).add(review);
         db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).collection(FIRESTORE_APP_REVIEWS_KEY).add(review);
+        db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_APP_REVIEWS_KEY).add(review);
     }
 }

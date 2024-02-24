@@ -52,10 +52,16 @@
                 android:text="creator" />
 
             <TextView
+                android:id="@+id/tvAppUploadDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Date Created: Unknown" />
+
+            <TextView
                 android:id="@+id/tvAppDownloads"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="download count" />
+                android:text="0 downloads" />
 
             <TextView
                 android:id="@+id/tvAppSize"
@@ -103,7 +109,7 @@
                 android:id="@+id/btnViewReviews"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Button" />
+                android:text="Reviews!" />
 
 
 

@@ -1,10 +1,26 @@
 package com.example.finalproject.Classes;
 
+import java.util.Date;
+
 public class Search {
     private String searchText;
     private String searchId;
+    private Date searchTime;
 
     public Search() {
+    }
+
+    public Search(String searchText, Date searchTime) {
+        this.searchText = searchText;
+        this.searchTime = searchTime;
+    }
+
+    public Date getSearchTime() {
+        return searchTime;
+    }
+
+    public void setSearchTime(Date searchTime) {
+        this.searchTime = searchTime;
     }
 
     public String getSearchText() {

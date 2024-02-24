@@ -44,6 +44,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firestore.v1.Document;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -128,7 +129,7 @@ public class CategoryActivity extends AppCompatActivity implements View.OnClickL
             specialFirstName += nameStr[rand.nextInt(nameStr.length)];
             specialLastName += nameStr[rand.nextInt(nameStr.length)];
         }
-        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", curUser, StorageFunctions.humanReadableByte(rand.nextInt(200000)), new ArrayList<String>(), (double) rand.nextInt(20), (double) rand.nextInt(100), category);
+        myNewApp = new App(specialFirstName, "Photos/0535622719050224-094546.0970.jpg", curUser, StorageFunctions.humanReadableByte(rand.nextInt(200000)), new ArrayList<String>(), (double) rand.nextInt(20), (double) rand.nextInt(100), category, Calendar.getInstance().getTime());
         db.collection("apps").add(myNewApp);
     }
     private void createRandomApps(){

@@ -4,6 +4,7 @@ import com.example.finalproject.Classes.User.User;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class App implements Serializable {
     private String appId;
@@ -19,8 +20,9 @@ public class App implements Serializable {
     private String appMainCategory;
     private String appDescription;
     private String appApkPath;
+    private Date appUploadDate;
 
-    public App(String appName, String appImagePath, User appCreator, String appSize, ArrayList<String> appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory) {
+    public App(String appName, String appImagePath, User appCreator, String appSize, ArrayList<String> appPerms, Double appPrice, Double appDiscountPercentage, String appMainCategory, Date appUploadDate) {
         this.appName = appName;
         this.appImagePath = appImagePath;
         this.appCreator = appCreator;
@@ -29,9 +31,18 @@ public class App implements Serializable {
         this.appPrice = appPrice;
         this.appDiscountPercentage = appDiscountPercentage;
         this.appMainCategory = appMainCategory;
+        this.appUploadDate = appUploadDate;
     }
 
     public App() {
+    }
+
+    public Date getAppUploadDate() {
+        return appUploadDate;
+    }
+
+    public void setAppUploadDate(Date appUploadDate) {
+        this.appUploadDate = appUploadDate;
     }
 
     public double getAppAvgRating() {

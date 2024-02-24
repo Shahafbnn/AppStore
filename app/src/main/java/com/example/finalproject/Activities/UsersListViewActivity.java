@@ -3,6 +3,7 @@ package com.example.finalproject.Activities;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.SHARED_PREFERENCES_KEY;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -57,6 +58,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
     private ProgressDialog waitProgressDialog;
     private Boolean isCurUserAdmin;
     private FirebaseStorage storage;
+    private Boolean isDataChanged;
     private boolean isSortedByFirstName, isSortedByLastName;
     // This ActivityResultLauncher is used to handle the result from the RegisterActivity.
     // It retrieves the User object from the returned Intent and updates the current user and sign-in status.
@@ -95,6 +97,8 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
                                     originalUsersList.set(position, curUser);
                                 }
                                 userAdapter.notifyDataSetChanged();
+
+                                isDataChanged = true;
                             }
                         }
                     }
@@ -159,6 +163,10 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             llSortUser.setVisibility(View.GONE);
         }
 
+
+        isDataChanged = false;
+
+
         //getting the list data
         if(curUser.isUserIsAdmin()){
             fetchUsersListDataFromFirestore();
@@ -168,6 +176,14 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             userAdapter.notifyDataSetChanged();
             originalUsersList = new ArrayList<>(usersList);
         }
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Back is pressed... Finishing the activity
+                finishActivity(isDataChanged != null && isDataChanged, curUser);
+            }
+        });
     }
 
     private void createLoadingScreen(){
@@ -243,9 +259,9 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         createDeleteAlertDialog(usersList.get(position));
         return true;
     }
-    public void deleteUser(User delUser){
+    public void disableUser(User delUser){
         if(delUser.isUserIsAdmin()){
-            Toast.makeText(this, "You can't delete an admin!", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "You can't disable an admin!", Toast.LENGTH_LONG).show();
             return;
         }
         if(delUser.getUserId().equals(curUser.getUserId())){
@@ -253,13 +269,14 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
             editor.commit();
             curUser = null;
             isUserSignedIn = false;
-            InitiateFunctions.deleteUserFromFirestore(delUser);
-            Toast.makeText(this, "You deleted yourself!", Toast.LENGTH_LONG).show();
+            InitiateFunctions.disableUserFromFirestore(delUser);
+            Toast.makeText(this, "You disabled yourself!", Toast.LENGTH_LONG).show();
             finishActivity(true, null);
         }
-        InitiateFunctions.deleteUserFromFirestore(delUser);
-        deleteUserFromUsersList(delUser);
+        InitiateFunctions.disableUserFromFirestore(delUser);
+        removeUserFromUsersList(delUser);
         lvUsers.invalidateViews();
+        isDataChanged = true;
     }
 
     private List<User> getListContainingAndSorted(List<User> list, String containing, boolean isSortedByFirstName, boolean isSortedByLastName){
@@ -290,16 +307,16 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         return sorted;
     }
 
-    private void deleteUserFromUsersList(User delUser){
+    private void removeUserFromUsersList(User delUser){
         usersList.remove(delUser);
         originalUsersList.remove(delUser);
     }
     public void createDeleteAlertDialog(User delUser){
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Delete User");
+        builder.setTitle("Disable User?");
         builder.setMessage("Are you sure?");
         builder.setCancelable(true);
-        builder.setPositiveButton("Delete", new AlertDialogClick(delUser, this));
+        builder.setPositiveButton("Disable", new AlertDialogClick(delUser, this));
         builder.setNegativeButton("Cancel", new AlertDialogClick(delUser, this));
         AlertDialog dialog = builder.create();
         dialog.show();
@@ -317,7 +334,7 @@ public class UsersListViewActivity extends AppCompatActivity implements View.OnC
         public void onClick(DialogInterface dialog, int which) {
             if (which == dialog.BUTTON_POSITIVE) {
                 dialog.dismiss();
-                deleteUser(delUser);
+                disableUser(delUser);
             }
 
             if (which == dialog.BUTTON_NEGATIVE) {
