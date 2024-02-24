@@ -5,10 +5,12 @@ import com.example.finalproject.Classes.User.User;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 public class App implements Serializable {
     private String appId;
     private String appName;
+    private String appNameLowercase;
     private String appImagePath;
     private User appCreator;
     private long appDownloadCount;
@@ -32,6 +34,15 @@ public class App implements Serializable {
         this.appDiscountPercentage = appDiscountPercentage;
         this.appMainCategory = appMainCategory;
         this.appUploadDate = appUploadDate;
+        this.appNameLowercase = appName.toLowerCase(Locale.ROOT);
+    }
+
+    public String getAppNameLowercase() {
+        return appNameLowercase;
+    }
+
+    public void setAppNameLowercase(String appNameLowercase) {
+        this.appNameLowercase = appNameLowercase;
     }
 
     public App() {

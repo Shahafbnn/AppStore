@@ -65,6 +65,7 @@ import org.checkerframework.checker.units.qual.A;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -176,6 +177,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     if(activityType.equals(INTENT_UPLOAD_APP_ACTIVITY_KEY)){
                                         arrReference = createdAppsArrayList;
                                         key = FIRESTORE_USER_CREATED_APPS_KEY;
+                                        String name  = "Recently uploaded:";
+                                        LinearLayout recentLayout = stringLinearLayoutHashMap.get(name);
+
+                                        recentLayout.addView(createAppViewAndListeners(app, recentLayout, activityResultLauncherSearchedApp, name));
                                     }
                                     else{
                                         arrReference = downloadedAppsArrayList;
@@ -424,7 +429,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     searchHistory.add(search);
                     searchHistoryReloadAdapter(searchData);
                     if(isUserSignedIn != null && isUserSignedIn) db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_SEARCH_HISTORY_KEY).add(search);
-                db.collection("apps").whereEqualTo("appName", searchData).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                db.collection("apps").whereEqualTo("appNameLowercase", searchData.toLowerCase(Locale.ROOT)).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
@@ -500,13 +505,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void addAppViewsToLinearLayout(@NonNull Task<QuerySnapshot> task, LinearLayout linearLayout, ActivityResultLauncher<Intent> arlScrollViews, String name) {
+    private void addAppViewsToLinearLayout(@NonNull Task<QuerySnapshot> task, LinearLayout linearLayout, ActivityResultLauncher<Intent> launcher, String name) {
         App app;
         AppView appView;
         for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
             app = documentSnapshot.toObject(App.class);
             app.setAppId(documentSnapshot.getId());
-            appView = createAppViewAndListeners(app, linearLayout, arlScrollViews, name);
+            appView = createAppViewAndListeners(app, linearLayout, launcher, name);
             linearLayout.addView(appView);
         }
     }

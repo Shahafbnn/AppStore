@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -333,6 +334,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         if(validateETData() && categoryExists){
             App app = new App();
             app.setAppName(etUploadAppName.getText().toString());
+            app.setAppNameLowercase(etUploadAppName.getText().toString().toLowerCase(Locale.ROOT));
             app.setAppDescription(etUploadAppDescription.getText().toString());
             app.setAppMainCategory(actvUploadAppMainCategory.getText().toString());
             app.setAppPrice(Double.parseDouble(etUploadAppPrice.getText().toString()));
