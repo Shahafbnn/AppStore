@@ -9,8 +9,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,8 +30,6 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-
-import java.util.ArrayList;
 
 public class InitiateFunctions {
     private Context context;
@@ -62,7 +63,16 @@ public class InitiateFunctions {
         return allValid;
     }
 
-
+    public static void changeSendBtnAndProgressBarVisibility(boolean usableState, View btn, ProgressBar pb){
+        btn.setClickable(usableState);
+        if(usableState) {
+            btn.setVisibility(View.VISIBLE);
+            pb.setVisibility(View.GONE);
+        } else {
+            btn.setVisibility(View.GONE);
+            pb.setVisibility(View.VISIBLE);
+        }
+    }
     public static boolean initApp(Object[] data, EditText[] ets){
         Validations.ValidateAppTypes[] types = Constants.getAppTypes();
         ValidationData v;

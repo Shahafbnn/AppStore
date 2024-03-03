@@ -99,6 +99,13 @@
                 android:scaleType="fitXY"
                 app:srcCompat="@drawable/download_button" />
 
+            <ProgressBar
+                android:id="@+id/pbChosenAppActivityDownload"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
             <ImageButton
                 android:id="@+id/ibAppShare"
                 android:layout_width="50dp"

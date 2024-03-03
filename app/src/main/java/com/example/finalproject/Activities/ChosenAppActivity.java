@@ -11,6 +11,7 @@ import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_SCROLL_VIEW_KEY;
 import static com.example.finalproject.Classes.Constants.getAppTypes;
+import static com.example.finalproject.Classes.InitiateFunctions.changeSendBtnAndProgressBarVisibility;
 import static com.example.finalproject.Classes.StorageFunctions.getUriFromImageView;
 
 import static java.security.AccessController.getContext;
@@ -40,6 +41,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -82,6 +84,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     private RatingBar rbAppAvgRating, rbAppUserRating;
     private EditText etAppReview;
     private FirebaseFirestore db;
+    private ProgressBar pbChosenAppActivityDownload;
 
     private LinearLayout llReviews;
     private App curApp;
@@ -101,6 +104,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     private Integer downloadCount;
     private Boolean alreadyDownloadedTheApp;
     private PermissionClass perms;
+    private ScrollView svAppData;
 
 
     @Override
@@ -108,6 +112,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chosen_app);
 
+        pbChosenAppActivityDownload = findViewById(R.id.pbChosenAppActivityDownload);
         db = FirebaseFirestore.getInstance();
         perms = new PermissionClass(this);
 
@@ -351,19 +356,29 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             if(isUserSignedIn){
                 if(perms.CheckPermission(this)){
                     if(alreadyDownloadedTheApp == null || !alreadyDownloadedTheApp){
+                        //changeSendButton(false);
                         boolean downloadedSuccessfully = StorageFunctions.downloadApkFileFromFireExternal(ChosenAppActivity.this, curApp.getAppApkPath(), curApp.getAppName(), perms);
+                        ibAppDownload.setVisibility(GONE);
+                        pbChosenAppActivityDownload.setVisibility(View.VISIBLE);
                         if(downloadedSuccessfully) {
                             Receipt receipt = new Receipt(curUser, curUser.getUserId(), curApp, Calendar.getInstance().getTime());
                             db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).add(receipt);
                             db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_DOWNLOADED_APPS_KEY).add(receipt);
                             if(downloadCount != null) {
+                                downloadCount++;
                                 if(downloadCount==1)tvAppDownloads.setText(downloadCount + " Download!");
                                 else tvAppDownloads.setText(downloadCount + " Downloads!");
                             }
                             dataChanged = true;
+                            changeSendButton(true);
+                        }
+                        else {
+                            Toast.makeText(getApplicationContext(), "Download failed, try again!", Toast.LENGTH_LONG).show();
+                            changeSendButton(true);
                         }
                     }
                     else Toast.makeText(getApplicationContext(), "You have already downloaded it!", Toast.LENGTH_LONG).show();
+
 
 
                 }
@@ -400,6 +415,10 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         else if(v==btnViewReviews){
             reviewsDialog.show();
         }
+    }
+
+    private void changeSendButton(boolean usableState){
+        changeSendBtnAndProgressBarVisibility(usableState, ibAppDownload, pbChosenAppActivityDownload);
     }
 
     private boolean shareApp(){ //doesn't display the image nor the title

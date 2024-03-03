@@ -1,6 +1,7 @@
 package com.example.finalproject.Activities;
 
 import static com.example.finalproject.Classes.Constants.*;
+import static com.example.finalproject.Classes.InitiateFunctions.changeSendBtnAndProgressBarVisibility;
 import static com.example.finalproject.Classes.StorageFunctions.humanReadableByte;
 
 import android.app.Activity;
@@ -24,8 +25,8 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,7 +51,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -58,6 +58,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnPausedListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -74,20 +75,21 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
     private SharedPreferences sharedPreferences;
     private User curUser;
-    private boolean isUserSignedIn;
+    private boolean isUserSignedIn, isDebugDefaultApkPath;
     private App curApp;
     private boolean isEditingApp;
     private Categories categories;
     private ArrayList<String> categoriesArrayList;
     private FirebaseFirestore db;
 
-    private MenuItem registerActivityMenuItemRandomData;
+    private MenuItem uploadAppActivityMenuItemRandomData,uploadAppActivityMenuItemDefaultApkPath;
     ActivityResultLauncher<Intent> activityResultLauncherFileExplorer;
     private Uri apkUri;
     private Dialog permsDialog;
     private ArrayList<String> permsDialogResult;
     private PermissionChoiceView permsDialogChoiceView;
     private PermissionClass perms;
+    private ProgressBar pbUploadAppSendData;
 
 
     ActivityResultLauncher<Intent> startFile;
@@ -144,6 +146,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                 }
         );
 
+        isDebugDefaultApkPath = false;
 
         //getting the user from the intent
         curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
@@ -172,6 +175,8 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         ivUploadAppCamera = findViewById(R.id.ivUploadAppCamera);
         ivUploadAppCamera.setOnClickListener(this);
+
+        pbUploadAppSendData = findViewById(R.id.pbUploadAppSendData);
 
         tvPerms = findViewById(R.id.tvPerms);
         permsDialog = new Dialog(this);
@@ -209,14 +214,20 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.activity_register_menu, menu);
+        inflater.inflate(R.menu.activity_upload_app_menu, menu);
 
-        registerActivityMenuItemRandomData = menu.findItem(R.id.registerActivityMenuItemRandomData);
+        uploadAppActivityMenuItemRandomData = menu.findItem(R.id.uploadAppActivityMenuItemRandomData);
+        uploadAppActivityMenuItemDefaultApkPath = menu.findItem(R.id.uploadAppActivityMenuItemDefaultApkPath);
         return true;
     }
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if(item==registerActivityMenuItemRandomData){
+        if(item== uploadAppActivityMenuItemRandomData){
+            fillWithRandomData();
+            return true;
+        }
+        if(item==uploadAppActivityMenuItemDefaultApkPath){
+            isDebugDefaultApkPath = true;
             fillWithRandomData();
             return true;
         }
@@ -228,7 +239,7 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         String specialLastName = "";
 
         Random rand = new Random();
-        int num = rand.nextInt(7) + 3;
+        int num = rand.nextInt(3) + 3;
         for(int i = 0; i < num; i++){
             if(i == 0){
                 specialFirstName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
@@ -240,8 +251,8 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         etUploadAppName.setText(specialFirstName);
         etUploadAppDescription.setText("This is a nice description laddie, i would appreciate if you gave me some of it!");
-        etUploadAppPrice.setText("99");
-        etUploadAppDiscountPercentage.setText("2");
+        etUploadAppPrice.setText("" + rand.nextInt(1000)/10);
+        etUploadAppDiscountPercentage.setText("" + Double.toString(rand.nextInt(100)/100));
         actvUploadAppMainCategory.setText(categoriesArrayList.get(rand.nextInt(3)));
 
     }
@@ -264,21 +275,43 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
 
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+
+        Bitmap compressed = getResizedBitmap(photoBitmap, 5 * 1024 * 1024);
+        compressed.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
         byte[] data = byteArrayOutputStream.toByteArray();
 
         imagesRef.putBytes(data).addOnCompleteListener(UploadAppActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                if (task.isSuccessful()) {
-                    finishActivity(true, app);
-                } else {
-                    Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
-                    btnUploadAppSendData.setClickable(true);
-                }
-            }
-        });
+                    @Override
+                    public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                        if (task.isSuccessful()) {
+                            finishActivity(true, app);
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+                            changeSendButton(true);
+                            if (task.getException() != null) {
+                                Log.e("debug", task.getException().getMessage());
+                            }
+                        }
+                    }
+                })
+                .addOnPausedListener(new OnPausedListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onPaused(@NonNull UploadTask.TaskSnapshot snapshot) {
+                        Toast.makeText(getApplicationContext(), "The image upload has paused, make sure you have a reliable internet connection!", Toast.LENGTH_LONG).show();
+                    }
+                });
+
     }
+    public Bitmap getResizedBitmap(Bitmap image, int byteSize) {
+        int width, height;
+        //The size of a Bitmap in memory is determined by its width, height, and the number of bytes per pixel.
+        // In Android, a Bitmap typically uses 4 bytes per pixel (one for each color channel: red, green, blue, and alpha
+        //sizeInBytes=width×height×bytesPerPixel
+        width = height = (byteSize/4)/2;
+        return Bitmap.createScaledBitmap(image, width, height, true);
+    }
+
+
     @Override
     public void onClick(View v) {
         if(v==btnUploadAppSendData){
@@ -343,7 +376,11 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             app.setAppUploadDate(Calendar.getInstance().getTime());
             app.setAppPerms(permsDialogResult);
 
-            if(apkUri==null){
+            if(isDebugDefaultApkPath) {
+                app.setAppApkPath("Apks/0586773375Mjbhshjsbe190224-175020.9160.app");
+                Toast.makeText(this, "Debug default APK set.", Toast.LENGTH_SHORT).show();
+            }
+            else if(apkUri==null){
                 if(isEditingApp) {
                     app.setAppApkPath(curApp.getAppApkPath());
                     app.setAppSize(curApp.getAppSize());
@@ -370,9 +407,8 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
             else app.setAppImagePath(getFullPath(curUser, app, FIRESTORE_STORAGE_IMAGE_FOLDER, "jpg"));
 
 
-            btnUploadAppSendData.setClickable(false);
+            changeSendButton(false);
             if(isEditingApp){
-                app.setAppImagePath(curApp.getAppImagePath());
                 app.setAppId(curApp.getAppId());
                 db.collection("apps").document(curApp.getAppId()).set(app).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
@@ -384,11 +420,12 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                                 saveBitmapAndFinish(app);
                             } catch (NullPointerException e){
                                 Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
+                                Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
                             }
                         } else {
                             Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
                             Log.d("debug", "set failed with ", task1.getException());
-                            btnUploadAppSendData.setClickable(true);
+                            changeSendButton(true);
                         }
                     }
                 });
@@ -411,13 +448,15 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
                                 saveBitmapAndFinish(app);
                             } catch (NullPointerException e){
                                 Log.e("debug", "NullPointerException for OnComplete RegisterActivity: " + e);
+                                Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+
                             }
                             // we now add the app to the user's created apps subcollection
 
                         } else {
                             Toast.makeText(getApplicationContext(), "Unsuccessful! Please try again!", Toast.LENGTH_LONG).show();
                             Log.d("debug", "add failed with ", task1.getException());
-                            btnUploadAppSendData.setClickable(true);
+                            changeSendButton(true);
                         }
                     }
                 });
@@ -427,6 +466,9 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
 
         }
         else Toast.makeText(this, "All EditTexts must be correct!", Toast.LENGTH_LONG).show();
+    }
+    private void changeSendButton(boolean usableState){
+        changeSendBtnAndProgressBarVisibility(usableState, btnUploadAppSendData, pbUploadAppSendData);
     }
 
     private void finishActivity(boolean result, App app){

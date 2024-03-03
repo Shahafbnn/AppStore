@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         String name  = "Recently uploaded:";
                                         LinearLayout recentLayout = stringLinearLayoutHashMap.get(name);
 
-                                        recentLayout.addView(createAppViewAndListeners(app, recentLayout, activityResultLauncherSearchedApp, name));
+                                        if (recentLayout != null) recentLayout.addView(createAppViewAndListeners(app, recentLayout, activityResultLauncherSearchedApp, name));
                                     }
                                     else{
                                         arrReference = downloadedAppsArrayList;
@@ -518,8 +518,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @NonNull
     private AppView createAppViewAndListeners(App app, LinearLayout linearLayout, ActivityResultLauncher<Intent> launcher, String name) {
-        AppView appView;
-        appView = new AppView(getApplicationContext(), app);
+        AppView appView = new AppView(getApplicationContext(), app);
         appView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -530,15 +529,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         });
         View.OnClickListener clickListener;
+        // name is null when we call from btnMainActivitySearchApp in the whereEqualTo query's listener
         if(name == null){
-            clickListener = new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
-                    intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
-                    intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
-                    activityResultLauncherSearchedApp.launch(intent);
-                }
+            clickListener = v -> {
+                Intent intent = new Intent(getApplicationContext(), ChosenAppActivity.class);
+                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
+                intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
+                activityResultLauncherSearchedApp.launch(intent);
             };
         }
         else{
@@ -547,7 +544,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, ((AppView)v).getApp());
                 intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curUser);
                 intent.putExtra(Constants.INTENT_SCROLL_VIEW_KEY, name);
-
                 launcher.launch(intent);
             };
         }
@@ -822,6 +818,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
     private void createCustomDialogLogIn(){
+        //TODO: fix not updating the createdApps, downloadedApps, searchHistory
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.log_in_dialog);
 
