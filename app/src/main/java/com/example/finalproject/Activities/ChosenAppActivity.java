@@ -10,31 +10,20 @@ import static com.example.finalproject.Classes.Constants.INTENT_CHOSEN_APP_ACTIV
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_SCROLL_VIEW_KEY;
-import static com.example.finalproject.Classes.Constants.getAppTypes;
 import static com.example.finalproject.Classes.InitiateFunctions.changeSendBtnAndProgressBarVisibility;
-import static com.example.finalproject.Classes.StorageFunctions.getUriFromImageView;
-
-import static java.security.AccessController.getContext;
-
-import androidx.activity.OnBackPressedCallback;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import static com.example.finalproject.Classes.UsefulFunctions.setTextViewUnderline;
+import static com.example.finalproject.Classes.UsefulFunctions.setTextViewUnderlineAndColor;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.ClipData;
-import android.content.ClipDescription;
 import android.content.Intent;
+import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Html;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -46,6 +35,9 @@ import android.widget.RatingBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.finalproject.Adapters.ReviewAdapter;
 import com.example.finalproject.Classes.App.App;
@@ -61,20 +53,15 @@ import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.Classes.ValidationData;
 import com.example.finalproject.FirestoreRunnable;
 import com.example.finalproject.R;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.AggregateField;
-import com.google.firebase.firestore.AggregateQuery;
 import com.google.firebase.firestore.AggregateQuerySnapshot;
 import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Random;
 
 public class ChosenAppActivity extends AppCompatActivity implements View.OnClickListener {
@@ -150,44 +137,39 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             }
         });
     }
+    @SuppressLint("SetTextI18n")
     private void fetchDownloadCountFromFireStore(){
-        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    if (!task.getResult().isEmpty()) {
-                        int counter = 0;
-                        Receipt receipt;
-                        alreadyDownloadedTheApp = false;
-                        for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
-                            receipt = documentSnapshot.toObject(Receipt.class);
-                            counter++;
-                            if(isUserSignedIn && receipt.getReceiptBuyer().getUserId().equals(curUser.getUserId())) alreadyDownloadedTheApp = true;
-                        }
-                        downloadCount = counter;
-                        if(downloadCount == 1) tvAppDownloads.setText(downloadCount + " Download!");
-                        else tvAppDownloads.setText(downloadCount + " Downloads!");
-
-                        db.collection("apps").document(curApp.getAppId()).update("appDownloadCount", downloadCount);
-                        db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appDownloadCount", downloadCount);
+        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                if (!task.getResult().isEmpty()) {
+                    int counter = 0;
+                    Receipt receipt;
+                    alreadyDownloadedTheApp = false;
+                    for(QueryDocumentSnapshot documentSnapshot: task.getResult()){
+                        receipt = documentSnapshot.toObject(Receipt.class);
+                        counter++;
+                        if(isUserSignedIn && receipt.getReceiptBuyer().getUserId().equals(curUser.getUserId())) alreadyDownloadedTheApp = true;
                     }
+                    downloadCount = counter;
+                    if(downloadCount == 1) tvAppDownloads.setText(downloadCount + " Download!");
+                    else tvAppDownloads.setText(downloadCount + " Downloads!");
+
+                    db.collection("apps").document(curApp.getAppId()).update("appDownloadCount", downloadCount);
+                    db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appDownloadCount", downloadCount);
                 }
             }
         });
     }
     private void fetchAverageRatingFromFireStore(){
-        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_APP_REVIEWS_KEY).aggregate(AggregateField.average("reviewAppScore")).get(AggregateSource.SERVER).addOnCompleteListener(new OnCompleteListener<AggregateQuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<AggregateQuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    // Aggregate fetched successfully
-                    AggregateQuerySnapshot snapshot = task.getResult();
-                    Double data  = snapshot.get(AggregateField.average("reviewAppScore"));
-                    if(data != null){
-                        rbAppAvgRating.setRating(data.floatValue());
-                        db.collection("apps").document(curApp.getAppId()).update("appAvgRating", data.floatValue());
-                        db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appAvgRating", data.floatValue());
-                    }
+        db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_APP_REVIEWS_KEY).aggregate(AggregateField.average("reviewAppScore")).get(AggregateSource.SERVER).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                // Aggregate fetched successfully
+                AggregateQuerySnapshot snapshot = task.getResult();
+                Double data  = snapshot.get(AggregateField.average("reviewAppScore"));
+                if(data != null){
+                    rbAppAvgRating.setRating(data.floatValue());
+                    db.collection("apps").document(curApp.getAppId()).update("appAvgRating", data.floatValue());
+                    db.collection("users").document(curApp.getAppCreator().getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY).document(curApp.getAppId()).update("appAvgRating", data.floatValue());
                 }
             }
         });
@@ -219,29 +201,30 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         rbAppAvgRating.setRating(score/i);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void initViews(){
-        tvAppName = (TextView) findViewById(R.id.tvAppName);
-        tvAppCreator = (TextView) findViewById(R.id.tvAppCreator);
+        tvAppName = findViewById(R.id.tvAppName);
+        tvAppCreator = findViewById(R.id.tvAppCreator);
         tvAppCreator.setOnClickListener(this);
-        tvAppDownloads = (TextView) findViewById(R.id.tvAppDownloads);
-        tvAppSize = (TextView) findViewById(R.id.tvAppSize);
-        tvAppPerms = (TextView) findViewById(R.id.tvAppPerms);
+        tvAppDownloads = findViewById(R.id.tvAppDownloads);
+        tvAppSize = findViewById(R.id.tvAppSize);
+        tvAppPerms = findViewById(R.id.tvAppPerms);
         tvAppPerms.setOnClickListener(this);
         tvAppMainCategory = findViewById(R.id.tvAppMainCategory);
         tvAppFullPrice = findViewById(R.id.tvAppFullPrice);
         tvAppUploadDate = findViewById(R.id.tvAppUploadDate);
 
-        ivAppImage = (ImageView) findViewById(R.id.ivAppImage);
+        ivAppImage = findViewById(R.id.ivAppImage);
 
-        ibAppDownload = (ImageButton) findViewById(R.id.ibAppDownload);
+        ibAppDownload = findViewById(R.id.ibAppDownload);
         ibAppDownload.setOnClickListener(this);
-        ibAppShare = (ImageButton) findViewById(R.id.ibAppShare);
+        ibAppShare = findViewById(R.id.ibAppShare);
         ibAppShare.setOnClickListener(this);
 
 
 
 
-        rbAppAvgRating = (RatingBar) findViewById(R.id.rbAppAvgRating);
+        rbAppAvgRating = findViewById(R.id.rbAppAvgRating);
         //so it won't be clickable!
         rbAppAvgRating.setOnTouchListener((v, event) -> true);
 
@@ -274,7 +257,8 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
 
     }
 
-    @SuppressLint("SetTextI18n")
+
+        @SuppressLint({"SetTextI18n", "DefaultLocale", "UseCompatLoadingForDrawables"})
     private void initAppDataFromCurApp(){
         fetchAverageRatingFromFireStore();
         if(curApp.getAppUploadDate() != null) {
@@ -283,22 +267,19 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             tvAppUploadDate.setText("Upload Date: " + str);
         }
 
+        setTextViewUnderline(tvAppName, curApp.getAppName());
 
-        tvAppName.setText(Html.fromHtml("<u>" + curApp.getAppName() + "</u>"));
         tvAppMainCategory.setText(curApp.getAppMainCategory());
-        tvAppCreator.setText("Created by: " + curApp.getAppCreator().getFullNameAdmin());
+
+        setTextViewUnderlineAndColor(tvAppCreator, "Created by: ", curApp.getAppCreator().getFullNameAdmin(), Color.rgb(0,102,204));
+
         tvAppSize.setText(curApp.getAppSize() + " in size");
         StorageFunctions.setImage(this, ivAppImage, curApp.getAppImagePath());
 
         permsDialog = new Dialog(this);
         permsDialogChoiceView = new PermissionChoiceView(this, PermissionClass.getAllPermsStrings(), new ArrayList<>(), permsDialog, null, 50, ListView.CHOICE_MODE_MULTIPLE, true);
         permsDialog.setContentView(permsDialogChoiceView);
-        tvAppPerms.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                permsDialog.show();
-            }
-        });
+        tvAppPerms.setOnClickListener(v -> permsDialog.show());
         permsDialogChoiceView.setCheckedItems(curApp.getAppPerms());
 
 
@@ -314,7 +295,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         }
         else{
             ibAppDownload.setImageDrawable(getDrawable(R.drawable.buy_button));
-            String fullPrice = "";
+            String fullPrice;
             // No discount
             if(curApp.getAppDiscountPercentage() == 0 || curApp.getAppDiscountPercentage() == 0.0){
                 fullPrice = "<font color='green'><b>" + String.format("%.2f", price) + "</b></font>";
@@ -350,6 +331,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     @Override
     public void onClick(View v) {
         if(v==tvAppCreator){
+            setTextViewUnderlineAndColor(tvAppCreator, "Created by: ", curApp.getAppCreator().getFullNameAdmin(), Color.rgb(102,0,153));
             Intent intent = new Intent(getApplicationContext(), UserDataActivity.class);
             intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curApp.getAppCreator());
             startActivity(intent);
@@ -457,21 +439,21 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
     private void addRandomReview(){
         Review review;
         char[] nameStr = "abcdefghijklmnopqrstubwxyz".toCharArray();
-        String specialFirstName = "";
-        String specialLastName = "";
+        StringBuilder specialFirstName = new StringBuilder();
+        StringBuilder specialLastName = new StringBuilder();
 
         Random rand = new Random();
         int num = rand.nextInt(7) + 3;
         for(int i = 0; i < num; i++){
             if(i == 0){
-                specialFirstName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
-                specialLastName += ("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase();
+                specialFirstName.append(("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase());
+                specialLastName.append(("" + nameStr[rand.nextInt(nameStr.length)]).toUpperCase());
             }
-            specialFirstName += nameStr[rand.nextInt(nameStr.length)];
-            specialLastName += nameStr[rand.nextInt(nameStr.length)];
+            specialFirstName.append(nameStr[rand.nextInt(nameStr.length)]);
+            specialLastName.append(nameStr[rand.nextInt(nameStr.length)]);
         }
         assert curApp != null;
-        review = new Review(num, specialFirstName + specialLastName, curUser);
+        review = new Review(num, specialFirstName.toString() + specialLastName, curUser);
         addReviewToFireBase(review);
     }
     private void addReviewToFireBase(Review review){
