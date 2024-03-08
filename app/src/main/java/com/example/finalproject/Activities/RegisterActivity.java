@@ -227,21 +227,15 @@ public class RegisterActivity extends AppCompatActivity implements View.OnClickL
             StorageReference imagesRef = storageRef.child(fullPath);
 
 
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            photoBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-            byte[] data = byteArrayOutputStream.toByteArray();
-
-            imagesRef.putBytes(data).addOnCompleteListener(RegisterActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                    if (task.isSuccessful()) {
-                        finishActivity(true, user);
-                    } else {
-                        Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
-                        btnSendData.setClickable(true);
-                    }
+            StorageFunctions.uploadAndCompressBitmapToFirestore(this, photoBitmap, imagesRef, task -> {
+                if (task.isSuccessful()) {
+                    finishActivity(true, user);
+                } else {
+                    Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+                    btnSendData.setClickable(true);
                 }
-            });
+            }, null);
+
         }
         else finishActivity(true, user);
     }

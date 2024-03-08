@@ -100,47 +100,40 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         db = FirebaseFirestore.getInstance();
         perms  = new PermissionClass(this);
 
-
         startFile  = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        if(result.getResultCode() == RESULT_OK){
-                            if(isFromCamera){
-                                try{
-                                    photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                } catch (IOException e){
-                                    Log.e("Runtime Exception", "" + e);
-                                }
-                            } else if (isFromGallery) {
-                                uriPhoto = result.getData().getData();
-                                try{
-                                    photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
-                                } catch (IOException e){
-                                    Log.e("Runtime Exception", "" + e);
-                                }
-
+                result -> {
+                    if(result.getResultCode() == RESULT_OK){
+                        if(isFromCamera){
+                            try{
+                                photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
+                            } catch (IOException e){
+                                Log.e("Runtime Exception", "" + e);
                             }
-                            ivUploadAppImage.setImageBitmap(photoBitmap);
+                        } else if (isFromGallery) {
+                            uriPhoto = result.getData().getData();
+                            try{
+                                photoBitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uriPhoto);
+                            } catch (IOException e){
+                                Log.e("Runtime Exception", "" + e);
+                            }
 
                         }
+                        ivUploadAppImage.setImageBitmap(photoBitmap);
+
                     }
                 });
 
         activityResultLauncherFileExplorer = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        if (result.getResultCode() == Activity.RESULT_OK) {
-                            Intent data = result.getData();
-                            if (data != null) {
-                                apkUri = data.getData();
-                                String filePath = apkUri.getPath();
-                                etAPKPath.setText(filePath);
-                                //openApkFile(getApplicationContext(), new File(filePath));
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Intent data = result.getData();
+                        if (data != null) {
+                            apkUri = data.getData();
+                            String filePath = apkUri.getPath();
+                            etAPKPath.setText(filePath);
+                            //openApkFile(getApplicationContext(), new File(filePath));
 
-                            }
                         }
                     }
                 }
@@ -273,43 +266,24 @@ public class UploadAppActivity extends AppCompatActivity implements View.OnClick
         StorageReference storageRef = storage.getReference();
         StorageReference imagesRef = storageRef.child(fullPath);
 
+        OnCompleteListener<UploadTask.TaskSnapshot> onCompleteListener = task -> {
+            if (task.isSuccessful()) {
+                finishActivity(true, app);
+            } else {
+                Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
+                changeSendButton(true);
+                if (task.getException() != null) {
+                    Log.e("debug", "" + task.getException().getMessage());
+                }
+            }
+        };
+        OnPausedListener<UploadTask.TaskSnapshot> onPausedListener = snapshot -> Toast.makeText(getApplicationContext(), "The image upload has paused, make sure you have a reliable internet connection!", Toast.LENGTH_LONG).show();
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 
-        Bitmap compressed = getResizedBitmap(photoBitmap, 5 * 1024 * 1024);
-        compressed.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
-        byte[] data = byteArrayOutputStream.toByteArray();
-
-        imagesRef.putBytes(data).addOnCompleteListener(UploadAppActivity.this, new OnCompleteListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            finishActivity(true, app);
-                        } else {
-                            Toast.makeText(getApplicationContext(), "Image upload failed, please try again!", Toast.LENGTH_LONG).show();
-                            changeSendButton(true);
-                            if (task.getException() != null) {
-                                Log.e("debug", task.getException().getMessage());
-                            }
-                        }
-                    }
-                })
-                .addOnPausedListener(new OnPausedListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onPaused(@NonNull UploadTask.TaskSnapshot snapshot) {
-                        Toast.makeText(getApplicationContext(), "The image upload has paused, make sure you have a reliable internet connection!", Toast.LENGTH_LONG).show();
-                    }
-                });
-
+        StorageFunctions.uploadAndCompressBitmapToFirestore(this, photoBitmap, imagesRef, onCompleteListener, onPausedListener);
     }
-    public Bitmap getResizedBitmap(Bitmap image, int byteSize) {
-        int width, height;
-        //The size of a Bitmap in memory is determined by its width, height, and the number of bytes per pixel.
-        // In Android, a Bitmap typically uses 4 bytes per pixel (one for each color channel: red, green, blue, and alpha
-        //sizeInBytes=width×height×bytesPerPixel
-        width = height = (byteSize/4)/2;
-        return Bitmap.createScaledBitmap(image, width, height, true);
-    }
+
+
 
 
     @Override

@@ -46,6 +46,13 @@ public class UserAdapter extends BaseAdapter {
         View userView = inflater.inflate(R.layout.user_adapter, parent, false);
         User user = users.get(position);
 
+
+        updateData(userView, user);
+
+
+        return userView;
+    }
+    private void updateData(View userView, User user){
         ImageView ivUserAdapterPfp = userView.findViewById(R.id.ivUserAdapterPfp);
         TextView tvUserAdapterFullName = userView.findViewById(R.id.tvUserAdapterFullName);
         TextView tvUserAdapterAge = userView.findViewById(R.id.tvUserAdapterAge);
@@ -53,7 +60,6 @@ public class UserAdapter extends BaseAdapter {
         TextView tvUserAdapterCity = userView.findViewById(R.id.tvUserAdapterCity);
         TextView tvUserAdapterWeight = userView.findViewById(R.id.tvUserAdapterWeight);
         TextView tvUserAdapterPhoneNumber = userView.findViewById(R.id.tvUserAdapterPhoneNumber);
-
         StorageFunctions.setImage(context, ivUserAdapterPfp, user.getUserImagePath());
 
         tvUserAdapterFullName.setText(user.getFullNameAdmin());
@@ -62,8 +68,5 @@ public class UserAdapter extends BaseAdapter {
         tvUserAdapterCity.setText(user.getHomeCityName());
         tvUserAdapterWeight.setText(Double.toString(user.getUserWeight()));
         tvUserAdapterPhoneNumber.setText(user.getUserPhoneNumber());
-
-        return userView;
     }
-
 }

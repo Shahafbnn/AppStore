@@ -64,7 +64,7 @@ public class UserDataActivity extends AppCompatActivity {
     private ListView lvAppReviews;
     private Dialog reviewsDialog;
     private Button btnUserDataDialog;
-
+//TODO: fix the fact that the data doesn't update when you add a review to an app in your reviews page for example when I go to one of the creator's apps, add a review, and return, then it doesn't show up once I click the Reviews Button!
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,12 +98,7 @@ public class UserDataActivity extends AppCompatActivity {
         createScrollView("Uploaded Apps:", db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY));
         createReviews();
         fetchReviewsFromFireStore();
-        btnUserDataDialog.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                reviewsDialog.show();
-            }
-        });
+        btnUserDataDialog.setOnClickListener(v -> reviewsDialog.show());
 
     }
     private void createReviews(){

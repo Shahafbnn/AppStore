@@ -59,8 +59,10 @@ import com.example.finalproject.Classes.StorageFunctions;
 import com.example.finalproject.Classes.User.User;
 import com.example.finalproject.Classes.User.Validations;
 import com.example.finalproject.Classes.ValidationData;
+import com.example.finalproject.FirestoreRunnable;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.AggregateQuery;
@@ -356,26 +358,32 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
             if(isUserSignedIn){
                 if(perms.CheckPermission(this)){
                     if(alreadyDownloadedTheApp == null || !alreadyDownloadedTheApp){
-                        //changeSendButton(false);
-                        boolean downloadedSuccessfully = StorageFunctions.downloadApkFileFromFireExternal(ChosenAppActivity.this, curApp.getAppApkPath(), curApp.getAppName(), perms);
-                        ibAppDownload.setVisibility(GONE);
-                        pbChosenAppActivityDownload.setVisibility(View.VISIBLE);
-                        if(downloadedSuccessfully) {
-                            Receipt receipt = new Receipt(curUser, curUser.getUserId(), curApp, Calendar.getInstance().getTime());
-                            db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).add(receipt);
-                            db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_DOWNLOADED_APPS_KEY).add(receipt);
-                            if(downloadCount != null) {
-                                downloadCount++;
-                                if(downloadCount==1)tvAppDownloads.setText(downloadCount + " Download!");
-                                else tvAppDownloads.setText(downloadCount + " Downloads!");
+                        alreadyDownloadedTheApp = true;
+                        changeSendButton(false);
+                        //putting this in an interface so I can use "file" from this context!
+                        FirestoreRunnable onSuccessListener = new FirestoreRunnable(){
+                            @Override
+                            public void runString(String file) {
+                                FirestoreRunnable.super.runString(file);
+                                Receipt receipt = new Receipt(curUser, curUser.getUserId(), curApp, Calendar.getInstance().getTime());
+                                db.collection("apps").document(curApp.getAppId()).collection(FIRESTORE_RECEIPT_KEY).add(receipt);
+                                db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_DOWNLOADED_APPS_KEY).add(receipt);
+                                if(downloadCount != null) {
+                                    downloadCount++;
+                                    if(downloadCount==1)tvAppDownloads.setText(downloadCount + " Download!");
+                                    else tvAppDownloads.setText(downloadCount + " Downloads!");
+                                }
+                                dataChanged = true;
+                                changeSendButton(true);
+                                Toast.makeText(getApplicationContext(), "Successfully downloaded at: " + file, Toast.LENGTH_LONG).show();
                             }
-                            dataChanged = true;
-                            changeSendButton(true);
-                        }
-                        else {
-                            Toast.makeText(getApplicationContext(), "Download failed, try again!", Toast.LENGTH_LONG).show();
-                            changeSendButton(true);
-                        }
+                        };
+                        OnFailureListener onFailureListener = e -> {
+                            Toast.makeText(getApplicationContext(), "Download failed! please try again!", Toast.LENGTH_LONG).show();
+                            alreadyDownloadedTheApp = false;
+                        };
+                        StorageFunctions.downloadApkFileFromFireExternal(ChosenAppActivity.this, curApp.getAppApkPath(), curApp.getAppName(), perms, onSuccessListener, onFailureListener);
+
                     }
                     else Toast.makeText(getApplicationContext(), "You have already downloaded it!", Toast.LENGTH_LONG).show();
 
@@ -417,7 +425,7 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         }
     }
 
-    private void changeSendButton(boolean usableState){
+    public void changeSendButton(boolean usableState){
         changeSendBtnAndProgressBarVisibility(usableState, ibAppDownload, pbChosenAppActivityDownload);
     }
 

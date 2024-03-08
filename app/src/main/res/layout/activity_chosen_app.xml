@@ -96,6 +96,7 @@
                 android:id="@+id/ibAppDownload"
                 android:layout_width="wrap_content"
                 android:layout_height="120dp"
+                android:background="#00FFFFFF"
                 android:scaleType="fitXY"
                 app:srcCompat="@drawable/download_button" />
 

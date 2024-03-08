@@ -180,7 +180,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         String name  = "Recently uploaded:";
                                         LinearLayout recentLayout = stringLinearLayoutHashMap.get(name);
 
-                                        if (recentLayout != null) recentLayout.addView(createAppViewAndListeners(app, recentLayout, activityResultLauncherSearchedApp, name));
+                                        if (recentLayout != null) {
+                                            // if it's empty and only has the missing data image
+                                            if(recentLayout.getChildAt(0) instanceof ImageView) recentLayout.removeViewAt(0);
+                                            recentLayout.addView(createAppViewAndListeners(app, recentLayout, activityResultLauncherSearchedApp, name));
+                                        }
                                     }
                                     else{
                                         arrReference = downloadedAppsArrayList;
@@ -366,7 +370,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Calendar time = Calendar.getInstance();
         time.add(Calendar.DAY_OF_YEAR, -1);
         Timestamp oneDayAgo = new Timestamp(time.getTime());
-        createScrollView("Recently uploaded:", db.collection("apps").whereGreaterThan("appUploadDate", oneDayAgo));
+        createScrollView("Recently uploaded:", db.collection("apps").whereGreaterThan("appUploadDate", oneDayAgo).orderBy("appUploadDate").limit(20));
         createScrollView("Most Liked Apps:", db.collection("apps")
                 .orderBy("appAvgRating", Query.Direction.DESCENDING)
                 .limit(20));
@@ -457,20 +461,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void createScrollView(String name, Query query){
+        // when we return from clicks on the apps:
         final ActivityResultLauncher<Intent> arlScrollViews = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
-                        //for changes done to apps in ChosenAppActivity and UploadAppActivity
-                        //handle returned data
-                        if(result.getResultCode()== Activity.RESULT_OK){
-                            if(result.getData() != null){
-                                //get the returned app from UploadAppActivity
-                                String key = result.getData().getStringExtra(Constants.INTENT_SCROLL_VIEW_KEY);
+                result -> {
+                    //for changes done to apps in ChosenAppActivity and UploadAppActivity
+                    //handle returned data
+                    if(result.getResultCode()== Activity.RESULT_OK){
+                        if(result.getData() != null){
+                            //get the returned app from UploadAppActivity
+                            String key = result.getData().getStringExtra(Constants.INTENT_SCROLL_VIEW_KEY);
+                            if(key != null){
                                 LinearLayout returnedLayout = stringLinearLayoutHashMap.get(key);
-                                App app = (App)result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
-                                if(app!=null && returnedLayout != null){
+                                App app = (App) result.getData().getSerializableExtra(INTENT_CURRENT_APP_KEY);
+                                if (app != null && returnedLayout != null) {
                                     updateAppInLayout(returnedLayout, app);
                                 }
                             }
@@ -479,30 +483,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
         );
 
-        query.get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                if (task.isSuccessful()) {
-                    if(task.getResult().size() > 0){
-                        HorizontalScrollView scrollView = new HorizontalScrollView(getApplicationContext());
-                        scrollView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-                        LinearLayout linearLayout = new LinearLayout(getApplicationContext());
-                        scrollView.addView(linearLayout);
-                        stringLinearLayoutHashMap.put(name, linearLayout);
-                        scrollViewLinearLayouts.add(linearLayout);
-
-                        TextView tvName = new TextView(getApplicationContext());
-                        tvName.setText(name);
-
-                        llMainActivity.addView(tvName);
-                        llMainActivity.addView(scrollView);
-
-                        addAppViewsToLinearLayout(task, linearLayout, arlScrollViews, name);
-                    }
+        //getting the query and updating the apps we get from firestore
+        query.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                LinearLayout linearLayout = addScrollViewLayouts(name);
+                if(task.getResult().size() > 0){
+                    addAppViewsToLinearLayout(task, linearLayout, arlScrollViews, name);
                 }
+                else {
+                    ImageView imageView = new ImageView(getApplicationContext());
+                    imageView.setImageResource(R.drawable.data_not_found);
+
+                    int pixels = UsefulFunctions.dpToPixels(getApplicationContext(), 100);
+                    LinearLayout.LayoutParams imageViewLayoutParams = new LinearLayout.LayoutParams(pixels, pixels);
+
+                    imageView.setLayoutParams(imageViewLayoutParams);
+                    linearLayout.addView(imageView);
+                }
+
             }
         });
 
+    }
+    private LinearLayout addScrollViewLayouts(String name){
+        HorizontalScrollView scrollView = new HorizontalScrollView(getApplicationContext());
+        scrollView.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        LinearLayout linearLayout = new LinearLayout(getApplicationContext());
+        scrollView.addView(linearLayout);
+        stringLinearLayoutHashMap.put(name, linearLayout);
+        scrollViewLinearLayouts.add(linearLayout);
+
+        TextView tvName = new TextView(getApplicationContext());
+        tvName.setText(name);
+        llMainActivity.addView(tvName);
+        llMainActivity.addView(scrollView);
+
+        return linearLayout;
     }
 
     private void addAppViewsToLinearLayout(@NonNull Task<QuerySnapshot> task, LinearLayout linearLayout, ActivityResultLauncher<Intent> launcher, String name) {
@@ -770,26 +786,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Button btnCreateNewApp = dialog.findViewById(R.id.btnCreateNewApp);
         // what happens when you click the create new app button:
-        btnCreateNewApp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
-                dialog.dismiss();
-                conditionalLaunchUploadActivity(intent);
+        btnCreateNewApp.setOnClickListener(v -> {
+            Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
+            dialog.dismiss();
+            conditionalLaunchUploadActivity(intent);
 
-            }
         });
-        View.OnClickListener listener = new View.OnClickListener() {
-            // what happens when you click an app in the dialog:
-            @Override
-            public void onClick(View v) {
-                App app = ((AppView)v).getApp();
+        // what happens when you click an app in the dialog:
+        View.OnClickListener listener = v -> {
+            App app = ((AppView)v).getApp();
 
-                Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
-                intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, app);
-                dialog.dismiss();
-                conditionalLaunchUploadActivity(intent);
-            }
+            Intent intent = new Intent(getApplicationContext(), UploadAppActivity.class);
+            intent.putExtra(Constants.INTENT_CURRENT_APP_KEY, app);
+            dialog.dismiss();
+            conditionalLaunchUploadActivity(intent);
         };
 
         RecyclerView rv = dialog.findViewById(R.id.rvCreatedApps);
@@ -797,12 +807,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         LinearLayoutManager layoutManager
                 = new LinearLayoutManager(getApplicationContext(), LinearLayoutManager.VERTICAL, false);
-//        LinearLayout.LayoutParams linearLayoutParams = new LinearLayout.LayoutParams(
-//                LinearLayout.LayoutParams.MATCH_PARENT,
-//                LinearLayout.LayoutParams.WRAP_CONTENT);
-//
-//        linearLayoutParams.gravity = CENTER;
-//        rv.setLayoutParams(linearLayoutParams);
 
         rv.setLayoutManager(layoutManager);
         rv.setAdapter(adapter);
@@ -826,60 +830,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);
         EditText etTextPassword = dialog.findViewById(R.id.etTextPassword);
 
-        btnLogInSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                btnLogInSubmit.setClickable(false);
-                if(validateCustomDialogLogInData(dialog)) {
+        btnLogInSubmit.setOnClickListener(v -> {
+            btnLogInSubmit.setClickable(false);
+            if(validateCustomDialogLogInData(dialog)) {
 
-                    db.collection("users")
-                            .whereEqualTo("userEmail", etEmailAddress.getText().toString())
-                            .get()
-                            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                                @Override
-                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                    if (task.isSuccessful()) {
-                                        for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
-                                            if(documentSnapshot.exists()){
-                                                User user = documentSnapshot.toObject(User.class);
-                                                if(user.isUserIsDisabled() == null || !user.isUserIsDisabled()){
-                                                    if(user.getUserPassword().equals(etTextPassword.getText().toString())){
-                                                        isUserSignedIn = true;
-                                                        curUser = user;
-                                                        curUser.setUserId(documentSnapshot.getId());
+                db.collection("users")
+                        .whereEqualTo("userEmail", etEmailAddress.getText().toString())
+                        .get()
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
+                                    if(documentSnapshot.exists()){
+                                        User user = documentSnapshot.toObject(User.class);
+                                        if(user.isUserIsDisabled() == null || !user.isUserIsDisabled()){
+                                            if(user.getUserPassword().equals(etTextPassword.getText().toString())){
+                                                isUserSignedIn = true;
+                                                curUser = user;
+                                                curUser.setUserId(documentSnapshot.getId());
 
-                                                        InitiateFunctions.setSharedPreferencesData(editor ,documentSnapshot.getId());
+                                                InitiateFunctions.setSharedPreferencesData(editor ,documentSnapshot.getId());
 
-                                                        reloadActivity();
-                                                        //Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
-                                                        dialog.cancel();
-                                                    }
-                                                    else {
-                                                        etTextPassword.setError("Incorrect password!");
-                                                        btnLogInSubmit.setClickable(true);
-                                                    }
-                                                }
-                                                else {
-                                                    etEmailAddress.setError("User is disabled!");
-                                                    btnLogInSubmit.setClickable(true);
-                                                }
-
+                                                reloadActivity();
+                                                //Toast.makeText(getApplicationContext(), "Logging in!", Toast.LENGTH_LONG).show();
+                                                dialog.cancel();
                                             }
-                                            else{
-                                                etEmailAddress.setError("User does not exist!");
-                                                btnLogInSubmit.setClickable(true);
+                                            else {
+                                                setErrorAndFixButton(etTextPassword, btnLogInSubmit,"Incorrect password!");
                                             }
                                         }
-                                    } else {
-                                        Log.w("user", "Task unsuccessful", task.getException());
-                                        btnLogInSubmit.setClickable(true);
+                                        else {
+                                            setErrorAndFixButton(etEmailAddress, btnLogInSubmit, "User is disabled!");
+                                        }
+
+                                    }
+                                    else{
+                                        setErrorAndFixButton(etEmailAddress, btnLogInSubmit,"User does not exist!");
                                     }
                                 }
-                            });
-                }
+                            } else {
+                                Log.w("user", "Task unsuccessful", task.getException());
+                                btnLogInSubmit.setClickable(true);
+                            }
+                        });
             }
         });
         dialog.show();
+    }
+    private static void setErrorAndFixButton(EditText et, Button btn, String error){
+        et.setError(error);
+        btn.setClickable(true);
     }
     private static boolean validateCustomDialogLogInData(Dialog dialog){
         EditText etEmailAddress = dialog.findViewById(R.id.etEmailAddress);

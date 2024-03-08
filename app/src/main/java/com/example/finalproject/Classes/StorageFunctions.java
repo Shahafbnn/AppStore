@@ -1,6 +1,9 @@
 package com.example.finalproject.Classes;
 
+import static android.content.Context.ACTIVITY_SERVICE;
+
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -22,14 +25,19 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
+import com.example.finalproject.Activities.ChosenAppActivity;
 import com.example.finalproject.Classes.User.User;
+import com.example.finalproject.FirestoreRunnable;
 import com.example.finalproject.GlideApp;
 import com.example.finalproject.R;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnPausedListener;
+import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -163,6 +171,19 @@ public class StorageFunctions {
         }
         return null;
     }
+
+
+    public static void uploadAndCompressBitmapToFirestore(Activity act, Bitmap photoBitmap, StorageReference storageReference, OnCompleteListener<UploadTask.TaskSnapshot> onCompleteListener, OnPausedListener<UploadTask.TaskSnapshot> onPausedListener) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+
+        // resizing the bitmap to not overload the RAM
+        Bitmap compressed = StorageFunctions.getResizedBitmap(photoBitmap, act);
+        compressed.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+        byte[] data = byteArrayOutputStream.toByteArray();
+        if(onPausedListener==null) onPausedListener = snapshot -> Toast.makeText(act, "The image upload has paused, make sure you have a reliable internet connection!", Toast.LENGTH_LONG).show();
+
+        storageReference.putBytes(data).addOnCompleteListener(onCompleteListener).addOnPausedListener(onPausedListener);
+    }
     public static Uri getUriFromPhysicalPath(String path, Context context){
         if(path==null) return Uri.parse("android.resource://" + context.getPackageName() + "/" + R.drawable.emptypfp);
         File f = new File(path);
@@ -172,8 +193,24 @@ public class StorageFunctions {
             return null;
         }
     }
+    public static Bitmap getResizedBitmap(Bitmap image, int byteSize) {
+        if(image.getAllocationByteCount() <= byteSize) return image;
+        int width, height;
+        //The size of a Bitmap in memory is determined by its width, height, and the number of bytes per pixel.
+        // In Android, a Bitmap typically uses 4 bytes per pixel (one for each color channel: red, green, blue, and alpha
+        //sizeInBytes=width×height×bytesPerPixel
+        width = height = (byteSize/4)/2;
+        if(image.getWidth() + image.getHeight() <= width + height) return image;
+        return Bitmap.createScaledBitmap(image, width, height, true);
+    }
+    public static Bitmap getResizedBitmap(Bitmap image, Activity act) {
+        ActivityManager activityManager = (ActivityManager) act.getSystemService(ACTIVITY_SERVICE);
+        int maxMemorySizeInMB = activityManager.getMemoryClass();
+        //compressing the image to either be 100Kb or smaller (if the device's memory is)
+        return StorageFunctions.getResizedBitmap(image, Math.min(maxMemorySizeInMB * 1024 * 1024 / 1000, 100 * 1024));
 
-    public static void setImage(Context context, ImageView imageView, String path){
+    }
+        public static void setImage(Context context, ImageView imageView, String path){
         GlideApp.with(context)
                 .load(FirebaseStorage.getInstance().getReference().child(path))
                 .into(imageView);
@@ -247,7 +284,7 @@ public class StorageFunctions {
         if(listener!=null) a.addOnCompleteListener(listener);
         return;
     }
-    public static boolean downloadApkFileFromFireExternal(Activity act, String fireStorePath, String fileName, PermissionClass perms){
+    public static boolean downloadApkFileFromFireExternal(Activity act, String fireStorePath, String fileName, PermissionClass perms, FirestoreRunnable onCompleteListener, OnFailureListener onFailureListener){
         if(perms.CheckPermission(act)){
             Toast.makeText(act, "Downloading, please wait...", Toast.LENGTH_LONG).show();
 
@@ -273,14 +310,15 @@ public class StorageFunctions {
             StorageReference ref = FirebaseStorage.getInstance().getReference(fireStorePath);
 
 
-            ref.getFile(myFile).addOnCompleteListener(new OnCompleteListener<FileDownloadTask.TaskSnapshot>() {
-                @Override
-                public void onComplete(@NonNull Task<FileDownloadTask.TaskSnapshot> task) {
-                    if(task.isSuccessful()){
-                        Toast.makeText(act, "Downloaded successfully at " + myFile.getPath(), Toast.LENGTH_LONG).show();
-                    }
+            ref.getFile(myFile).addOnCompleteListener(task -> {
+                if(task.isSuccessful()) onCompleteListener.runString(myFile.getPath());
+                else {
+                    Toast.makeText(act, "Download failed, try again!", Toast.LENGTH_LONG).show();
+                    if(act instanceof ChosenAppActivity) ((ChosenAppActivity)act).changeSendButton(true);
                 }
-            });
+            }).addOnFailureListener(onFailureListener);
+
+
         } else{
             perms.RequestPerms(act);
             Toast.makeText(act, "Please accept permissions to download the app", Toast.LENGTH_LONG).show();
