@@ -22,6 +22,7 @@
             android:text="Add" />
 
         <AutoCompleteTextView
+            android:inputType="text"
             android:id="@+id/actvSearchCategoryActivity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

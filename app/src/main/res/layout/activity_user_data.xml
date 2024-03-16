@@ -38,10 +38,16 @@
             </LinearLayout>
 
             <Button
-                android:id="@+id/btnUserDataDialog"
+                android:id="@+id/btnUserDataAllAppReviewsDialog"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Reviews" />
+                android:text="All Apps Reviews!" />
+
+            <Button
+                android:id="@+id/btnUserDataAllCurUserAppReviewsDialog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="All Your Reviews!" />
         </LinearLayout>
     </ScrollView>
 

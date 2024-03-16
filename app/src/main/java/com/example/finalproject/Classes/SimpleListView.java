@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,7 +22,9 @@ import java.util.ArrayList;
 
 public class SimpleListView extends LinearLayout {
     private ListView listView;
+    private LinearLayout llReviews;
     private EditText editText;
+    private RatingBar rbAppUserRating;
     private Button button;
     private String[] choices;
     private Context context;
@@ -44,13 +47,19 @@ public class SimpleListView extends LinearLayout {
     private void setParams(){
         setOrientation(LinearLayout.VERTICAL);
 
+        llReviews = findViewById(R.id.llReviews);
         listView = findViewById(R.id.lvAppReviews);
         listView.setAdapter(adapter);
-
         button = findViewById(R.id.btnAppSendUserReview);
         editText = findViewById(R.id.etAppReview);
-
-        button.setOnClickListener(listener);
+        rbAppUserRating = findViewById(R.id.rbAppUserRating);
+        //if there is no listener that means there is no review, so we make it invisible
+        if(listener != null){
+            button.setOnClickListener(listener);
+        }
+        else {
+            llReviews.setVisibility(GONE);
+        }
 
     }
 

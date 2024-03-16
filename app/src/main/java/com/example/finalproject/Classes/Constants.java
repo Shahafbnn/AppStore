@@ -63,6 +63,8 @@ public abstract class Constants {
     public static final String INTENT_SCROLL_VIEW_KEY = "intentScrollView";
     public static final String REGISTER_ACTIVITY_RETURN_DATA_KEY = "registerActivitySuccess";
     public static final String INTENT_CURRENT_USER_KEY = "intentCurrentUser";
+    public static final String INTENT_CURRENT_APP_CREATOR_KEY = "intentCurrentAppCreator";
+
     public static final String INTENT_CURRENT_APP_KEY = "intentCurrentApp";
     public static final String INTENT_CATEGORIES_KEY = "intentCategories";
 

@@ -7,6 +7,7 @@ import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_CREATED_
 import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_DOWNLOADED_APPS_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_ACTIVITY_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CHOSEN_APP_ACTIVITY_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_CREATOR_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_SCROLL_VIEW_KEY;
@@ -333,7 +334,8 @@ public class ChosenAppActivity extends AppCompatActivity implements View.OnClick
         if(v==tvAppCreator){
             setTextViewUnderlineAndColor(tvAppCreator, "Created by: ", curApp.getAppCreator().getFullNameAdmin(), Color.rgb(102,0,153));
             Intent intent = new Intent(getApplicationContext(), UserDataActivity.class);
-            intent.putExtra(Constants.INTENT_CURRENT_USER_KEY, curApp.getAppCreator());
+            intent.putExtra(INTENT_CURRENT_USER_KEY, curUser);
+            intent.putExtra(INTENT_CURRENT_APP_CREATOR_KEY, curApp.getAppCreator());
             startActivity(intent);
         }
         else if(v==ibAppDownload){

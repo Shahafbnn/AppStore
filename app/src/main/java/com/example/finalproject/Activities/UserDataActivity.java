@@ -1,7 +1,9 @@
 package com.example.finalproject.Activities;
 
+import static android.view.View.GONE;
 import static com.example.finalproject.Classes.Constants.FIRESTORE_APP_REVIEWS_KEY;
 import static com.example.finalproject.Classes.Constants.FIRESTORE_USER_CREATED_APPS_KEY;
+import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_CREATOR_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_APP_KEY;
 import static com.example.finalproject.Classes.Constants.INTENT_CURRENT_USER_KEY;
 
@@ -23,7 +25,6 @@ import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,20 +51,29 @@ public class UserDataActivity extends AppCompatActivity {
 
     private User curUser;
     private boolean isUserSignedIn;
+    private User curAppCreator;
+    private boolean isAppCreatorSignedIn;
     private LinearLayout llUserDataScrollView;
     private ImageView ivUserDataImage;
     private TextView tvUserDataName;
+    private Button btnUserDataAllAppReviewsDialog, btnUserDataAllCurUserAppReviewsDialog;
     private HashMap<String,LinearLayout> stringLinearLayoutHashMap;
     private ArrayList<LinearLayout> scrollViewLinearLayouts;
     private FirebaseFirestore db;
 
-    private ArrayList<Review> appReviews;
-    private ArrayList<Review> appCurUserReviews;
-    private ReviewAdapter appReviewsAdapter;
+    private ArrayList<Review> allAppReviews;
+    private ReviewAdapter allAppReviewsAdapter;
+    private ListView lvAllAppReviews;
+    private Dialog allAppReviewsDialog;
 
-    private ListView lvAppReviews;
-    private Dialog reviewsDialog;
-    private Button btnUserDataDialog;
+
+    private ArrayList<Review> curUserAppReviews;
+    private ReviewAdapter curUserAppReviewsAdapter;
+    private ListView lvCurUserAppReviews;
+    private Dialog curUserAppReviewsDialog;
+
+
+
 //TODO: fix the fact that the data doesn't update when you add a review to an app in your reviews page for example when I go to one of the creator's apps, add a review, and return, then it doesn't show up once I click the Reviews Button!
 
     @Override
@@ -72,9 +82,14 @@ public class UserDataActivity extends AppCompatActivity {
         setContentView(R.layout.activity_user_data);
         db = FirebaseFirestore.getInstance();
 
-        btnUserDataDialog = findViewById(R.id.btnUserDataDialog);
+        btnUserDataAllAppReviewsDialog = findViewById(R.id.btnUserDataAllAppReviewsDialog);
+        btnUserDataAllCurUserAppReviewsDialog = findViewById(R.id.btnUserDataAllCurUserAppReviewsDialog);
+
         curUser = (User) getIntent().getSerializableExtra(INTENT_CURRENT_USER_KEY);
         isUserSignedIn = curUser != null;
+
+        curAppCreator = (User) getIntent().getSerializableExtra(INTENT_CURRENT_APP_CREATOR_KEY);
+        isAppCreatorSignedIn = curAppCreator != null;
 
         llUserDataScrollView = findViewById(R.id.llUserDataScrollView);
         ivUserDataImage = findViewById(R.id.ivUserDataImage);
@@ -82,50 +97,63 @@ public class UserDataActivity extends AppCompatActivity {
         stringLinearLayoutHashMap = new HashMap<>();
         scrollViewLinearLayouts = new ArrayList<>();
 
-        appReviews = new ArrayList<>();
-        appCurUserReviews = new ArrayList<>();
+        allAppReviews = new ArrayList<>();
+        curUserAppReviews = new ArrayList<>();
 
 
-        if(isUserSignedIn) {
-            StorageFunctions.setImage(this, ivUserDataImage, curUser.getUserImagePath());
-            tvUserDataName.setText(curUser.getFullNameAdmin());
-
+        if(isAppCreatorSignedIn) {
+            StorageFunctions.setImage(this, ivUserDataImage, curAppCreator.getUserImagePath());
+            tvUserDataName.setText(curAppCreator.getFullNameAdmin());
+            createScrollView("Uploaded Apps:", db.collection("users").document(curAppCreator.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY));
+            createReviews();
+            fetchReviewsFromFireStore();
+            btnUserDataAllAppReviewsDialog.setOnClickListener(v -> allAppReviewsDialog.show());
         }
         else {
             Toast.makeText(this, "Please try again!", Toast.LENGTH_LONG).show();
             finish();
         }
-        createScrollView("Uploaded Apps:", db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_USER_CREATED_APPS_KEY));
-        createReviews();
-        fetchReviewsFromFireStore();
-        btnUserDataDialog.setOnClickListener(v -> reviewsDialog.show());
-
     }
     private void createReviews(){
         //reviews dialog
-        reviewsDialog = new Dialog(this);
-        appReviewsAdapter = new ReviewAdapter(this, appReviews);
-        SimpleListView simpleListView = new SimpleListView(this, reviewsDialog, appReviewsAdapter, (v) -> {});
-        reviewsDialog.setContentView(simpleListView);
+        allAppReviewsDialog = new Dialog(this);
+        allAppReviewsAdapter = new ReviewAdapter(this, allAppReviews);
+        SimpleListView allAppReviewsListView = new SimpleListView(this, allAppReviewsDialog, allAppReviewsAdapter, null);
+        allAppReviewsDialog.setContentView(allAppReviewsListView);
 
         // reviews variables
-        lvAppReviews = reviewsDialog.findViewById(R.id.lvAppReviews);
-        LinearLayout llReviews = reviewsDialog.findViewById(R.id.llReviews);
+        lvAllAppReviews = allAppReviewsDialog.findViewById(R.id.lvAppReviews);
 
-        lvAppReviews.setAdapter(appReviewsAdapter);
+        lvAllAppReviews.setAdapter(allAppReviewsAdapter);
 
+
+        if(isUserSignedIn){
+            //reviews dialog
+            curUserAppReviewsDialog = new Dialog(this);
+            curUserAppReviewsAdapter = new ReviewAdapter(this, curUserAppReviews);
+            SimpleListView curUserAppReviewsListView = new SimpleListView(this, curUserAppReviewsDialog, curUserAppReviewsAdapter, null);
+            allAppReviewsDialog.setContentView(curUserAppReviewsListView);
+
+            // reviews variables
+            lvCurUserAppReviews = curUserAppReviewsDialog.findViewById(R.id.lvAppReviews);
+
+            lvAllAppReviews.setAdapter(curUserAppReviewsAdapter);
+        }
+        else btnUserDataAllCurUserAppReviewsDialog.setVisibility(GONE);
     }
     private void fetchReviewsFromFireStore(){
-        db.collection("users").document(curUser.getUserId()).collection(FIRESTORE_APP_REVIEWS_KEY).get().addOnCompleteListener(task -> {
+        db.collection("users").document(curAppCreator.getUserId()).collection(FIRESTORE_APP_REVIEWS_KEY).get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 Review review;
                 for (QueryDocumentSnapshot documentSnapshot : task.getResult()) {
                     review = documentSnapshot.toObject(Review.class);
                     review.setReviewId(documentSnapshot.getId());
-                    if(isUserSignedIn && review.getReviewReviewer().getUserId().equals(curUser.getUserId())) appCurUserReviews.add(review);
-                    appReviews.add(review);
+                    //adding the signed in user's reviews separately for a later feature
+                    if(isUserSignedIn && review.getReviewReviewer().getUserId().equals(curUser.getUserId())) curUserAppReviews.add(review);
+                    allAppReviews.add(review);
                 }
-                appReviewsAdapter.notifyDataSetChanged();
+                allAppReviewsAdapter.notifyDataSetChanged();
+                if(isUserSignedIn) curUserAppReviewsAdapter.notifyDataSetChanged();
             } else {
                 Log.d("debug", "Error getting documents: ", task.getException());
             }
