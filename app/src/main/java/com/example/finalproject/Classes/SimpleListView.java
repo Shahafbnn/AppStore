@@ -26,16 +26,13 @@ public class SimpleListView extends LinearLayout {
     private EditText editText;
     private RatingBar rbAppUserRating;
     private Button button;
-    private String[] choices;
     private Context context;
-    private ArrayList<String> result;
     private Dialog dialog;
     private BaseAdapter adapter;
     private OnClickListener listener;
     public SimpleListView(Context context, Dialog dialog, BaseAdapter adapter, OnClickListener listener) {
         super(context);
         inflate(getContext(), R.layout.app_reviews_dialog, this);
-        this.choices = choices;
         this.context = context;
         this.dialog = dialog;
         this.adapter = adapter;

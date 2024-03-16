@@ -63,13 +63,11 @@ public class UserDataActivity extends AppCompatActivity {
 
     private ArrayList<Review> allAppReviews;
     private ReviewAdapter allAppReviewsAdapter;
-    private ListView lvAllAppReviews;
     private Dialog allAppReviewsDialog;
 
 
     private ArrayList<Review> curUserAppReviews;
     private ReviewAdapter curUserAppReviewsAdapter;
-    private ListView lvCurUserAppReviews;
     private Dialog curUserAppReviewsDialog;
 
 
@@ -121,11 +119,6 @@ public class UserDataActivity extends AppCompatActivity {
         SimpleListView allAppReviewsListView = new SimpleListView(this, allAppReviewsDialog, allAppReviewsAdapter, null);
         allAppReviewsDialog.setContentView(allAppReviewsListView);
 
-        // reviews variables
-        lvAllAppReviews = allAppReviewsDialog.findViewById(R.id.lvAppReviews);
-
-        lvAllAppReviews.setAdapter(allAppReviewsAdapter);
-
 
         if(isUserSignedIn){
             //reviews dialog
@@ -134,10 +127,6 @@ public class UserDataActivity extends AppCompatActivity {
             SimpleListView curUserAppReviewsListView = new SimpleListView(this, curUserAppReviewsDialog, curUserAppReviewsAdapter, null);
             allAppReviewsDialog.setContentView(curUserAppReviewsListView);
 
-            // reviews variables
-            lvCurUserAppReviews = curUserAppReviewsDialog.findViewById(R.id.lvAppReviews);
-
-            lvAllAppReviews.setAdapter(curUserAppReviewsAdapter);
         }
         else btnUserDataAllCurUserAppReviewsDialog.setVisibility(GONE);
     }
