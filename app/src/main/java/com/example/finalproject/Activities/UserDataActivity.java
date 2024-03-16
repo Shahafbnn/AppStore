@@ -111,13 +111,18 @@ public class UserDataActivity extends AppCompatActivity {
             Toast.makeText(this, "Please try again!", Toast.LENGTH_LONG).show();
             finish();
         }
+
+        if(isUserSignedIn){
+            btnUserDataAllCurUserAppReviewsDialog.setOnClickListener(v -> curUserAppReviewsDialog.show());
+        }
     }
     private void createReviews(){
         //reviews dialog
         allAppReviewsDialog = new Dialog(this);
         allAppReviewsAdapter = new ReviewAdapter(this, allAppReviews);
-        SimpleListView allAppReviewsListView = new SimpleListView(this, allAppReviewsDialog, allAppReviewsAdapter, null);
-        allAppReviewsDialog.setContentView(allAppReviewsListView);
+        SimpleListView simpleListView = new SimpleListView(this, allAppReviewsDialog, allAppReviewsAdapter, null);
+        allAppReviewsDialog.setContentView(simpleListView);
+
 
 
         if(isUserSignedIn){
@@ -125,7 +130,7 @@ public class UserDataActivity extends AppCompatActivity {
             curUserAppReviewsDialog = new Dialog(this);
             curUserAppReviewsAdapter = new ReviewAdapter(this, curUserAppReviews);
             SimpleListView curUserAppReviewsListView = new SimpleListView(this, curUserAppReviewsDialog, curUserAppReviewsAdapter, null);
-            allAppReviewsDialog.setContentView(curUserAppReviewsListView);
+            curUserAppReviewsDialog.setContentView(curUserAppReviewsListView);
 
         }
         else btnUserDataAllCurUserAppReviewsDialog.setVisibility(GONE);

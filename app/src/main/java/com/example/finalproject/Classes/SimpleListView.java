@@ -48,8 +48,6 @@ public class SimpleListView extends LinearLayout {
         listView = findViewById(R.id.lvAppReviews);
         listView.setAdapter(adapter);
         button = findViewById(R.id.btnAppSendUserReview);
-        editText = findViewById(R.id.etAppReview);
-        rbAppUserRating = findViewById(R.id.rbAppUserRating);
         //if there is no listener that means there is no review, so we make it invisible
         if(listener != null){
             button.setOnClickListener(listener);
@@ -60,4 +58,7 @@ public class SimpleListView extends LinearLayout {
 
     }
 
+    public BaseAdapter getAdapter() {
+        return adapter;
+    }
 }
